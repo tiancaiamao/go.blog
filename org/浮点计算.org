@@ -1,0 +1,43 @@
+#+BEGIN_HTML
+{
+"Title":"浮点计算误差集累",
+"Date":"2012-06-05"
+}
+#+END_HTML
+同一个函数，即使用递归和非递归两种形式实现，其计算结果都可能不相同。
+
+比如计算 1+e^2+e^3+...+e^n
+#+BEGIN_SRC C
+double f(int n)
+{
+	if(n == 0)
+		return exp(0);
+	else
+		return exp(n) + f(n-1);
+}
+#+END_SRC
+对比下面
+#+BEGIN_SRC C
+sum = 0;
+for(int i=0; i<n; i++)
+{
+	sum += exp(i);
+}
+#+END_SRC
+有什么区别呢？计算顺序不同。
+
+上面的是递归到函数栈的底部，回去的时候计算的。也就是说它的计算顺序是：
+
+f(n) = exp(n) + f(n-1)\\
+	=exp(n) + exp(n-1) + f(n-2)\\
+	=exp(n) + exp(n-1) + exp(n-2) + f(n-3)\\
+...\\
+	=exp(n) + exp(n-1) + exp(n-2) + ... + f(2)\\
+	=exp(n) + exp(n-1) + exp(n-2) + ... + exp(2) + f(1)\\
+	=exp(n) + exp(n-1) + exp(n-2) + ... + exp(2) + exp(0)
+
+　　是从exp(n)加到exp(0)的，与for那个的计算顺序相反。
+
+两者加的数都是一样的。但计算顺序不一样。由于浮点运算的误差集累，最终得到的结果不一样。
+
+这样带来的误差看似微小，但在某些场合积累下来之后误差却是惊人的。

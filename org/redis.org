@@ -1,0 +1,52 @@
+#+begin_html
+{
+"Title":"redis研究",
+"Date":"2012-10-16",
+"Category":["分布式","存储"],
+"Tags": ["redis"]
+}
+#+end_html
+
+最近在研究redis。写redis的文章已经太多了，所以我就不继续写细节了。  
+
+这篇文章主要是记一下自已看redis中觉得值得看的一些点。
+** 双hash表
+rehash时为了不影响正常服务而提供\\
+增量rehash
+#+begin_src C
+计时   
+while(rehash 100个)   
+	计时，如果时间超了就break   
+#+end_src
+
+** 事件模型
+异步单线程事件驱动。\\
+优点是可以省掉线程切换的开销，缺点是没法充分利用多核硬件优势。\\
+因此redis适合于并发量高但一次请求非常短的应用场景。
+
+aeMain函数中\\
+while(服务没停)\\  
+	给机会执行事件处理之前的一些东西\\
+	事件处理aeProcessEvents\\	
+aeProcessEvents函数中调用aeApiPoll()\\	
+aeApiPoll函数中是调用操作系统的epoll,注意设置超时的，这样aeProcessEvents就可以返回
+
+** 支持多种数据结构
+key-value中的value不仅可以是常规的string，也可以是一个链表，或哈希表\\ 
+还支持集合，用skiplist实现的
+
+** 持久化  
+快照和aof方式  
+
+aof方式实现：
+1. Redis通过fork一个子进程，遍历数据，写入新临时文件
+2. 父进程继续处理client请求，子进程继续写临时文件
+3. 父进程把新写入的aof写在缓冲区
+4. 子进程写完退出，父进程接到退出消息，将缓冲区aof写入临时文件
+5. 临时文件签名为appendonly.aof，原来文件被覆盖，整个过程完成
+aof创建是指定的flags是open(filename, O\_WRONLY|O\_APPEND|O\_CREATE, 0644)
+
+redis对象的反序列化是通过从对象解析出命令实现的，反序列化成命令
+
+主从
+---------------------
