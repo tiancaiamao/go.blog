@@ -1,0 +1,217 @@
+{
+"Title":"actor模型漫谈",
+"Date":"2012-09-07",
+"Category":["高性能服务器"],
+"Tags":["actor model"]
+}
+
+<p>
+这篇文章，从go语言的channel，讲到我自己写的线程库task，从分发/订阅模式，讲到actor模型。算是一个漫谈吧，都是围绕actor模型相关的东西，目前我的一些模糊的理解。
+</p>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1">go语言中的actor </h2>
+<div class="outline-text-2" id="text-1">
+
+<p>go语言中，通过channel + goroutine配合使用，就能达到actor模型效果了  
+</p>
+<p>
+Actor行为:
+</p>
+
+
+<pre class="example">var c = make(chan bool)  
+func Actor() {  
+    &lt;-c  
+    //begin to do the thing  
+}  
+
+func Main() {  
+    go Actor() //观察者在后台开始准备  
+    c &lt;- true //通知观察者  
+}  
+</pre>
+
+
+
+<p>
+一个goroutine就是一个actor，通信是通过语言提供的管道完成的。go语言的goroutine是非常轻量级的，又可以充分发挥多核的优势。actor模式的核心就在这里，无锁+充分利用多核，actor之间通过消息通信共同工作。
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2">actor模型分类 </h2>
+<div class="outline-text-2" id="text-2">
+
+<p>Actor模型的任务调度方式分为“基于线程（thread-based）的调度”以及“基于事件（event-based）的调度”两种。
+</p>
+</div>
+
+<div id="outline-container-2.1" class="outline-3">
+<h3 id="sec-2.1">基于线程的 </h3>
+<div class="outline-text-3" id="text-2.1">
+
+<p>基于线程的调度为每个Actor分配一个线程，在接受一个消息（如在Scala Actor中使用receive）时，如果当前Actor的“邮箱（mail box）”为空，则会阻塞当前线程直到获得消息为止。   
+</p>
+<p>
+基于线程的调度实现起来较为简单，例如在.NET中可以通过Monitor.Wait/Pulse来轻松实现这样的生产/消费逻辑。   
+</p>
+<p>
+不过基于线程的调度缺点也是非常明显的，由于线程数量受到操作系统的限制，把线程和Actor捆绑起来势必影响到系统中可以同时的Actor数量。   
+</p>
+<p>
+而线程数量一多也会影响到系统资源占用以及调度，而在某些情况下大部分的Actor会处于空闲状态，而大量阻塞线程既是系统的负担，也是资源的浪费。   
+</p>
+<p>
+因此基于线程的调度是一个拥有重大缺陷的实现，现有的Actor Model大都不会采取这种方式。
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2.2" class="outline-3">
+<h3 id="sec-2.2">基于事件的 </h3>
+<div class="outline-text-3" id="text-2.2">
+
+<p>于是另一种Actor模型的任务调度方式便是基于事件的调度。“事件”在这里可以简单理解为“消息到达”事件，而此时才会为Actor的任务分配线程并执行。   
+</p>
+<p>
+很容易理解，我们现在便可以使用少量的线程来执行大量Actor产生的任务，既保证了运算资源的充分占用，也不会让系统在同时进行的太多任务中“疲惫不堪”，这样系统便可以得到很好的伸缩性。   
+</p>
+<p>
+在Scala Actor中也可以选择使用“react”而不是“recive”方法来使用基于事件的方式来执行任务。
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3">线程级actor模型的实现 </h2>
+<div class="outline-text-2" id="text-3">
+
+<p>go语言中的goroutine和channel自是不用说。goroutine是非常轻量，而且调度器会使用多核。这个语言的设计就是打算这么干的。   
+</p>
+<p>
+lua语言中的coroutine协程，在某种程度上也可以完成actor模型的工作，就是不太好用。是手动的yield和resume的，没有channel而是通过yield和resume的参数来传递消息。  
+</p>
+<p>
+我自己写过一个<a href="https://github.com/tiancaiamao/task">线程库</a>，类似coroutine做的事情，有点像lua和go中的coroutine的一个结合。像lua一样单线程又像go一样支持channel。可以像线程级actor模型这么用。   
+</p>
+<p>
+当然，只是玩具代码，通过swapcontext保存上下文实现的，轻量还算是轻量。这么用还是有问题，主要二个:
+</p><ul>
+<li>
+不像go语言，我写的这个东东不能线程的栈自动扩张   
+</li>
+<li>
+用户级的线程库，完全没有用到多核   
+
+</li>
+</ul>
+
+<p>第二点太要命了，actor模型的出发点就是充分利用多核优势的。当然出发点不一样，我本来也不是写个actor框架的。   
+</p>
+<p>
+要是真的用C语言搞一个这种东西，搞到最后就是go语言的一个拙劣的模仿品。消息队列和一些数据结构倒是蛮有用。后面再考虑自己写一个actor的框架玩玩吧&hellip;等有时间了。  
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4">RPC与分发/订阅 </h2>
+<div class="outline-text-2" id="text-4">
+
+<p>本文是actor模型漫谈，为什么会谈到RPC和分发/订阅呢？  
+</p>
+<p>
+还是因为中间有相似的东西。先看RPC，想一想RPC的流程，client做一个RPC调用，其实是向server发一个消息，让server做某事，server做完后回client一条消息。  
+</p>
+<p>
+整个过程就像client在调用某个函数一样，只管给个输入，调用一个函数，返回后得到一个结果。它不用在乎过程如何实现的，即这个函数发生在本地还是远程。  
+</p>
+<p>
+换一个角度看，其实RPC就是一种actor模型。client和server都是一个actor，前者通知后者去做某事，不去管后者是如何做的，两个actor之间通过消息通信进行协作。
+</p>
+<p>
+当然真正的RPC实现中会复杂的多。首先涉及到序列化和反序列化的工作，专业术语叫marshall和unmarshall。  
+</p>
+<p>
+这个解决的是调用参数的问题。比如参数传一个结构体，或是传一个int又或是string，要序列化为一条消息才能通过网络上传输到server那边去。marshall就做这个事。  
+</p>
+<p>
+完了server收到消息，又需要unmarshall出client发过来的参数，再调用自己对应的函数。
+</p>
+<p>
+server如何知道要调用哪个函数？client又如何知道哪个server提供了哪些服务函数呢？这里就要讲到分发/订阅了。   
+</p>
+<p>
+首先要有一个中心server，它做两件事情：
+</p><ol>
+<li>
+接受注册事件。某个server提供什么函数，就向中心server注册一下。这就是发布过程。
+</li>
+<li>
+响应查询事件。某个client可以向中心server查到谁谁谁，提供了什么样的RPC调用。   
+
+</li>
+</ol>
+
+<p>当然中间有点不同的地方。分发/订阅是client消息直接发到中心server，由中心server再发到其它server去执行，其它server充当的是worker的角色。  
+而RPC的中心server只是提供一个查询，返回结果中包含了比如server的端口等一些信息，后面是由client去发消息的。
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5">actor模型 </h2>
+<div class="outline-text-2" id="text-5">
+
+<p>前面废话了这么久，最后，想一想怎么设计一个actor模型的编程框架。  
+</p>
+<p>
+其实云风的<a href="https://github.com/cloudwu/skynet">skynet</a>从某种意义上看，就是一个这种框架。把actor如何通过消息通信弄出来由框架实现的，它上面每个skynet_context就是一个actor，完成某种特定的服务。  
+</p>
+<p>
+橫看成岭侧成峰，你可以说它是一个消息通信的框架，每个服务完成自己的任务，它就是actor，等待消息来然后做对应的处理。至于消息怎么来它不管，由框架做了。  
+</p>
+<p>
+框架做的事情也很专一：分发消息，调用对应actor的回调函数。有个线程池，actor不等于线程。这是一个基于事件的actor模型。
+</p>
+<p>
+不管是基于线程，或者是基于事件，总结规律，看它们的共同特点:
+</p><ol>
+<li>
+都有一个回调函数 
+</li>
+<li>
+都有消息队列   
+
+</li>
+</ol>
+
+<p>线程自然是有回调函数，这个就是线程启动后执行的函数。至于基于事件的，它的回调函数就很像RPC中server注册回调函数那样了。回调函数只是一个入口，消息会有类型，然后再解包消息，像protol buffer什么的。
+</p>
+<p>
+消息队列是都有的。明显，因为actor处理消息的速度可能达不到消息来的速度，这样就必须搞个消息队列排队，并阻塞发送者。
+</p>
+<p>
+再看不同点。最核心的就是"消息队列"是隐式的还是显式的。这个决定了和使用上的不同。  
+</p>
+<p>
+显式比如通道这东西。actor之间不是直接传消息而是一个传给actor，而是一个写通道，另一个读通道，这个通道就是消息队列。  
+</p>
+<p>
+隐式的就没有把消息队列暴露出来，而是actor自己私有的。比如skynet中是由框架调度发给具体的actor的消息队列。  
+</p>
+<p>
+这个不同之处有多大影响呢？主要影响了编程的模式。
+</p>
+<p>
+像skynet感觉这么搞编程模式就有一点麻烦。自己写模块，向框架注册回调函数，有消息到来的回调函数就会被执行。
+</p></div>
+</div>
