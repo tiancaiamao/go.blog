@@ -16,9 +16,9 @@ import (
 
 var (
 	httpAddr     = flag.String("http", "localhost:8080", "HTTP listen address")
-	contentPath  = flag.String("content", "../src/blog/content/", "path to content files")
-	templatePath = flag.String("template", "../src/blog/template/", "path to template files")
-	staticPath   = flag.String("static", "../src/blog/static/", "path to static files")
+	contentPath  = flag.String("content", "../content/", "path to content files")
+	templatePath = flag.String("template", "../template/", "path to template files")
+	staticPath   = flag.String("static", "../static/", "path to static files")
 )
 
 func main() {
