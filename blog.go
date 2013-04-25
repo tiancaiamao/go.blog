@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	hostname     = "mygoapp-tiancaiamao.dotcloud.com"
+	hostname     = "frozen-plains-3143.herokuapp.com"
 	baseURL      = "http://" + hostname
 	homeArticles = 5  // number of articles to display on the home page
 	feedArticles = 10 // number of articles to include in Atom feed

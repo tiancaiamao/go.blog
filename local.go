@@ -24,6 +24,13 @@ var (
 
 func main() {
 	flag.Parse()
+	port := os.Getenv("PORT")
+	if port == "" {//run local
+		*contentPath = "../src/blog/content/"
+		*templatePath = "../src/blog/template/"
+		*staticPath = "../src/blog/static/"
+		port = "8080"
+	}
 	s, err := NewServer(*contentPath, *templatePath)
 	if err != nil {
 		log.Fatal(err)
@@ -31,5 +38,5 @@ func main() {
 	http.Handle("/", s)
 	fs := http.FileServer(http.Dir(*staticPath))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
