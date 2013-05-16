@@ -1,0 +1,105 @@
+#+begin_html
+{
+"Title":"设计一个用户级线程库",
+"Date":"2012-08-06",
+"Tags": ["协程","task"]
+}
+#+end_html
+
+无意中受libtask启发看到getcontext这函数,一下子学得我应该能自己写一个用户级线程库了.以前做个课程设计时写嵌入式操作系统内核,也写过进程调用的东西.看到getcontext函数后,我又想练练手了.getcontext把最难搞的保存上下文信息弄好了。若是自己写必须用汇编，还必须了解对应硬件体系结构的东西
+
+有几个难点要处理:
+1. 栈大小不够时,如何自动增长?
+2. 是抢占式的还是协同式的?
+
+采用不可剥夺，协同方式进行线程切换。因为在用户级上采用不可剥夺效率会更高。而且用户应该知道更合理的时机进行切换。提供task_yield函数
+ 
+栈增长的方向要注意,应该是向下的.而数组的增长方向是向上的.
+
+线程的数据结构组织方面\\
+给一个tid，如何直接得到对应的task* ?\\
+存一个task*的数组all,这样就可以通过tid直接得到对应的线程控制结构了.\\
+ready队列搞一个.利用链表把就绪队列管理起来\\
+freeslot分配task*的糟位
+
+[[../img/task.jpg]]
+最后整个程序退出时要释放task，如何编历到所有分配的资源？ 先把free_slot链表的所有都置为NULL，然后扫描一遍all，对不为NULL的项进行释放。  
+
+task\_create流程：
+#+begin_quote
+分配结构体的空间\\
+初始化成员，包括context\\
+放到ready队列中\\
+#+end_quote
+ 
+schedule流程：
+#+begin_quote
+死循环\\
+从ready队列中取一项作为running，如果没有ready的了，准备退出\\
+进行swapcontext切换到running的上下文\\
+返回这里意味running做了上下文切换，可能原因是主动yield，读写channel而block，以及线程退出\\
+如果原因是该task要退出，则释放资源\\
+把running置为NULL
+#+end_quote
+ 
+task\_exit流程：
+#+begin_quote
+把task的status置为EXITING。要switch到schedule中才能真正释放空间，因为task_exit函数使用的是此task的栈
+
+把对应的slot回收给free_slot\\
+进行swapcontext换到schedule的上下文\\
+#+end_quote
+ 
+task_yield流程：  
+#+begin_quote
+把当前running挂到ready队列\\
+swapcontext到schedule的上下文\\  
+#+end_quote
+ 
+线程通信方面。只支持channel
+[[../img/task1.jpg]]
+channel中分别挂着阻塞队列(数组)，因无法写管道而阻塞的挂在sender，因读管道阻塞的挂在receiver。队列的每个元素就是struct task*  
+
+不单独设置block队列\\
+管道可以是带缓存的也可以不是带缓存的。不带的用void *p\\
+带的有个数组实现的环形队列\\
+ 
+chan_send流程：
+#+begin_quote
+确定是否能写管道\\
+若不能写，将当前线程挂到此通道的sender链中，然后swap到schedule_context进行调度\\
+若可写，则写管道，然后从receiver中挑一个放到ready队列\\
+然后函数返回0表示此函数调用没有被阻塞过\\
+#+end_quote
+ 
+非阻塞IO  
+
+用户级线程，假如其中用个线程IO阻塞了，则整个进程也会被阻塞\\
+如何解决这个问题？让某个线程IO阻塞后调度器自动切到其它线程继续运行？
+
+核心思想：将IO的文件描述符设置为非阻塞，然后专门开一个后台线程做epoll  
+
+fd设置为不阻塞 fdnoblock\\
+fd_read中，若error==EAGAIN则调用fdwait\\
+fdwait函数把fd加到pollfd中，然后切换线程\\ 
+开一个fdtask线程专程检测就绪的pollfd，此线程的流程：\\
+#+begin_src c
+无限循环：  
+while(task_yield() > 0);    //确定没有其它task运行时才做IO  
+if(poll(pollfd,npollfd,ms) < 0) {  //有可运行的fd  
+    for 每个可运行的线程  
+        调用task_ready  
+#+end_src
+
+代码放在https://github.com/tiancaiamao/task
+---------------------------------------------------------------------
+2012.8.23补充：
+两个改动
+1.想让栈空间大小不受限制
+受云风的[[https://github.com/cloudwu/coroutine][coroutine]]库启发，每次切换前把线程的栈（堆空间）拷到主栈上，切换后把主栈上该栈的空间拷回堆区保存
+2.去掉task\_main
+让程序还是从main函数起，然后调用task\_init初始化。一直运行都是用的主栈的栈空间。
+-------------------------------------------------------------------------
+2012.8.30
+在主栈后面拼接的拷贝方式无法实现。
+因为没有函数直接提供改当前栈的地址,并继续运行某个context
