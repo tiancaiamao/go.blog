@@ -9,34 +9,21 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
-	"os"
-)
-
-var (
-	httpAddr     = flag.String("http", "localhost:8080", "HTTP listen address")
-	contentPath  = flag.String("content", "/app/content/", "path to content files")
-	templatePath = flag.String("template", "/app/template/", "path to template files")
-	staticPath   = flag.String("static", "/app/static/", "path to static files")
 )
 
 func main() {
-	flag.Parse()
-	port := os.Getenv("PORT")
-	if port == "" {//run local
-		*contentPath = "../src/blog/content/"
-		*templatePath = "../src/blog/template/"
-		*staticPath = "../src/blog/static/"
-		port = "8080"
-	}
-	s, err := NewServer(*contentPath, *templatePath)
+	var contentPath = "../src/github.com/tiancaiamao//go.blog/content/"
+	var templatePath = "../src/github.com/tiancaiamao/go.blog/template/"
+	var staticPath = "../src/github.com/tiancaiamao/go.blog/static/"
+	var port = "8080"
+	s, err := NewServer(contentPath, templatePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	http.Handle("/", s)
-	fs := http.FileServer(http.Dir(*staticPath))
+	fs := http.FileServer(http.Dir(staticPath))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

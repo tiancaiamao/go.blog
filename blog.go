@@ -8,24 +8,24 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"time"
-	"io/ioutil"
-	"encoding/json"
-	"fmt"
 
-	"blog/atom"
-	"blog/present"
+	"github.com/tiancaiamao/go.blog/atom"
+	"github.com/tiancaiamao/go.blog/present"
 )
 
 const (
-	hostname     = "frozen-plains-3143.herokuapp.com"
+	hostname     = "www.zenlife.tk"
 	baseURL      = "http://" + hostname
 	homeArticles = 5  // number of articles to display on the home page
 	feedArticles = 10 // number of articles to include in Atom feed
@@ -153,25 +153,26 @@ func authorName(a present.Author) string {
 type blogTime time.Time
 
 func (t *blogTime) UnmarshalJSON(data []byte) (err error) {
-        str := string(data)
-        tt, err := time.Parse(`"`+"2006-01-02"+`"`, str)
-        if err != nil {
-                return fmt.Errorf("did not recognize time: %s", str)
-        }
-        *t = blogTime(tt)
-        return nil
+	str := string(data)
+	tt, err := time.Parse(`"`+"2006-01-02"+`"`, str)
+	if err != nil {
+		return fmt.Errorf("did not recognize time: %s", str)
+	}
+	*t = blogTime(tt)
+	return nil
 }
-type PostData struct {
-        Title string
-        Date blogTime
-        Category []string
-        Tags []string
-        Summary string
-        Article string
 
-        author string
-        favorite bool
-        Name string //file name of the post
+type PostData struct {
+	Title    string
+	Date     blogTime
+	Category []string
+	Tags     []string
+	Summary  string
+	Article  string
+
+	author   string
+	favorite bool
+	Name     string //file name of the post
 }
 
 // loadDocs reads all content from the provided file system root, renders all
@@ -213,18 +214,18 @@ func (s *Server) loadDocs(root string) error {
 		if filepath.Ext(p) != ".html" {
 			return nil
 		}
-		f,err := os.Open(p)
+		f, err := os.Open(p)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
-		art,err := ioutil.ReadAll(f)
+		art, err := ioutil.ReadAll(f)
 		if err != nil {
 			return err
 		}
 
 		meta := &PostData{
-			Name: info.Name(),
+			Name:  info.Name(),
 			Title: "Title Here",
 		}
 		if bytes.HasPrefix(art, []byte("{\n")) {
@@ -236,12 +237,12 @@ func (s *Server) loadDocs(root string) error {
 			if err := json.Unmarshal(hdr, meta); err != nil {
 				panic(fmt.Sprintf("loading %s: %s", info.Name(), err))
 			}
-		
+
 			p = p[len(root) : len(p)-len(".html")]
 			d := &Doc{
 				Doc: &present.Doc{
 					Title: meta.Title,
-					Time: time.Time(meta.Date),
+					Time:  time.Time(meta.Date),
 					//Authors: []present.Author{"毛康力"},
 				},
 				Path:      p,

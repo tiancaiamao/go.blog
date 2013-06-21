@@ -12,4 +12,3 @@ handlers:
 - url: /.*
   script: _go_app
 
-nobuild_files: ^(?!(cmd/blog|code.google.com)/)

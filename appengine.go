@@ -8,12 +8,16 @@
 
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func init() {
 	s, err := NewServer("content/", "template/")
 	if err != nil {
 		panic(err)
 	}
-	http.Handle("/", s)
+	f := s.ServeHTTP
+	http.HandleFunc("/", f)
+	//	log.Fatal(http.ListenAndServe(":80", nil))
 }
