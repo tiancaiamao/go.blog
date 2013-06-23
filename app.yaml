@@ -1,4 +1,4 @@
-application: golang-org
+application: x7-universal-ion-c
 version: blog-test
 runtime: go
 api_version: go1
