@@ -26,8 +26,8 @@ func main() {
 		contentPath = "../src/github.com/tiancaiamao/go.blog/content/"
 		templatePath = "../src/github.com/tiancaiamao/go.blog/template/"
 	} else {
-		contentPath = "../content/"
-		templatePath = "../template/"
+		contentPath = "/app/content/"
+		templatePath = "/app/template/"
 	}
 	s, err := NewServer(contentPath, templatePath)
 	if err != nil {
