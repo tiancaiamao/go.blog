@@ -46,18 +46,18 @@ Tags: scheme, primitive
 	      (+ 1 (cdr (/ z 3)))
 	      0))
 
-类似地，像数字0，加法，也可以用基本的core syntax定义出来。比如：
+类似地，像数字0，加法，也可以用基本的core syntax定义出来。比如，我们假设0就是0个#t的list，1是1个#t的list，n是n个#t的list，则：
 
-	(define (cons a b)
-	  (* (expt 2 a) (expt 3 b)))
-	(define (car z)
-	  (if (= 0 (remainder z 2))
-	      (+ 1 (car (/ z 2)))
-	      0))
-	(define (cdr z)
-	  (if (= 0 (remainder z 3))
-	      (+ 1 (cdr (/ z 3)))
-	      0))
+	(define zero '())
+	(define (zero? v) (null? v))
+	(define (add1 v) (cons #t v))
+	(define (sub1 v) (cdr v))
+	(define (+ x y)
+	  (cond
+	   ((zero? x) y)
+	   ((zero? y) x)
+	   (else
+	    (+ (add1 x) (sub1 y)))))
 
 有了加法之后，定义乘法也就不是什么难事。
 

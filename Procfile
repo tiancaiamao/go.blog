@@ -1,1 +1,1 @@
-web: bin/blog
+web: bin/go.blog
