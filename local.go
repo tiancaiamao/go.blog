@@ -15,9 +15,12 @@ import (
 )
 
 func main() {
-	var contentPath = "../src/github.com/tiancaiamao//go.blog/content/"
-	var templatePath = "../src/github.com/tiancaiamao/go.blog/template/"
-	var staticPath = "../src/github.com/tiancaiamao/go.blog/static/"
+	var gopath = os.Getenv("GOPATH")
+	var contentPath = gopath + "/src/github.com/tiancaiamao//go.blog/content/"
+	var templatePath = gopath + "/src/github.com/tiancaiamao/go.blog/template/"
+	var staticPath = gopath + "/src/github.com/tiancaiamao/go.blog/static/"
+
+	
 	var port = os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
