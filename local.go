@@ -11,13 +11,17 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
 	var contentPath = "../src/github.com/tiancaiamao//go.blog/content/"
 	var templatePath = "../src/github.com/tiancaiamao/go.blog/template/"
 	var staticPath = "../src/github.com/tiancaiamao/go.blog/static/"
-	var port = "8080"
+	var port = os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	s, err := NewServer(contentPath, templatePath)
 	if err != nil {
 		log.Fatal(err)
