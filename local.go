@@ -19,15 +19,16 @@ func main() {
 	var templatePath string
 	var staticPath string
 
-	
 	var port = os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 		contentPath = "../src/github.com/tiancaiamao/go.blog/content/"
 		templatePath = "../src/github.com/tiancaiamao/go.blog/template/"
+		staticPath = "../src/github.com/tiancaiamao/go.blog/static/"
 	} else {
 		contentPath = "/app/content/"
 		templatePath = "/app/template/"
+		staticPath = "/app/static/"
 	}
 	s, err := NewServer(contentPath, templatePath)
 	if err != nil {

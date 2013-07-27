@@ -137,6 +137,82 @@ func authors(authors []present.Author) string {
 	return b.String()
 }
 
+// my old json+org format articles~~
+func (s *Server) loadOld(p string, info os.FileInfo, err error) error {
+	f, err := os.Open(p)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	art, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	meta := &PostData{
+		Name:  info.Name(),
+		Title: "Title Here",
+	}
+	if bytes.HasPrefix(art, []byte("{\n")) {
+		i := bytes.Index(art, []byte("\n}\n"))
+		if i < 0 {
+			panic("cannot find end of json metadata")
+		}
+		hdr, rest := art[:i+3], art[i+3:]
+		if err := json.Unmarshal(hdr, meta); err != nil {
+			panic(fmt.Sprintf("loading %s: %s", info.Name(), err))
+		}
+
+		_, file := filepath.Split(p)
+		p = file[:len(file)-len(".html")]
+		d := &Doc{
+			Doc: &present.Doc{
+				Title: meta.Title,
+				Time:  time.Time(meta.Date),
+				//Authors: []present.Author{"毛康力"},
+			},
+			Path:      "/" + p,
+			Permalink: baseURL + "/" + p,
+			HTML:      template.HTML(string(rest)),
+		}
+		if len(meta.Tags) > 0 {
+			d.Tags = meta.Tags
+		}
+		if len(meta.Category) > 0 {
+			d.Category = meta.Category[0]
+		}
+		s.docs = append(s.docs, d)
+	}
+	return nil
+}
+
+func (s *Server) loadArticle(p string, info os.FileInfo, err error) error {
+	f, err := os.Open(p)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	d, err := present.Parse(f, p, 0)
+	if err != nil {
+		return err
+	}
+	html := new(bytes.Buffer)
+	err = d.Render(html, s.template.doc)
+	if err != nil {
+		return err
+	}
+
+	_, file := filepath.Split(p)
+	p = file[:len(file)-len(".article")] // trim root and extension
+	s.docs = append(s.docs, &Doc{
+		Doc:       d,
+		Path:      "/" + p,
+		Permalink: baseURL + "/" + p,
+		HTML:      template.HTML(html.String()),
+	})
+	return nil
+}
+
 // authorName returns the first line of the Author text: the author's name.
 func authorName(a present.Author) string {
 	el := a.TextElem()
@@ -175,98 +251,29 @@ type PostData struct {
 	Name     string //file name of the post
 }
 
+func (s *Server) walkFunc(p string, info os.FileInfo, err error) error {
+	ext := filepath.Ext(p)
+	switch ext {
+	case ".html":
+		return s.loadOld(p, info, err)
+	case ".article":
+		return s.loadArticle(p, info, err)
+		// case ".slice":
+		// 	s.loadSlide(p, info, err)
+	}
+	return nil
+}
+
 // loadDocs reads all content from the provided file system root, renders all
 // the articles it finds, adds them to the Server's docs field, computes the
 // denormalized docPaths, docTags, and tags fields, and populates the various
 // helper fields (Next, Previous, Related) for each Doc.
 func (s *Server) loadDocs(root string) error {
-	// Read content into docs field.
-	const ext = ".article"
-	fn := func(p string, info os.FileInfo, err error) error {
-		if filepath.Ext(p) != ext {
-			return nil
-		}
-		f, err := os.Open(p)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		d, err := present.Parse(f, p, 0)
-		if err != nil {
-			return err
-		}
-		html := new(bytes.Buffer)
-		err = d.Render(html, s.template.doc)
-		if err != nil {
-			return err
-		}
-		p = p[len(root) : len(p)-len(ext)] // trim root and extension
-		s.docs = append(s.docs, &Doc{
-			Doc:       d,
-			Path:      p,
-			Permalink: baseURL + p,
-			HTML:      template.HTML(html.String()),
-		})
-		return nil
-	}
-	// load my old json+org format articles~~
-	fnold := func(p string, info os.FileInfo, err error) error {
-		if filepath.Ext(p) != ".html" {
-			return nil
-		}
-		f, err := os.Open(p)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		art, err := ioutil.ReadAll(f)
-		if err != nil {
-			return err
-		}
-
-		meta := &PostData{
-			Name:  info.Name(),
-			Title: "Title Here",
-		}
-		if bytes.HasPrefix(art, []byte("{\n")) {
-			i := bytes.Index(art, []byte("\n}\n"))
-			if i < 0 {
-				panic("cannot find end of json metadata")
-			}
-			hdr, rest := art[:i+3], art[i+3:]
-			if err := json.Unmarshal(hdr, meta); err != nil {
-				panic(fmt.Sprintf("loading %s: %s", info.Name(), err))
-			}
-
-			p = p[len(root) : len(p)-len(".html")]
-			d := &Doc{
-				Doc: &present.Doc{
-					Title: meta.Title,
-					Time:  time.Time(meta.Date),
-					//Authors: []present.Author{"毛康力"},
-				},
-				Path:      p,
-				Permalink: baseURL + p,
-				HTML:      template.HTML(string(rest)),
-			}
-			if len(meta.Tags) > 0 {
-				d.Tags = meta.Tags
-			}
-			if len(meta.Category) > 0 {
-				d.Category = meta.Category[0]
-			}
-			s.docs = append(s.docs, d)
-		}
-		return nil
-	}
-	err := filepath.Walk(root, fn)
+	err := filepath.Walk(root, s.walkFunc)
 	if err != nil {
 		return err
 	}
-	err = filepath.Walk(root, fnold)
-	if err != nil {
-		return err
-	}
+
 	sort.Sort(docsByTime(s.docs))
 
 	// Pull out doc paths and tags and put in reverse-associating maps.
