@@ -35,6 +35,7 @@ const (
 // its absolute path and related articles.
 type Doc struct {
 	*present.Doc
+	Slide        bool
 	Permalink    string
 	Path         string
 	Related      []*Doc
@@ -45,11 +46,12 @@ type Doc struct {
 // Server implements an http.Handler that serves blog articles.
 type Server struct {
 	docs     []*Doc
+	slides   []*present.Doc
 	tags     []string
 	docPaths map[string]*Doc
 	docTags  map[string][]*Doc
 	template struct {
-		home, index, article, doc, about *template.Template
+		home, index, article, doc, slide, about *template.Template
 	}
 	atomFeed []byte // pre-rendered Atom feed
 	content  http.Handler
@@ -88,6 +90,14 @@ func NewServer(contentPath, templatePath string) (*Server, error) {
 	}
 	p := present.Template().Funcs(funcMap)
 	s.template.doc, err = p.ParseFiles(filepath.Join(templatePath, "doc.tmpl"))
+	if err != nil {
+		return nil, err
+	}
+
+	tmpl := present.Template()
+	actionTmpl := filepath.Join(templatePath, "action.tmpl")
+	contentTmpl := filepath.Join(templatePath, "slides.tmpl")
+	s.template.slide, err = tmpl.ParseFiles(actionTmpl, contentTmpl)
 	if err != nil {
 		return nil, err
 	}
@@ -213,6 +223,34 @@ func (s *Server) loadArticle(p string, info os.FileInfo, err error) error {
 	return nil
 }
 
+func (s *Server) loadSlide(p string, info os.FileInfo, err error) error {
+	f, err := os.Open(p)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	d, err := present.Parse(f, p, 0)
+	if err != nil {
+		return err
+	}
+	// html := new(bytes.Buffer)
+	// err = d.Render(html, s.template.slide)
+	// if err != nil {
+	// 	return err
+	// }
+	_, file := filepath.Split(p)
+	p = file[:len(file)-len(".slide")] // trim root and extension
+
+	s.docs = append(s.docs, &Doc{
+		Doc:       d,
+		Path:      "/" + p,
+		Slide:     true,
+		Permalink: baseURL + "/" + p,
+		HTML:      "",
+	})
+	return nil
+}
+
 // authorName returns the first line of the Author text: the author's name.
 func authorName(a present.Author) string {
 	el := a.TextElem()
@@ -258,8 +296,8 @@ func (s *Server) walkFunc(p string, info os.FileInfo, err error) error {
 		return s.loadOld(p, info, err)
 	case ".article":
 		return s.loadArticle(p, info, err)
-		// case ".slice":
-		// 	s.loadSlide(p, info, err)
+	case ".slide":
+		return s.loadSlide(p, info, err)
 	}
 	return nil
 }
@@ -433,6 +471,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// Not a doc; try to just serve static content.
 			s.content.ServeHTTP(w, r)
 			return
+		} else if doc.Slide {
+			err := doc.Render(w, s.template.slide)
+			if err != nil {
+				log.Println(err)
+			}
+			return
 		}
 		d.Doc = doc
 		t = s.template.article
@@ -441,6 +485,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+	// }
 }
 
 // docsByTime implements sort.Interface, sorting Docs by their Time field.
