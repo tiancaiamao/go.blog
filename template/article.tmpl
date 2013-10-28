@@ -1,9 +1,9 @@
 {{/* This file is combined with the root.tmpl to display a single article. */}}
 
-{{define "title"}}{{.Doc.Title}} {{end}}
+{{define "title"}}{{.Title}} {{end}}
 {{define "content"}}
-	{{template "doc" .Doc}}
-	{{with .Doc.Related}}
+	{{template "doc" .}}
+	{{with .Related}}
 		<h1>Related articles</h1>
 		<ul>
 		{{range .}}

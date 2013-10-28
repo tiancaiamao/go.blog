@@ -32,19 +32,19 @@
 	{{with .Doc}}
 		{{with .Newer}}
 			<h1>Next article</h1>
-			<p><a href="{{.Path}}">{{.Title}}</a></p>
+			<p><a href="{{.File}}">{{.Title}}</a></p>
 		{{end}}
 		
 		{{with .Older}}
 			<h1>Previous article</h1>
-			<p><a href="{{.Path}}">{{.Title}}</a></p>
+			<p><a href="{{.File}}">{{.Title}}</a></p>
 		{{end}}
 		
 		{{with .Related}}
 			<h1>Related articles</h1>
 			<ul>
 			{{range .}}
-				<li><a href="{{.Path}}">{{.Title}}</a></li>
+				<li><a href="{{.File}}">{{.Title}}</a></li>
 			{{end}}
 			</ul>
 		{{end}}
@@ -101,11 +101,8 @@
 
 {{define "doc"}}
 	<div class="article">
-		<p class="date">{{.Time.Format "2006-01-02"}}</p>
-		<h1 class="title"><a href="{{.Path}}">{{.Title}}</a></h1>
+		<p class="date">{{.Date.Format "2006-01-02"}}</p>
+		<h1 class="title"><a href="{{.File}}">{{.Title}}</a></h1>
 		{{.HTML}}
-		{{with .Authors}}
-			<p class="author">By {{authors .}}</p>
-		{{end}}
 	</div>
 {{end}}

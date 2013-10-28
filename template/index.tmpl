@@ -7,8 +7,8 @@
   
   {{range .Data}}
   <p class="blogtitle">
-    <a href="{{.Path}}">{{.Title}}</a><br>
-    <span class="date">{{.Time.Format "2006-01-02"}}</span><br>
+    <a href="{{.File}}">{{.Title}}</a><br>
+    <span class="date">{{.Date.Format "2006-01-02"}}</span><br>
     {{with .Tags}}<span class="tags">{{range .}}{{.}} {{end}}</span>{{end}}
   </p>
   {{end}}
