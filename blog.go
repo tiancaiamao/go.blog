@@ -12,6 +12,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/russross/blackfriday"
 	"github.com/tiancaiamao/go.blog/atom"
 	"github.com/tiancaiamao/go.blog/present"
 )
@@ -34,10 +36,10 @@ const (
 // Doc represents an article, adorned with presentation data:
 // its absolute path and related articles.
 type Doc struct {
-	*present.Doc
-	Slide        bool
-	Permalink    string
-	Path         string
+	ArticleItem
+	Slide *present.Doc
+	// Permalink    string
+	// Path         string
 	Related      []*Doc
 	Newer, Older *Doc
 	HTML         template.HTML // rendered article
@@ -148,7 +150,7 @@ func authors(authors []present.Author) string {
 }
 
 // my old json+org format articles~~
-func (s *Server) loadOld(p string, info os.FileInfo, err error) error {
+func (s *Server) loadOld(p string, doc *Doc) error {
 	f, err := os.Open(p)
 	if err != nil {
 		return err
@@ -160,7 +162,7 @@ func (s *Server) loadOld(p string, info os.FileInfo, err error) error {
 	}
 
 	meta := &PostData{
-		Name:  info.Name(),
+		Name:  doc.File,
 		Title: "Title Here",
 	}
 	if bytes.HasPrefix(art, []byte("{\n")) {
@@ -170,33 +172,29 @@ func (s *Server) loadOld(p string, info os.FileInfo, err error) error {
 		}
 		hdr, rest := art[:i+3], art[i+3:]
 		if err := json.Unmarshal(hdr, meta); err != nil {
-			panic(fmt.Sprintf("loading %s: %s", info.Name(), err))
+			panic(fmt.Sprintf("loading %s: %s", doc.File, err))
 		}
 
 		_, file := filepath.Split(p)
 		p = file[:len(file)-len(".html")]
-		d := &Doc{
-			Doc: &present.Doc{
-				Title: meta.Title,
-				Time:  time.Time(meta.Date),
-				//Authors: []present.Author{"毛康力"},
-			},
-			Path:      "/" + p,
-			Permalink: baseURL + "/" + p,
-			HTML:      template.HTML(string(rest)),
-		}
-		if len(meta.Tags) > 0 {
-			d.Tags = meta.Tags
-		}
-		if len(meta.Category) > 0 {
-			d.Category = meta.Category[0]
-		}
-		s.docs = append(s.docs, d)
+		doc.HTML = template.HTML(string(rest))
 	}
 	return nil
 }
 
-func (s *Server) loadArticle(p string, info os.FileInfo, err error) error {
+func (s *Server) loadMarkdown(p string, doc *Doc) error {
+	input, err := ioutil.ReadFile(p)
+	if err != nil {
+		return err
+	}
+	output := blackfriday.MarkdownBasic(input)
+	doc.HTML = template.HTML(string(output))
+
+	s.docs = append(s.docs, doc)
+	return nil
+}
+
+func (s *Server) loadPresent(p string, doc *Doc) error {
 	f, err := os.Open(p)
 	if err != nil {
 		return err
@@ -212,18 +210,19 @@ func (s *Server) loadArticle(p string, info os.FileInfo, err error) error {
 		return err
 	}
 
-	_, file := filepath.Split(p)
-	p = file[:len(file)-len(".article")] // trim root and extension
-	s.docs = append(s.docs, &Doc{
-		Doc:       d,
-		Path:      "/" + p,
-		Permalink: baseURL + "/" + p,
-		HTML:      template.HTML(html.String()),
-	})
+	doc.HTML = template.HTML(html.String())
+	// _, file := filepath.Split(p)
+	// p = file[:len(file)-len(".article")] // trim root and extension
+	// s.docs = append(s.docs, &Doc{
+	// 	Doc:       d,
+	// 	Path:      "/" + p,
+	// 	Permalink: baseURL + "/" + p,
+	// 	HTML:      template.HTML(html.String()),
+	// })
 	return nil
 }
 
-func (s *Server) loadSlide(p string, info os.FileInfo, err error) error {
+func (s *Server) loadSlide(p string, doc *Doc) error {
 	f, err := os.Open(p)
 	if err != nil {
 		return err
@@ -241,13 +240,15 @@ func (s *Server) loadSlide(p string, info os.FileInfo, err error) error {
 	_, file := filepath.Split(p)
 	p = file[:len(file)-len(".slide")] // trim root and extension
 
-	s.docs = append(s.docs, &Doc{
-		Doc:       d,
-		Path:      "/" + p,
-		Slide:     true,
-		Permalink: baseURL + "/" + p,
-		HTML:      "",
-	})
+	doc.Slide = d
+
+	// s.docs = append(s.docs, &Doc{
+	// 	Doc:       d,
+	// 	Path:      "/" + p,
+	// 	Slide:     true,
+	// 	Permalink: baseURL + "/" + p,
+	// 	HTML:      "",
+	// })
 	return nil
 }
 
@@ -276,6 +277,15 @@ func (t *blogTime) UnmarshalJSON(data []byte) (err error) {
 	return nil
 }
 
+// json格式的文件索引
+type ArticleItem struct {
+	Title    string
+	Date     time.Time
+	Category string
+	Tags     []string
+	File     string
+}
+
 type PostData struct {
 	Title    string
 	Date     blogTime
@@ -289,27 +299,57 @@ type PostData struct {
 	Name     string //file name of the post
 }
 
-func (s *Server) walkFunc(p string, info os.FileInfo, err error) error {
-	ext := filepath.Ext(p)
-	switch ext {
-	case ".html":
-		return s.loadOld(p, info, err)
-	case ".article":
-		return s.loadArticle(p, info, err)
-	case ".slide":
-		return s.loadSlide(p, info, err)
-	}
-	return nil
-}
+// func (s *Server) walkFunc(p string, info os.FileInfo, err error) error {
+// 	ext := filepath.Ext(p)
+// 	switch ext {
+// 	case ".html":
+// 		return s.loadOld(p, info, err)
+// 	case ".article":
+// 		return s.loadPresent(p, info, err)
+// 	case ".slide":
+// 		return s.loadSlide(p, info, err)
+// 	case ".md":
+// 		return s.loadMarkdown(p, info, err)
+// 	}
+// 	return nil
+// }
 
 // loadDocs reads all content from the provided file system root, renders all
 // the articles it finds, adds them to the Server's docs field, computes the
 // denormalized docPaths, docTags, and tags fields, and populates the various
 // helper fields (Next, Previous, Related) for each Doc.
 func (s *Server) loadDocs(root string) error {
-	err := filepath.Walk(root, s.walkFunc)
+	indexFile := root + "/index.json"
+	file, err := os.Open(indexFile)
 	if err != nil {
-		return err
+		panic(err)
+	}
+
+	dec := json.NewDecoder(file)
+	for {
+		var doc Doc
+		if err := dec.Decode(&doc.ArticleItem); err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+
+		fileName := root + "/" + doc.File
+		ext := filepath.Ext(doc.File)
+		var err error
+		switch ext {
+		case ".html":
+			err = s.loadOld(fileName, &doc)
+		case ".article":
+			err = s.loadPresent(fileName, &doc)
+		case ".slide":
+			err = s.loadSlide(fileName, &doc)
+		case ".md":
+			err = s.loadMarkdown(fileName, &doc)
+		}
+		if err != nil {
+			s.docs = append(s.docs, &doc)
+		}
 	}
 
 	sort.Sort(docsByTime(s.docs))
@@ -318,7 +358,7 @@ func (s *Server) loadDocs(root string) error {
 	s.docPaths = make(map[string]*Doc)
 	s.docTags = make(map[string][]*Doc)
 	for _, d := range s.docs {
-		s.docPaths[d.Path] = d
+		s.docPaths[d.File] = d
 		for _, t := range d.Tags {
 			s.docTags[t] = append(s.docTags[t], d)
 		}
@@ -369,7 +409,7 @@ func (s *Server) loadDocs(root string) error {
 func (s *Server) renderAtomFeed() error {
 	var updated time.Time
 	if len(s.docs) > 1 {
-		updated = s.docs[0].Time
+		updated = s.docs[0].Date
 	}
 	feed := atom.Feed{
 		Title:   "Genius的博客",
@@ -386,13 +426,13 @@ func (s *Server) renderAtomFeed() error {
 		}
 		e := &atom.Entry{
 			Title: doc.Title,
-			ID:    feed.ID + doc.Path,
+			ID:    feed.ID + doc.File,
 			Link: []atom.Link{{
 				Rel:  "alternate",
-				Href: baseURL + doc.Path,
+				Href: baseURL + doc.File,
 			}},
-			Published: atom.Time(doc.Time),
-			Updated:   atom.Time(doc.Time),
+			Published: atom.Time(doc.Date),
+			Updated:   atom.Time(doc.Date),
 			Summary: &atom.Text{
 				Type: "html",
 				Body: summary(doc),
@@ -402,7 +442,7 @@ func (s *Server) renderAtomFeed() error {
 				Body: string(doc.HTML),
 			},
 			Author: &atom.Person{
-				Name: authors(doc.Authors),
+				Name: "genius",
 			},
 		}
 		feed.Entry = append(feed.Entry, e)
@@ -417,22 +457,22 @@ func (s *Server) renderAtomFeed() error {
 
 // summary returns the first paragraph of text from the provided Doc.
 func summary(d *Doc) string {
-	if len(d.Sections) == 0 {
-		return ""
-	}
-	for _, elem := range d.Sections[0].Elem {
-		text, ok := elem.(present.Text)
-		if !ok || text.Pre {
-			// skip everything but non-text elements
-			continue
-		}
-		var buf bytes.Buffer
-		for _, s := range text.Lines {
-			buf.WriteString(string(present.Style(s)))
-			buf.WriteByte('\n')
-		}
-		return buf.String()
-	}
+	// if len(d.Sections) == 0 {
+	// 	return ""
+	// }
+	// for _, elem := range d.Sections[0].Elem {
+	// 	text, ok := elem.(present.Text)
+	// 	if !ok || text.Pre {
+	// 		// skip everything but non-text elements
+	// 		continue
+	// 	}
+	// 	var buf bytes.Buffer
+	// 	for _, s := range text.Lines {
+	// 		buf.WriteString(string(present.Style(s)))
+	// 		buf.WriteByte('\n')
+	// 	}
+	// 	return buf.String()
+	// }
 	return ""
 }
 
@@ -471,8 +511,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// Not a doc; try to just serve static content.
 			s.content.ServeHTTP(w, r)
 			return
-		} else if doc.Slide {
-			err := doc.Render(w, s.template.slide)
+		} else if doc.Slide != nil {
+			err := doc.Slide.Render(w, s.template.slide)
 			if err != nil {
 				log.Println(err)
 			}
@@ -493,4 +533,4 @@ type docsByTime []*Doc
 
 func (s docsByTime) Len() int           { return len(s) }
 func (s docsByTime) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s docsByTime) Less(i, j int) bool { return s[i].Time.After(s[j].Time) }
+func (s docsByTime) Less(i, j int) bool { return s[i].Date.After(s[j].Date) }
