@@ -348,11 +348,15 @@ func (s *Server) loadDocs(root string) error {
 			err = s.loadMarkdown(fileName, &doc)
 		}
 		if err != nil {
+			log.Println("loadDocs error:", err)
+		} else {
 			s.docs = append(s.docs, &doc)
 		}
 	}
 
 	sort.Sort(docsByTime(s.docs))
+
+	fmt.Println("load finished...len(s.docs) is ", len(s.docs))
 
 	// Pull out doc paths and tags and put in reverse-associating maps.
 	s.docPaths = make(map[string]*Doc)
@@ -506,9 +510,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(s.atomFeed)
 		return
 	default:
-		doc, ok := s.docPaths[p]
+		log.Println("request:", p)
+		doc, ok := s.docPaths[p[1:]] // p begin with "/"
 		if !ok {
 			// Not a doc; try to just serve static content.
+			log.Println("server static content")
 			s.content.ServeHTTP(w, r)
 			return
 		} else if doc.Slide != nil {
@@ -525,7 +531,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	// }
 }
 
 // docsByTime implements sort.Interface, sorting Docs by their Time field.
