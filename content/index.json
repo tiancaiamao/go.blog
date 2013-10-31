@@ -97,7 +97,7 @@
 {
 	"Title": "关卡生成器",
 	"Date": "2013-04-28T11:00:00Z",
-	"Category": " Android开发",
+	"Category": " Android游戏开发",
 	"Tags": [
 		"tiled",
 		"关卡生成",
@@ -108,7 +108,7 @@
 {
 	"Title": "libgdx的AssetManager相关",
 	"Date": "2013-08-13T11:00:00Z",
-	"Category": "Android开发",
+	"Category": "Android游戏开发",
 	"Tags": [
 		"libgdx",
 		"AssetManager"

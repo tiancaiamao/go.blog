@@ -1,13 +1,13 @@
 {{/* This file is combined with the root.tmpl to display a single article. */}}
 
-{{define "title"}}{{.Title}} {{end}}
+{{define "title"}}{{.Doc.Title}} {{end}}
 {{define "content"}}
 	{{template "doc" .}}
-	{{with .Related}}
+	{{with .Data.Related}}
 		<h1>Related articles</h1>
 		<ul>
 		{{range .}}
-			<li><a href="{{.Path}}">{{.Title}}</a></li>
+			<li><a href="{{.File}}">{{.Title}}</a></li>
 		{{end}}
 		</ul>
 	{{end}}

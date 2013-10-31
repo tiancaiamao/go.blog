@@ -6,7 +6,7 @@
   <!--meta name="viewport" content="width=device-width, initial-scale=1.0"-->
   <meta name="description" content="">
   <link rel="shortcut icon" href="/static/favicon.ico">
-  <title>This is Title</title>
+  <title>{{template "title"}}</title>
   <link href="/static/bootstrap.min.css" rel="stylesheet">
   <link href="/static/test.css" rel="stylesheet">
 </head>
@@ -34,11 +34,17 @@
         <div class="well sidebar-nav">
           <ul class="nav">
             <li>Category</li>
-            <li><a href="#"></a>Link</li>
+            {{with .Category}}
+              {{range $name, $doc := .}}
+              <li><a href="#">{{$name}}</a></li>
+              {{end}}
+            {{end}}
             <li>Tags</li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
+            {{with .Tags}}
+              {{range $name, $doc := .}}
+              <a href="#">{{$name}} </a>
+              {{end}}
+            {{end}}
           </ul>
         </div><!--/.well -->
       </div><!--/span-->

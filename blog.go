@@ -47,12 +47,13 @@ type Doc struct {
 
 // Server implements an http.Handler that serves blog articles.
 type Server struct {
-	docs     []*Doc
-	slides   []*present.Doc
-	tags     []string
-	docPaths map[string]*Doc
-	docTags  map[string][]*Doc
-	template struct {
+	docs        []*Doc
+	slides      []*present.Doc
+	tags        []string
+	docPaths    map[string]*Doc
+	docTags     map[string][]*Doc
+	docCategory map[string][]*Doc
+	template    struct {
 		home, index, article, doc, slide, about *template.Template
 	}
 	atomFeed []byte // pre-rendered Atom feed
@@ -190,7 +191,6 @@ func (s *Server) loadMarkdown(p string, doc *Doc) error {
 	output := blackfriday.MarkdownBasic(input)
 	doc.HTML = template.HTML(string(output))
 
-	s.docs = append(s.docs, doc)
 	return nil
 }
 
@@ -361,10 +361,15 @@ func (s *Server) loadDocs(root string) error {
 	// Pull out doc paths and tags and put in reverse-associating maps.
 	s.docPaths = make(map[string]*Doc)
 	s.docTags = make(map[string][]*Doc)
+	s.docCategory = make(map[string][]*Doc)
 	for _, d := range s.docs {
 		s.docPaths[d.File] = d
 		for _, t := range d.Tags {
 			s.docTags[t] = append(s.docTags[t], d)
+		}
+
+		if d.Category != "" {
+			s.docCategory[d.Category] = append(s.docCategory[d.Category], d)
 		}
 	}
 
@@ -482,8 +487,9 @@ func summary(d *Doc) string {
 
 // rootData encapsulates data destined for the root template.
 type rootData struct {
-	Doc  *Doc
-	Data interface{}
+	Category map[string][]*Doc
+	Tags     map[string][]*Doc
+	Data     interface{} //用于模板中content部分
 }
 
 // ServeHTTP servers either an article list or a single article.
@@ -492,6 +498,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		d rootData
 		t *template.Template
 	)
+	d.Category = s.docCategory
+	d.Tags = s.docTags
 	switch p := r.URL.Path; p {
 	case "/":
 		d.Data = s.docs
@@ -505,6 +513,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/about":
 		d.Data = s.docs
 		t = s.template.about
+	// case "/category?":
 	case "/feed.atom", "/feeds/posts/default":
 		w.Header().Set("Content-type", "application/atom+xml")
 		w.Write(s.atomFeed)
@@ -524,7 +533,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		d.Doc = doc
+		d.Data = doc
 		t = s.template.article
 	}
 	err := t.ExecuteTemplate(w, "root", d)
