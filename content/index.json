@@ -1,7 +1,7 @@
 {
 	"Title": "actor模型漫谈",
 	"Date": "2012-09-07T11:00:00Z",
-	"Category": " 高性能服务器",
+	"Category": "高性能服务器",
 	"Tags": [
 		"actor模型"
 	],
@@ -10,21 +10,25 @@
 {
 	"Title": "android游戏资源优化",
 	"Date": "2013-10-27T23:10:00.221417676+08:00",
-	"Category": "",
-	"Tags": null,
+	"Category": "Android游戏开发",
+	"Tags": [
+		"libgdx"
+	],
 	"File": "android-resource-optimite.md"
 }
 {
 	"Title": "在osx上编译planeshift",
 	"Date": "2013-10-27T23:10:00.221602836+08:00",
 	"Category": "",
-	"Tags": null,
+	"Tags": [
+		"planeshift"
+	],
 	"File": "compile-planeshift.md"
 }
 {
 	"Title": "flash4libgdx",
 	"Date": "2013-06-21T11:00:00Z",
-	"Category": " Android游戏开发",
+	"Category": "Android游戏开发",
 	"Tags": [
 		"flash",
 		"libgdx"
@@ -34,15 +38,20 @@
 {
 	"Title": "gleed4libgdx",
 	"Date": "2013-10-27T23:10:00.224197085+08:00",
-	"Category": "",
-	"Tags": null,
+	"Category": "Android游戏开发",
+	"Tags": [
+		"libgdx"
+	],
 	"File": "gleed2d-libgdx.md"
 }
 {
 	"Title": "Go手动内存分配",
 	"Date": "2013-10-27T23:10:00.224428082+08:00",
-	"Category": "",
-	"Tags": null,
+	"Category": "编程语言",
+	"Tags": [
+		"golang",
+		"mempool"
+	],
 	"File": "go-manual-memory-mamagement.md"
 }
 {
@@ -59,8 +68,11 @@
 {
 	"Title": "Go语言的抢占式调度",
 	"Date": "2013-10-27T23:10:00.226317101+08:00",
-	"Category": "",
-	"Tags": null,
+	"Category": "编程语言",
+	"Tags": [
+		"golang",
+		"调度器"
+	],
 	"File": "go-preemptive-scheduling.md"
 }
 {
@@ -77,7 +89,7 @@
 	"Date": "2013-09-25T11:00:00Z",
 	"Category": "",
 	"Tags": [
-		"Actor模型",
+		"actor模型",
 		"golang",
 		"hive",
 		"skynet",
@@ -97,7 +109,7 @@
 {
 	"Title": "关卡生成器",
 	"Date": "2013-04-28T11:00:00Z",
-	"Category": " Android游戏开发",
+	"Category": "Android游戏开发",
 	"Tags": [
 		"tiled",
 		"关卡生成",
@@ -138,15 +150,6 @@
 		"lisp"
 	],
 	"File": "multiple-returns-in-scheme.article"
-}
-{
-	"Title": "actor模型漫谈",
-	"Date": "2012-09-07T00:00:00Z",
-	"Category": "高性能服务器",
-	"Tags": [
-		"actor模型"
-	],
-	"File": "actor.html"
 }
 {
 	"Title": "beansdb-0.5.3源代码分析",
@@ -358,7 +361,7 @@
 {
 	"Title": "设计一个用户级线程库",
 	"Date": "2012-08-06T00:00:00Z",
-	"Category": "",
+	"Category": "高性能服务器",
 	"Tags": [
 		"协程",
 		"task"
@@ -453,11 +456,9 @@
 {
 	"Title": "Petrescue中的算法",
 	"Date": "2013-06-10T11:00:00Z",
-	"Category": "编程语言",
+	"Category": "Android游戏开发",
 	"Tags": [
-		"golang",
-		"blog",
-		"org-mode"
+		"petrescue",
 	],
 	"File": "petrescue.slide"
 }

@@ -36,13 +36,13 @@
             <li>Category</li>
             {{with .Category}}
               {{range $name, $doc := .}}
-              <li><a href="#">{{$name}}</a></li>
+              <li><a href="/category?name={{$name}}">{{$name}}</a></li>
               {{end}}
             {{end}}
             <li>Tags</li>
             {{with .Tags}}
               {{range $name, $doc := .}}
-              <a href="#">{{$name}} </a>
+              <a href="/tags?name={{$name}}">{{$name}} </a>
               {{end}}
             {{end}}
           </ul>

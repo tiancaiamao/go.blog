@@ -356,7 +356,7 @@ func (s *Server) loadDocs(root string) error {
 
 	sort.Sort(docsByTime(s.docs))
 
-	fmt.Println("load finished...len(s.docs) is ", len(s.docs))
+	// fmt.Println("load finished...len(s.docs) is ", len(s.docs))
 
 	// Pull out doc paths and tags and put in reverse-associating maps.
 	s.docPaths = make(map[string]*Doc)
@@ -494,6 +494,11 @@ type rootData struct {
 
 // ServeHTTP servers either an article list or a single article.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		return
+	}
+
 	var (
 		d rootData
 		t *template.Template
@@ -513,17 +518,34 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/about":
 		d.Data = s.docs
 		t = s.template.about
-	// case "/category?":
+	case "/category":
+		form := r.FormValue("name")
+		if docs, ok := s.docCategory[form]; ok {
+			d.Data = docs
+			t = s.template.index
+		} else {
+			http.NotFound(w, r)
+			return
+		}
+	case "/tags":
+		form := r.FormValue("name")
+		if docs, ok := s.docTags[form]; ok {
+			d.Data = docs
+			t = s.template.index
+		} else {
+			http.NotFound(w, r)
+			return
+		}
 	case "/feed.atom", "/feeds/posts/default":
 		w.Header().Set("Content-type", "application/atom+xml")
 		w.Write(s.atomFeed)
 		return
 	default:
-		log.Println("request:", p)
+		// log.Println("request:", p)
 		doc, ok := s.docPaths[p[1:]] // p begin with "/"
 		if !ok {
 			// Not a doc; try to just serve static content.
-			log.Println("server static content")
+			// log.Println("server static content")
 			s.content.ServeHTTP(w, r)
 			return
 		} else if doc.Slide != nil {
@@ -536,7 +558,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		d.Data = doc
 		t = s.template.article
 	}
-	err := t.ExecuteTemplate(w, "root", d)
+	err = t.ExecuteTemplate(w, "root", d)
 	if err != nil {
 		log.Println(err)
 	}

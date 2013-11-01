@@ -2,7 +2,7 @@
 
 {{define "title"}}{{.Doc.Title}} {{end}}
 {{define "content"}}
-	{{template "doc" .}}
+	{{template "doc" .Data}}
 	{{with .Data.Related}}
 		<h1>Related articles</h1>
 		<ul>
