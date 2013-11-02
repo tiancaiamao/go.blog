@@ -24,7 +24,7 @@
 		"planeshift"
 	],
 	"File": "compile-planeshift.md"
-}
+} 
 {
 	"Title": "flash4libgdx",
 	"Date": "2013-06-21T11:00:00Z",
@@ -150,7 +150,7 @@
 		"lisp"
 	],
 	"File": "multiple-returns-in-scheme.article"
-}
+} 
 {
 	"Title": "beansdb-0.5.3源代码分析",
 	"Date": "2012-06-08T00:00:00Z",
@@ -160,14 +160,14 @@
 		"beansdb"
 	],
 	"File": "beansdb.html"
-}
+} 
 {
 	"Title": "大道至简--简单与复杂数据结构之间的性能PK",
 	"Date": "2013-03-01T00:00:00Z",
 	"Category": "",
 	"Tags": null,
 	"File": "bst-avl.html"
-}
+} 
 {
 	"Title": "chibi-scheme源代码分析之零--总体结构",
 	"Date": "2012-01-10T00:00:00Z",
@@ -458,7 +458,7 @@
 	"Date": "2013-06-10T11:00:00Z",
 	"Category": "Android游戏开发",
 	"Tags": [
-		"petrescue",
+		"petrescue"
 	],
 	"File": "petrescue.slide"
 }
