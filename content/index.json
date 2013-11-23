@@ -1,4 +1,13 @@
 {
+	"Title": "使用libgdx框架的一些心得",
+	"Date": "2013-11-23T11:00:00Z",
+	"Category": "Android游戏开发",
+	"Tags": [
+		"libgdx"
+	],
+	"File": "use-libgdx-framework.md"
+}
+{
 	"Title": "actor模型漫谈",
 	"Date": "2012-09-07T11:00:00Z",
 	"Category": "高性能服务器",
