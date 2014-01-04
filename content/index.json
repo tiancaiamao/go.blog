@@ -1,18 +1,30 @@
 {
-	"Title":"现代OpenGL介绍",
+	"Title":"现代OpenGL介绍(三)",
 	"Date": "2014-01-01T11:00:00Z",
 	"Category": "Android游戏开发",
 	"Tags": [
-		"OpenGL"
+		"OpenGL",
+		"翻译"
+	],
+	"File": "an-intro-to-modern-opengl-2-1.md"
+}
+{
+	"Title":"现代OpenGL介绍(二)",
+	"Date": "2014-01-01T11:00:00Z",
+	"Category": "Android游戏开发",
+	"Tags": [
+		"OpenGL",
+		"翻译"
 	],
 	"File": "an-intro-to-modern-opengl-2.md"
 }
 {
-	"Title":"现代OpenGL介绍",
+	"Title":"现代OpenGL介绍(零)",
 	"Date": "2013-12-29T11:00:00Z",
 	"Category": "Android游戏开发",
 	"Tags": [
-		"OpenGL"
+		"OpenGL",
+		"翻译"
 	],
 	"File": "an-intro-to-modern-opengl-0.md"
 }
@@ -26,11 +38,12 @@
 	"File": "2013.md"
 }
 {
-	"Title":"现代OpenGL介绍",
+	"Title":"现代OpenGL介绍(一)",
 	"Date": "2013-12-28T11:00:00Z",
 	"Category": "Android游戏开发",
 	"Tags": [
-		"OpenGL"
+		"OpenGL",
+		"转载"
 	],
 	"File": "an-intro-to-modern-opengl-1.md"
 }

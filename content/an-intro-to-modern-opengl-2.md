@@ -127,4 +127,4 @@ glClearColor设置一个RGBA消除颜色(这里是白色)，然后glClear使用�
 
 我们已经准备好了将我们的顶点和图像放到OpenGL。在下一篇文章中，我们会介绍OpenGL的缓冲以及纹理对象。
 
-[<< 第一章](http://www.zenlife.tk/an-intro-to-modern-opengl-1.md) | [目录](http://www.zenlife.tk/an-intro-to-modern-opengl-0.md) | [下一节 >>](http://www.zenlife.tk/an-intro-to-modern-opengl-2.1.md)
+[<< 第一章](http://www.zenlife.tk/an-intro-to-modern-opengl-1.md) | [目录](http://www.zenlife.tk/an-intro-to-modern-opengl-0.md) | [下一节 >>](http://www.zenlife.tk/an-intro-to-modern-opengl-2-1.md)
