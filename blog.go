@@ -30,7 +30,7 @@ const (
 	hostname     = "www.zenlife.tk"
 	baseURL      = "http://" + hostname
 	homeArticles = 5  // number of articles to display on the home page
-	feedArticles = 10 // number of articles to include in Atom feed
+	feedArticles = 20 // number of articles to include in Atom feed
 )
 
 // Doc represents an article, adorned with presentation data:
@@ -421,8 +421,8 @@ func (s *Server) renderAtomFeed() error {
 		updated = s.docs[0].Date
 	}
 	feed := atom.Feed{
-		Title:   "Genius的博客",
-		ID:      "tag:" + hostname + ",2013:" + hostname,
+		Title:   "Arthur的博客",
+		ID:       hostname,
 		Updated: atom.Time(updated),
 		Link: []atom.Link{{
 			Rel:  "self",
@@ -451,12 +451,12 @@ func (s *Server) renderAtomFeed() error {
 				Body: string(doc.HTML),
 			},
 			Author: &atom.Person{
-				Name: "genius",
+				Name: "Arthur",
 			},
 		}
 		feed.Entry = append(feed.Entry, e)
 	}
-	data, err := xml.Marshal(&feed)
+	data, err := xml.MarshalIndent(&feed, "", " ")
 	if err != nil {
 		return err
 	}
