@@ -33,7 +33,7 @@ acme是一个最小化的集成开发环境。传统的IDE是一个封闭系统�
 
 它是一个窗口管理器，如果你使用过平铺式窗口管理器，对它的界面应该会感到亲切。
 
-![]()
+![](http://upload.wikimedia.org/wikipedia/commons/9/98/Acme.png)
 
 当然，它是一个shell，你可以中键点击win打开一个shell窗口，在里面执行你想要的各种命令。
 
