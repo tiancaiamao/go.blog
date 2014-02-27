@@ -1,4 +1,4 @@
-我非常喜欢[acme]()，但是它默认是不支持中文的，花了好大力气才弄好，分享一下。
+我非常喜欢[acme](http://www.zenlife.tk/acme.md)，但是它默认是不支持中文的，花了好大力气才弄好，分享一下。
 
 ----------------
 
@@ -25,4 +25,4 @@
 
 devdraw是plan9port下唯一直接与X通信的程序，其它都是通过协议调用devdraw实现界面的。不过plan9port中的devdraw只实现了协议部分，并没有实现/dev/draw文件接口。
 
-这里下载一个我[修改过的版本]()，用它替换$PLAN9/src/cmd/devdraw重新编译devdraw就可以了。由于我也完全没接触过objective-c和cocoa，写得比较挫，我在自己使用过程中再慢慢改进它吧。have fun!
+这里下载一个我[修改过的版本](https://github.com/tiancaiamao/devdraw)，用它替换$PLAN9/src/cmd/devdraw重新编译devdraw就可以了。由于我也完全没接触过objective-c和cocoa，写得比较挫，我在自己使用过程中再慢慢改进它吧。have fun!
