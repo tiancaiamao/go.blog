@@ -438,7 +438,7 @@ func (s *Server) renderAtomFeed() error {
 			ID:    feed.ID + doc.File,
 			Link: []atom.Link{{
 				Rel:  "alternate",
-				Href: baseURL + doc.File,
+				Href: baseURL +"/"+ doc.File,
 			}},
 			Published: atom.Time(doc.Date),
 			Updated:   atom.Time(doc.Date),
