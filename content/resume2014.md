@@ -3,18 +3,18 @@
 ## 基本信息
 <table>
 	<tr>
-		<td>姓名:毛康力</td>
-		<td>毕业学校:华中科技大学</td>
-		<td>学历:硕士</td> 
+		<td>姓名：毛康力</td>
+		<td>毕业学校：华中科技大学</td>
+		<td>学历：硕士</td> 
 	</tr>
 	<tr>
-		<td>专业:计算机软件与理论</td>		
-		<td>性别:男</td>
-		<td>出生年月:1989.1</td> 
+		<td>专业：计算机软件与理论</td>		
+		<td>性别：男</td>
+		<td>出生年月：1989.1</td> 
 	</tr>
 	<tr>
-		<td>联系方式:13482194912</td> 
-		<td>邮箱:tiancaiamao@gmail.com</td>
+		<td>联系方式：13482194912</td> 
+		<td>邮箱：tiancaiamao@gmail.com</td>
 	</tr>
 </table>
 
@@ -22,11 +22,11 @@
 
 喜欢Go和C语言，喜欢*nix系统，自豪地使用textmate编辑器。
 
-涉猎领域:机器学习，编译器，函数式语言，分布式存储，android游戏开发，网游后端。
+涉猎领域：机器学习，编译器，函数式语言，分布式存储，android游戏开发，网游后端。
 
-Github地址:[https://github.com/tiancaiamao](https://github.com/tiancaiamao)
+Github地址：[https://github.com/tiancaiamao](https://github.com/tiancaiamao)
 
-技术博客:[http://www.zenlife.tk](http://www.zenlife.tk)
+技术博客：[http://www.zenlife.tk](http://www.zenlife.tk)
 
 ## 项目
 
