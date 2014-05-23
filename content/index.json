@@ -1,4 +1,20 @@
 {
+    "Title":"ouster开发笔记（五）",
+    "Date": "2014-05-23T17:00:00Z",
+    "Tags": [
+        "ouster"
+    ],
+    "File": "ouster-dev5.md"
+}
+{
+    "Title":"goroutine之间移动计算",
+    "Date": "2014-05-23T21:42:00Z",
+    "Tags": [
+        "golang"
+    ],
+    "File": "passing-computation-across-goroutine.md"
+}
+{
     "Title":"ouster开发笔记（四）",
     "Date": "2014-05-09T21:50:00Z",
     "Tags": [
