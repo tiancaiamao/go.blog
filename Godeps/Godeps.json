@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/tiancaiamao/go.blog",
-	"GoVersion": "devel +bef07f7786d6 Wed Jun 11 17:39:34 2014 -0700",
+	"GoVersion": "devel +824ea5943ba8 Thu Jun 12 21:12:53 2014 -0400",
 	"Deps": [
 		{
 			"ImportPath": "github.com/russross/blackfriday",
