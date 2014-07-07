@@ -5,59 +5,67 @@
 	<tr>
 		<td>姓名：毛康力</td>
 		<td>毕业学校：华中科技大学</td>
-		<td>学历：硕士</td> 
+		<td>专业：计算机软件与理论</td>	
 	</tr>
 	<tr>
-		<td>专业：计算机软件与理论</td>		
+		<td>学历：硕士</td> 	
 		<td>性别：男</td>
 		<td>出生年月：1989.1</td> 
 	</tr>
 	<tr>
-		<td>联系方式：13482194912</td> 
+		<td>手机：13482194912</td>
 		<td>邮箱：tiancaiamao@gmail.com</td>
 	</tr>
 </table>
 
+技术博客：[http://www.zenlife.tk](http://www.zenlife.tk)
+
 ## 技能
 
-喜欢Go和C语言，喜欢*nix系统，自豪地使用textmate编辑器。
+涉猎领域：机器学习，编译器，函数式语言，分布式存储，Android游戏开发，网游后端。
 
-涉猎领域：机器学习，编译器，函数式语言，分布式存储，android游戏开发，网游后端。
+精通Go和C语言，掌握Java基本使用，研究过Lisp。不盲目排斥自己不了解的语言。
 
-Github地址：[https://github.com/tiancaiamao](https://github.com/tiancaiamao)
+熟习类Unix系统及其编程环境，6年使用经验。
 
-技术博客：[http://www.zenlife.tk](http://www.zenlife.tk)
+对数据结构理解比较深入，扎实的算法和操作系统基础。
+
+喜欢研究服务端架构，关注高性能服务器，性能优化问题。
+
+能独立承担后台开发工作。
 
 ## 项目
 
-* 2014.4-2014.7 Ouster
-
-	一个MMORPG。正在进行中，辞职全心投入此项目开发。
+* 2014.4-2014.7 ouster 一个MMORPG。祼辞了投入此项目开发，一方面想做一些很理想主义的事情，另一方面是积累网游后台开发的相关经验。
 	
-	项目地址：[https://github.com/tiancaiamao/ouster](https://github.com/tiancaiamao/ouster)
+	使用Go开发，因其非常适合于网游架构：每个场景/每个玩家都对应一个goroutine，相互之间通过channel发送消息进行通信。
+	
+	完成了基本的登陆流程，地图内行走，广播消息，以及部分的技能。
 
-* 2013.4-2014.3 TapDiamond
-
-	公司上线项目，一个消除类的Android小游戏。
+* 2013.4-2014.3 TapDiamond 公司上线项目，一个消除类的Android游戏。与美术/策划/测试合作完成，本人独立负责所有的代码。
+	
+	基于libgdx游戏引擎开发，利用gleed2d做界面的代码生成，tiled做关卡工具，flash动画解析。技术上比较有挑战的主要是游戏逻辑/资源优化/渲染优化/关卡生成的相关算法等。
+	
+	发布在Google Play，游戏下载排名在美国榜最高为56，在40个国家进入下载排名前100。收入排名在美国榜最高为350，在41个国家进入收入榜排名前500。
 	
 	这款游戏让我积累了一个完整的手游开发经验，深刻理解了程序与产品的区别。
 	
-	项目地址：[https://play.google.com/store/apps/details?id=com.zenlife](https://play.google.com/store/apps/details?id=com.zenlife)
+	下载地址：[https://play.google.com/store/apps/details?id=com.zenlife](https://play.google.com/store/apps/details?id=com.zenlife)
 
-* 2013.2-至今 《深入解析Go》
-
-	因为自己对Go语言底层实现的东西比较感兴趣，利用业余时间写的一本开源书。
+* 2013.2-至今 《深入解析Go》 因为自己对Go语言底层实现的东西比较感兴趣，利用业余时间写的一本开源书。
 	
-	截止目前github的star数137，fork数28。
+	Go语言是一门还很年轻的语言，使用和研究的人还并不是太多，而关于Go的底层机制方面的资料则更少。希望通过这本书能为Go语言的发展和推广出一份力。
+	
+	本书涵盖了从基本数据类型的实现到生成的汇编研究等许多方面，重点放在对runtime的分析，其中关于内存管理/垃圾回收/goroutine调度等部分完成度还是比较高的。一些内容还有待完善，本书还在继续更新中。
+	
+	截止目前github的star数166，fork数39。
 
 	项目地址：[https://github.com/tiancaiamao/go-internals](https://github.com/tiancaiamao/go-internals)
 
 ## 经历
 
-2014.4-2014.7 创业? 辞掉工作做一个开源项目ouster
+2013.4-2014.3	工作 涂鸦移动(创新工厂家族成员)
 
-2013.4-2014.3 工作 Doodle(创新工厂家族成员)
+2012.7-2012.9	实习 百度基础架构部
 
-2012.7-2012.9 实习 百度基础架构部
-
-2010.9-2013.3 读研 华中科技大学
+2010.9-2013.3	读研 华中科技大学

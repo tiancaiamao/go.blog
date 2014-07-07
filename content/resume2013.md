@@ -44,7 +44,7 @@
 	
 	具体实现上主要包括线程的组织与调度，支持管道方式通信，非阻塞I/O
 	
-	代码托管在https://github.com/tiancaiamao/ouster
+	代码托管在https://github.com/tiancaiamao/task
 
 * 2012.7-2012.9 SVM大规模训练的调研
 
