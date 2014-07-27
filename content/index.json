@@ -1,11 +1,19 @@
 {
+    "Title":"自己写个梯子",
+    "Date": "2014-07-27T18:51:00Z",
+	"Tags": [
+		"n6bagent",
+		"翻墙"
+	],
+    "File": "n6bagent.md"
+}
+{
     "Title":"分布式系统中的一致性问题",
     "Date": "2014-07-07T18:11:00Z",
 	"Category": "分布式",
 	"Tags": [
 		"一致性"
-	],
-	
+	],	
     "File": "consistent.md"
 }
 {
