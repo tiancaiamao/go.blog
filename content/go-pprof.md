@@ -48,26 +48,7 @@ RCampaign是一个全内存的活动数据库，注意到它使用的存储是`C
 	    FrequencyFilters  []model.FrequencyFilter
 	    AMonit            []string
 	    Character         []model.ActionTerm
-	    CharacterMatch    bool
-	    BDXCharacter      []model.ActionTerm
-	    BDXCharacterMatch bool
-	    People            []model.PeopleCondition
-	    MZPeople          []model.PeopleCondition
-	    PeopleMatch       bool
-	    MZPeopleMatch     bool
-	    Speculator        Speculator
-	    Products          map[int64]CProduct
-	    Positions         map[int64]bool
-	    ExPositions       map[int64]bool
-	    BrowserType       map[int]bool
-	    OSType            map[int]bool
-	    DeviceType        map[int]bool
-	    GovernorStatus    int //0.关闭，1.开启，需要dsp_web输入
-	    AdViewType        uint
-	    AdCategory        []int32
-	    DailyBudget       float64
-	    TotalBudget       float64		
-	    WeatherFilter model.WeatherFilter
+		...
 	}
 
 mentor平素是这样子写代码的：
@@ -135,40 +116,16 @@ mentor平素是这样子写代码的：
 有点进展不顺了，于是去与mentor讨论。mentor提到，在加入了调价的一个更新之后，系统的CPU从原来的200%升到了400%的样子，让我可以去查一下这条路径的代码。然后我看到了defer，立马眼睛亮了：
 
 	 func (this *Campaign) GetPrice(positionId, size, host int64, b *BidServer) (price float64, err error) {
-	     // log.AppLog().Logf("get price : pid:%d cid:%d", positionId, this.Id)
-	     offer := &Offer{
-	         CampaignId: this.Id,
-	         UserId:     this.CreateUserId,
-	         Ctype:      this.ChargeType,
-	     }
+	     ...
 	     defer func() {
-	         // 用户溢价
-	         if costOver, err := GetCostOver(RDspUser, this.CreateUserId); err == nil {
-	             price /= costOver
-	         }
-	         offer.Price = price
-	         b.ConvQuery.AddCache(offer)
-	         // log.AppLog().Logf("get price done : \n%#v", b.ConvQuery)
+	         ...
 		 }()
 	
-	     if this.ChargeType == model.CHARGE_TYPE_CPM {
-	         price = this.GetCpmPrice(positionId, size, host, b)
-	         return
-	     }
-		 
-	     //读取预测转化率
-	     cr, err := b.ConvQuery.GetConvRate(b.AdxId, this.Id, b.PositionId, this.CreateUserId)
+		 ...
 	     if err != nil {
 	         return
 	     }
-		 
-	     //计算出价
-	     offer.cr = &cr
-	     if this.ChargeType == model.CHARGE_TYPE_CPC {
-	         price = cr.Ctr * this.ChargePrice * 1000 * cr.CPAfactor
-	     } else if this.ChargeType == model.CHARGE_TYPE_CPA {
-	         price = cr.Rgr * this.ChargePrice * 1000 * cr.CPAfactor
-	     }
+	
 	     return
 	 }
 
