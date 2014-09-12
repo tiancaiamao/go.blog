@@ -1,0 +1,327 @@
+SSD调研 & 分布式存储介绍
+2014-09-12
+Category: 分布式
+Tags: ssd, kv, aerospike
+
+* 目录
+
+- 分布式存储
+- SSD特征
+- Aerospike
+
+* Part1 分布式存储
+
+* 单机存储引擎
+
+分布式存储 = 单机存储引擎 + 分布式存储架构
+
+存储引擎要做到的，是关于存储性能，网络性能
+
+要充分考虑存储介质的物理特性
+
+* 存储介质
+
+- 内存
+- SSD
+- 磁盘
+
+顺序读1M内存需要多久？
+
+磁盘平均寻道时间？
+
+磁盘顺序读写速度？
+
+* 硬件性能
+
+L1 cache reference			0.5ns 
+Branch mispredict			5ns
+L2 cache reference			7ns 
+Mutex lock/unlock			100ns
+Main memory reference			100ns
+Send 1M bytes over 1Gbps network 		10ms
+Read 1M sequentially from memory 		0.25ms
+Round trip within data center			0.5ms
+Disk seek			8~10ms
+Read 1MB sequentially from disk			20~25ms
+
+* 数据结构
+
+- B树
+- hash
+- SkipList
+- LSM
+- fractal tree
+- merkle tree
+- bloom filter
+
+存储的本质是数据结构
+
+* B树
+
+Log_B(N/B)
+
+读优化
+
+硬盘速度100MB/s，4K页大小，读取只需要0.04ms，但寻道10ms，实际读取速率仅0.4MB/s。
+另一方面，更大的页意味着B值更大，也就是更少的IO次数。所以优化读，应该选择更大的页大小，比如4M。是不是页越大越好？
+
+写放大
+
+读到内存，修改数据，写回磁盘。写一个记录，而实际需要IO的大小为一整页，写放大倍数非常高！
+
+顺序读、写性能好
+
+随机写性能差
+
+
+* LSM
+
+Log-structured merge-tree
+
+只追加写
+
+垃圾回收
+
+内存索引
+
+为写优化、随机读性能一般
+
+* 网络/线程模型
+
+网络性能对分布式存储是很重要的
+
+epoll
+
+基于事件
+
+actor
+
+reactor
+
+不展开了...c10k问题
+
+* 分布式存储架构
+
+分布式存储 = 单机存储引擎 + 分布式存储架构
+
+一致性(consistant)，可用性(avaliable)，扩展性(scalable)
+
+延迟、并发、吞吐量
+
+* 数据分布
+
+- 按数据范围
+- 简单哈希
+- 一致性哈希
+
+难点：分布均匀
+
+难点：增删结点时数据迁移
+
+* 副本
+
+以机器为单位：优点简单，缺点恢复效率低
+
+数据切片为单位：恢复效率高，容错性强，可扩展性好
+
+* 一致性
+
+- 强一致性
+- 单调一致性
+- 会话一致性
+- 最终一致性
+
+* 读写方式
+
+- quorum
+
+- primary-secondary
+
+强一致性方案一：始终只读primary可以实现强一致性
+
+思考问题：主从是否会造成资源浪费？
+
+强一致性方案二：由primary控制secondary节点的可用性
+
+难点：CAP中的C和A的处理
+
+难点：同步
+
+* 集群信息维护
+
+- lease
+
+- paxos/raft
+
+- gossip
+
+* 冰山一角
+
+错误:成功/失败/超时
+日志:undo日志 redo日志 
+事务:乐观锁 两阶段提交
+schema...
+
+CAP/BASE/ACID
+
+* Part2 SSD特性
+
+* 基本
+
+- 无寻道时间
+- 随机读非常快
+- 写前需要先擦除
+- 擦除次数上限
+
+* 进阶
+
+- 若干(128)个页构成一个块(512KB)
+- 读是页对齐的
+- 写是页对齐的
+- 擦除是块对齐的
+
+* 高级
+
+写入放大--写4k，需要先读擦除块(512K)，修改，整块写入。放大系数是128倍。
+
+FTL(Flash Transport Layer)作用类似磁盘控制器
+
+-逻辑块映射
+-日志写
+-垃圾回收
+-损耗平衡
+
+随使用率增加性能下降
+
+* Part3 Aerospike
+
+* feature
+
+1亿记录10秒内热重启
+
+99% < 1ms
+
+* 支持的存储形式
+
+索引都是全内存的
+
+- SSD
+- 内存
+- 内存+HDD持久化
+- HDD
+
+* 数据模型
+
+- namespace(database)
+- set(table)
+- record(row)
+- bin(field)
+
+set可以没有
+
+record由key+metadata+bins构成。hash(key)用于寻址，metadata提供record版本信息和ttl
+
+bin是一个name和一个value，不指定类型，但是value是有类型的
+
+支持自定义数据类型
+
+* 架构
+
+1. 客户层:
+
+集群状态
+向上层提供api
+
+2. 分布式层：
+
+数据分布
+集群管理
+数据迁移
+
+3. 数据存储层:
+
+碎片回收
+数据过期
+
+* 内部实现-数据分布
+
+partition map
+
+每个key哈希到20字节的字符串。
+这个hash加上一些额外数据，64字节，存到内存索引
+其中12字节用于计算partition的id
+4096个糟
+将partition id映射到各个node id
+
+* 内部实现-结点挂掉/添加结点
+
+重建Partition Map，迁移数据
+难点：如果让重建映射后，需要迁移的数据量最小
+难点：迁移期间的一致性如何保证
+
+* 内部实现-集群维护
+
+广播心跳信息
+gossip协议：发现新的结点
+paxos协议：投票决定新的数据分布
+
+* 内部实现-读写一致性
+
+写主，主负责写到从
+
+副本数据可配置
+
+* 为SSD优化
+
+多线程IO ：SSD跟磁盘不一样，有多个控制器，并行可以发挥出性能。北桥并行度为8，南桥16。
+跳过文件系统：页缓存造成有些请求在16-32ms才完成，以及3%-5%超过1ms
+写大块读小块：低的写放大和读延迟
+
+全内存索引，减少ssd的损耗
+后台碎片整理
+Log structured file system, "copy on write"
+
+* 性能测试
+
+benchmark同机器,16线程,写
+观察到：2w5tps,250%cpu,90%<1ms,2min周期性抖动,2w3tps,崩溃
+
+为什么？后台有线程周期性地执行defraction和evicate
+
+benchmark同机器,20线程，写
+观察到：前2分钟5wtps,99%<1ms,陡降1w2,慢慢稳定2w6tps,90%<1ms,10%<2ms,1%2ms+，崩溃
+重启后：300w记录,2G索引重建时间2-3min,1w7tps,78% 22% 6% 1%
+
+为什么？实际上测试的是update而不是insert,"copy on write"
+
+* 性能测试
+
+benchmark同机器,20线程,读
+观察到：4w7-5w2的qps，99%小于1ms,3分钟后陡降到1w8qps,慢慢回到2w5,cpu240%,89%<1ms,10%<2ms,1%<4ms
+
+benchmark不同机器,20线程,读
+观察到：平稳的3w2-3w3qps，99%~100%<1ms。服务器那边的cpu使用率稳定在150%以内;抖动qps1w9,cpu不稳定
+
+原因：不稳定是由网络波动产生的，后面同时开一个ping观察，发现出现间或出现30ms甚至50ms的ping值
+稳定的时刻至少应该在2w8+的qps,cpu240%-300%
+
+* 性能测试
+
+benchmark不同机器,32线程,读
+观察到：cpu使用率在300%左右，qps在3w8，响应时间95% %4 %1的样子。
+写崩溃
+
+benchmark不同机器,20线程,写
+20线程,3w3tps,167%cpu,99%<1ms
+
+- 总体稳定，周期性任务会引起一定性能波动
+- CPU使用高以后延时增加
+- 正常能做到3wtps,99%<1ms
+
+* 总结
+
+科普了分布式存储的一些基础知识，如果发现新名词并且有求知欲，google之
+
+介绍了SSD的特点
+
+Aerospike是一个为SSD优化的，牛逼的数据库

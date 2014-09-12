@@ -1,4 +1,15 @@
 {
+    "Title":"SSD调研",
+    "Date": "2014-09-03T14:48:00Z",
+    "Category": "分布式",
+	"Tags": [
+		"ssd",
+		"kv",
+		"aerospike"
+	],
+    "File": "aerospike.slide"
+}
+{
     "Title":"聊下DSP的一些技术挑战",
     "Date": "2014-08-23T00:48:00Z",
     "Category": "高性能服务器",
