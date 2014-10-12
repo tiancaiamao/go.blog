@@ -1,4 +1,25 @@
 {
+    "Title":"来自plan9的libthread",
+    "Date": "2014-10-12T11:17:00Z",
+    "Category": "高性能服务器",
+	"Tags": [
+		"libthread",
+		"plan9",
+		"coroutine"
+	],
+    "File": "libthread.md"
+}
+{
+    "Title":"aerospike这一路的坑",
+    "Date": "2014-10-12T09:48:00Z",
+    "Category": "高性能服务器",
+	"Tags": [
+		"aerospike",
+		"nosql"
+	],
+    "File": "aerospike-trap.md"
+}
+{
     "Title":"记一例overcommit_memory设置不当导致的线程创建失败",
     "Date": "2014-09-17T11:48:00Z",
 	"Tags": [
