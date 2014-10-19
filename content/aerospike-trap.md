@@ -19,3 +19,9 @@ aerospike是不存原始的key的，用户的key会被hash成一个20字节的di
 afterbunner是一定要用的。这个脚本隐藏得很好，在/opt/aerospike/bin/afterbunner中，官方文档很少提及。这个是自动根据机器的配置生成配置文件。不配置好根本没法发挥出机器的性能来，而手动去配置很多项根本不知道该如何设置。afterbunner脚本就解决了这个问题。
 
 先写这些吧，更多的问题还等着去踩。总体来说，坏的方面是比较小众，成熟度和资料都不如现有的一些nosql数据库。好的方面是aerospike性能真的很好，在高QPS环境中还能保证很低的延迟这是非常难道的，也正是我们应用场景需要的。
+
+---------2014.10.16更新-----
+
+存储原始key是可以的，Key结构体中有个useKey，将WritePolicy.sendKey设置为true，则useKey将被存储到一个bin中。
+
+Go客户端中Record过期时间用一个int表示的，实际上就是int32的
