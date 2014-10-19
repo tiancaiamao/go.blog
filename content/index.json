@@ -3,11 +3,11 @@
     "Date": "2014-10-12T11:17:00Z",
     "Category": "高性能服务器",
 	"Tags": [
-		"libthread",
+		"grt",
 		"plan9",
 		"coroutine"
 	],
-    "File": "libthread.md"
+    "File": "grt.md"
 }
 {
     "Title":"aerospike这一路的坑",
