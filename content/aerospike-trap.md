@@ -25,3 +25,7 @@ afterbunner是一定要用的。这个脚本隐藏得很好，在/opt/aerospike/
 存储原始key是可以的，Key结构体中有个useKey，将WritePolicy.sendKey设置为true，则useKey将被存储到一个bin中。
 
 Go客户端中Record过期时间用一个int表示的，实际上就是int32的
+
+---------2014.10.29更新-----
+
+udf那边，传入的lua的变长参数不能过多，否则会导致服务崩溃。具体见我的提问：[http://discuss.aerospike.com/t/my-udf-make-aerospike-crash/462](http://discuss.aerospike.com/t/my-udf-make-aerospike-crash/462)
