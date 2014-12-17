@@ -1,0 +1,175 @@
+y combinator推导
+2014-12-17
+Category: 编程语言
+Tags: y combinator, lambda
+
+* 定义阶乘函数
+
+	(define (fact n)
+	  (if (= n 1)
+	      1
+	      (* n (fact (- n 1)))))
+
+由于我们不能使用define，那么需要把fact作为参数
+
+	(lambda (f)
+	  (lambda (n)
+	    (if (= n 1) 1
+	        (* n (f (- n 1))))))
+			
+这一步到下一步的变换是最难理解的，因为即将出现高阶函数			
+
+* meta-fact
+
+如果可以命名，可以把这个东西叫meta-fact
+meta-fact接受一个函数作为参数，返回一个计算阶乘的函数
+
+	(define meta-fact
+	  (lambda (f)
+	    (lambda (n)
+	      (if (= n 1) 1
+	          (* n ((f f) (- n 1)))))))
+
+其实meta-face接受的参数是它自己
+
+	((meta-fact meta-fact) 5) ;;120
+
+* 继续推导
+
+好吧，故事继续回到我们不能使用define
+那么(meta-fact meta-fact)需要这样写
+
+	((lambda (f)
+	    (lambda (n)
+	      (if (< n 2) 1
+	          (* n ((f f) (- n 1))))))
+	 (lambda (f)
+	    (lambda (n)
+	      (if (< n 2) 1
+	          (* n ((f f) (- n 1)))))))
+
+* 提取重复的操作
+
+	((lambda (f)
+	    (lambda (n)
+	      (if (< n 2) 1
+	          (* n ((f f) (- n 1))))))
+	 (lambda (f)
+	    (lambda (n)
+	      (if (< n 2) 1
+	          (* n ((f f) (- n 1)))))))
+
+将重复部分提取成参数x			
+
+	((lambda (x) (x x))
+	 (lambda (f)
+	    (lambda (n)
+	      (if (< n 2) 1
+	          (* n ((f f) (- n 1)))))))
+
+* 继续提取重复部分
+
+	((lambda (x) (x x))
+	 (lambda (f)
+	    (lambda (n)
+	      (if (< n 2) 1
+	          (* n ((f f) (- n 1)))))))
+
+将(f f)用参数g代替
+
+	((lambda (x) (x x))
+	 (lambda (f)
+	   ((lambda (g)
+	      (lambda (n)
+	        (if (= n 1) 1
+	            (* n (g (- n 1))))))
+	        (f f))))
+
+call-by-value在这一步会死循环的
+oh no!			
+
+* 处理死循环
+
+	((lambda (x) (x x))
+	 (lambda (f)
+	   ((lambda (g)
+	      (lambda (n)
+	        (if (= n 1) 1
+	            (* n (g (- n 1))))))
+	        (f f))))
+
+做一个变换
+(f f) => (lambda (v) ((f f) v))
+
+	((lambda (x) (x x))
+	 (lambda (f)
+	   ((lambda (g)
+	      (lambda (n)
+	        (if (= n 1) 1
+	            (* n (g (- n 1))))))
+	        (lambda (v) ((f f) v)))))
+
+* 参数化
+
+	((lambda (x) (x x))
+	 (lambda (f)
+	   ((lambda (g)
+	      (lambda (n)
+	        (if (= n 1) 1
+	            (* n (g (- n 1))))))
+	        (lambda (v) ((f f) v)))))
+			
+把中间那一部分提取出来，用参数F替换
+
+	((lambda (F)
+	  ((lambda (x) (x x))
+	   (lambda (f)
+	     (F (lambda (v) ((f f) v))))))
+	 (lambda (g)
+	      (lambda (n)
+	        (if (< n 2) 1
+	            (* n (g (- n 1)))))))
+
+* Y combinator
+
+	((lambda (F)
+	  ((lambda (x) (x x))
+	   (lambda (f)
+	     (F (lambda (v) ((f f) v))))))
+	 (lambda (g)
+	      (lambda (n)
+	        (if (< n 2) 1
+	            (* n (g (- n 1)))))))
+
+上面的那一部分就是Y
+
+	(lambda (F)
+	  ((lambda (x) (x x))
+	   (lambda (f)
+	     (F (lambda (v) ((f f) v))))))
+		 
+* 一些变种写法
+
+不处理call-by-name
+
+	(lambda (F)
+	  ((lambda (x) (x x))
+	   (lambda (f)
+	     (F (f f)))))
+
+参数名可以改成其它
+
+	(lambda (f)
+	  ((lambda (u) (u u))
+	   (lambda (x)
+	     (f (x x)))))
+
+或者展开
+
+	((lambda (f)
+	  (lambda (x)
+	    (f (x x))))
+	 (lambda (f)
+	   (lambda (x)
+	     (f (x x)))))
+		 
