@@ -1,4 +1,13 @@
 {
+    "Title":"aerospike节点重启",
+    "Date": "2014-12-25T17:54:00Z",
+	"Tags": [
+		"aerospike",
+		"ssd"
+	],
+    "File": "aerospike-node-restart.md"
+}
+{
     "Title":"y combinator推导",
     "Date": "2014-12-17T09:37:00Z",
     "Category": "编程语言",
