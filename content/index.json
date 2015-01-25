@@ -1,4 +1,17 @@
 {
+	"Title":"分布式跟踪系统调研",
+	"Date": "2015-01-25T14:25:42Z",
+    "Category": "分布式",
+	"Tags": [
+		"分布式跟踪",
+		"heka",
+		"influxdb",
+		"zipkin",
+		"监控"
+	],
+	"File": "distributed-tracing.md"
+}
+{
 	"Title":"跳表实战",
 	"Date": "2015-01-24T12:14:42Z",
 	"Tags": [
