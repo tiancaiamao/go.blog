@@ -1,4 +1,14 @@
 {
+    "Title":"Go代码bug深入跟踪一例",
+    "Date": "2015-02-05T11:48:00Z",
+	"Tags": [
+		"gorilla",
+		"bug",
+		"golang"
+	],
+    "File": "go-bug.md"
+}
+{
 	"Title":"分布式跟踪系统调研",
 	"Date": "2015-01-25T14:25:42Z",
     "Category": "分布式",
