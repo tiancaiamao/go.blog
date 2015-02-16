@@ -1,4 +1,13 @@
 {
+    "Title":"scheme自举",
+    "Date": "2015-02-16T23:09:00Z",
+	"Category": "编译器",
+	"Tags": [
+		"scheme"
+	],
+    "File": "bootstrap-scheme.md"
+}
+{
     "Title":"Go代码bug深入跟踪一例",
     "Date": "2015-02-05T11:48:00Z",
 	"Tags": [
