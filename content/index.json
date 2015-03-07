@@ -1,4 +1,15 @@
 {
+    "Title":"Go语言http中间件",
+    "Date": "2015-03-07T16:25:00Z",
+	"Category": "编程语言",
+	"Tags": [
+		"golang",
+		"http",
+		"middleware"
+	],
+    "File": "go-http-middleware.md"
+}
+{
     "Title":"架构演化",
     "Date": "2015-03-05T13:17:00Z",
 	"Category": "分布式",
