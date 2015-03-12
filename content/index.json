@@ -1,4 +1,103 @@
 {
+	"Title":"nanopass之八--通用中间语言",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass8.md"
+}
+{
+	"Title":"nanopass之七--非尾调用",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass7.md"
+}
+{
+	"Title":"nanopass之六--处理调用参数和返回值",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass6.md"
+}
+{
+	"Title":"nanopass之五--frame分配和迭代",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass5.md"
+}
+{
+	"Title":"nanopass之四--寄存器分配",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass4.md"
+}
+{
+	"Title":"nanopass之三--变量和跳转",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass3.md"
+}
+{
+	"Title":"nanopass之二--带括号的汇编语法",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass2.md"
+}
+{
+	"Title":"nanopass之一--代码生成",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass1.md"
+}
+{
+	"Title":"nanopass之零--序",
+	"Date":"2015-03-11T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"nanopass",
+		"翻译",
+		"scheme"
+	],
+	"File": "nanopass0.md"
+}
+{
     "Title":"Go语言对象跟闭包性能比较",
     "Date": "2015-03-09T14:05:00Z",
 	"Category": "编程语言",
