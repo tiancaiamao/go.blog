@@ -1,4 +1,14 @@
 {
+	"Title":"Go使用全局变量要小心闭包",
+	"Date":"2015-03-16T11:09:00Z",
+	"Category":"编译器",
+	"Tags":[
+		"golang",
+		"closure"
+	],
+	"File": "闭包的坑.md"
+}
+{
 	"Title":"nanopass之八--通用中间语言",
 	"Date":"2015-03-11T11:09:00Z",
 	"Category":"编译器",
