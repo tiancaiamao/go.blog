@@ -105,15 +105,15 @@
 
 新加入的以及更新的步骤在4.1到4.15部分是描述。迭代的变化在4.16部分中描述。
 
-## 4.1. verify-scheme
+### 4.1. verify-scheme
 
 这步需要加两个简单的match语句来处理Value和Effect中的非尾调用。
 
-## 4.2. remove-complex-opera*
+### 4.2. remove-complex-opera*
 
 这步需要加两个简单的match语句来处理Value和Effect中的非尾调用。
 
-## 4.3. flatten-set!
+### 4.3. flatten-set!
 
 这步需要加两个简单的match语句来处理Value和Effect中的非尾调用。
 
@@ -140,7 +140,7 @@
 			|	(begin Effect* Effect)
 	Triv	->	uvar | int | label
 
-## 4.4. impose-calling-conventions
+### 4.4. impose-calling-conventions
 
 这步也需要添加两个match语句处理非尾调用，而且，它必须记录下它找到的非尾调用的出去的frame变量的链表(如果你这步的版本还没有处理Pred和Effect表达式，这次必须做了)。
 
@@ -213,7 +213,7 @@ new-frame中的变量的分配顺序是无关的，正如寄存器分配顺序�
 	Var		->	uvar | Loc
 	Triv	->	Var | int | label
 
-## 4.5. uncover-frame-conflict
+### 4.5. uncover-frame-conflict
 
 这步需要加一个match语句来处理非尾调用，即，return-point表。除此之后，它还要决定call-live变量集合和frame位置。如果一个变量或者frame位置在整个调用过程都是live的，那么它就是call-live的，也就是，在调用返回之后，它的值仍然可能被使用。
 

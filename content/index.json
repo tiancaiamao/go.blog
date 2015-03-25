@@ -1,4 +1,12 @@
 {
+	"Title":"当我说监控时，我该关注什么",
+	"Date": "2015-03-25T23:05:42Z",
+	"Tags": [
+		"监控"
+	],
+	"File": "instrument.md"
+}
+{
 	"Title":"nanopass之八--通用中间语言",
 	"Date":"2015-03-11T11:09:00Z",
 	"Category":"编译器",

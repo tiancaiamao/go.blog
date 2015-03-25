@@ -105,7 +105,7 @@ procedure或者primitive调用的子表达式可以按任意顺序执行，即�
 			|	(set! uvar Value)
 			|	(if Pred Effect Effect)
 			|	(begin Effect* Effect)
-	Valure	->	Triv
+	Value	->	Triv
 			|	(binop Triv Triv)
 			|	(if Pred Value Value)
 			|	(begin Effect* Value)

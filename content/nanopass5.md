@@ -6,7 +6,7 @@
 3. 要做的事
 	* 3.1. Iterating
 	* 3.2. verify-scheme
-	* 3.3. uncover-frame-confilct
+	* 3.3. uncover-frame-conflict
 	* 3.4. introduce-allocation-forms
 	* 3.5. select-instructions
 	* 3.6. uncover-register-conflict
@@ -97,7 +97,7 @@
 
 做少量的修改。添加几个新的步骤：
 
-	uncover-frame-confilct
+	uncover-frame-conflict
 	introduce-allocation-forms
 	select-instructions
 	assign-frame
