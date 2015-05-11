@@ -91,24 +91,26 @@ MiddleWare和MiddlewareFunc的关系，很类似标准库中Handler跟HandlerFun
 
 用MiddleWare做串联就很简单了。比如说：
 
-	type MiddleWareChain struct {
+	type Chain struct {
 		middlewares []MiddleWare
-		http.Handler
+		raw         http.Handler
 	}
-	func New(h http.Handler) *MiddleWareChain {
-		return &MiddleWareChain {
-			Handler: h,
+	func New(handler http.Handler, middlewares ...MiddleWare) *Chain {
+		return &Chain{
+			raw:         handler,
+			middlewares: middlewares,
 		}
 	}
-	func (mc *MiddleWareChain) Then(m MiddleWare) MiddleWareChain {
+	func (mc *Chain) Then(m MiddleWare) *Chain {
 		mc.middlewares = append(mc.middlewares, m)
+		return mc
 	}
 	func (mc *MiddleWareChain) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-		final := mc.Handler
+		final := mc.raw
 		for _, v := range mc.middlewares {
-			final = v(final)
+			final = v.Chain(final)
 		}
-		f.ServeHTTP(w, r)
+		final.ServeHTTP(w, r)
 	}
 
 然后这样子用
@@ -117,7 +119,7 @@ MiddleWare和MiddlewareFunc的关系，很类似标准库中Handler跟HandlerFun
 
 ## 上下文
 
-如果使用http中间件，必然会遇到的一个问题是上下文中传递数据的问题。上下文是指什么呢？每个中间件会从之前的中间件中获取数据，并且可能会新的数据传之后的中间件，这些数据传递形成的就是上下文。比如我有一个ParamFilter，这个中间件的作用是验证输出参数是否合法的。那么验证完之后，应该把数据放到上下文中，传给后面中间件去使用。再比如说，如果我写了一个Login的中间件，那么这个中间件可以把session一类的信息就可以放到上下文，后面的中间件就可以从上下文中获取到session。
+如果使用http中间件，必然会遇到的一个问题是上下文中传递数据的问题。上下文是指什么呢？每个中间件会从前面的中间件中获取数据，并且可能会生成新的数据传后面的中间件，这些数据传递形成的就是上下文。比如我有一个ParamFilter，这个中间件的作用是验证输出参数是否合法的。那么验证完之后，应该把数据放到上下文中，传给后面中间件去使用。再比如说，如果我写了一个Login的中间件，那么这个中间件可以把session一类的信息就可以放到上下文，后面的中间件就可以从上下文中获取到session。
 
 [gorilla](https://github.com/gorilla/context)的做法是把上下文信息放到了一个全局map中，使用http.Request作为key就可以将上下文获取出来。这个方案优点是对标准库无侵入性。但是也有些缺点，一个是请求结束后还需要清除掉map[r]，另一个是全局map的加锁会影响性能，这个缺点在很多场景是致命的。
 
@@ -127,58 +129,73 @@ Go语言[官方推荐的做法](http://blog.golang.org/context)是，在每个Ha
 		ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	}
 
-官方的补充库中专门有一个[context.Context接口](https://github.com/golang/net/tree/master/context)。这种方式我觉得相对标准库的Handler侵入性比较强，如果有较多遗留代码，也不算太好一个方案。
+官方的补充库中专门有一个[context.Context接口](https://github.com/golang/net/tree/master/context)。这种方式对标准库的Handler侵入性比较强，如果有较多遗留代码，也不算太好一个方案。
 
-既然使用http中间件，上下文是必不可少的。可能直接整合进MiddleWare里面合适一些。修改一下MiddleWare定义：
+使用http中间件，处理上下文是必不可少的。上面都是比较有代表性的方案，但是我都不太满意。直到突然有一天灵光一闪，发现其实可以利用http.ResponseWriter是interface这点，把上下文隐藏在里面!
 
-	type ContextMiddleware interface {
-		Chain(Context, http.Handler) http.Handler
+	type ContextResponseWriter interface {
+		http.ResponseWriter
+		Value(interface{}) interface{}
 	}
 
-额，这样满意多了。
+这样我们可以写标准的http.Handler接口，并且在需要的时候又可以取出上下文：
 
-## 不完整例子
+	func HelloWorld(w http.ResponseWriter, r *http.Request) {
+	    if cw, ok := w.(ContextResponseWriter); ok {
+	        value := cw.Value("key")
+	        ...
+	    }
+	}
+
+## 完整例子
 
 	package main
 	
 	import (
-		"fmt"
-		"net/http"
+	    "github.com/tiancaiamao/middleware"
+	    "io"
+	    "net/http"
 	)
 	
-	type Context map[string]interface{}
-	
-	// 中间件是接受一个handler，返回一个新的handler
-	type ContextMiddleWare interface {
-		Chain(Context, http.Handler) http.Handler
-	}
-	type ContextMiddleWareFunc func(Context, http.Handler) http.Handler
-	
-	func (f ContextMiddleWareFunc) Chain(c Context, h http.Handler) http.Handler {
-		return f(c, h)
+	type MyContextResponseWriter struct {
+	    http.ResponseWriter
+	    key, value interface{}
 	}
 	
-	type ContextHandler func(Context) http.Handler
-	
-	func MethodFilter(method string) ContextMiddleWare {
-		return ContextMiddleWareFunc(func(ctx Context, h http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if method != r.Method {
-					http.NotFound(w, r)
-					return
-				}
-				h.ServeHTTP(w, r)
-			})
-		})
+	func (w *MyContextResponseWriter) Value(key interface{}) interface{} {
+	    if w.key == key {
+	        return w.value
+	    }
+	    return nil
 	}
 	
-	func helloworld(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "hello world!")
+	func HelloWorld(w http.ResponseWriter, r *http.Request) {
+	    if ctx, ok := w.(middleware.ContextResponseWriter); ok {
+	        valueFromContext := ctx.Value("xxx")
+	        io.WriteString(w, "hello, "+valueFromContext.(string))
+	        return
+	    }
+		
+	    io.WriteString(w, "hello world")
+	}
+	
+	type MiddleWareDemo struct{}
+	
+	func (demo MiddleWareDemo) Chain(h http.Handler) http.Handler {
+	    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	        cw := &MyContextResponseWriter{
+	            ResponseWriter: w,
+	            key:            "xxx",
+	            value:          "demo",
+	        }
+			
+	        h.ServeHTTP(cw, r)
+	    })
 	}
 	
 	func main() {
-		ctx := make(Context)
-		handler := MethodFilter("GET").Chain(ctx, http.HandlerFunc(helloworld))
-		
-		http.ListenAndServe(":8080", handler)
+	    handler := middleware.New(http.HandlerFunc(HelloWorld), MiddleWareDemo{})
+	    http.ListenAndServe(":8080", handler)
 	}
+
+代码放到了[github](https://github.com/tiancaiamao/middleware)，需要的自取。
