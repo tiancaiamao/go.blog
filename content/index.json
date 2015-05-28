@@ -1,4 +1,21 @@
 {
+	"Title":"再看预算控制模块",
+	"Date": "2015-05-28T16:41:42Z",
+	"Tags": [
+		"redis"
+	],
+	"File": "再看预算控制模块.md"
+}
+{
+	"Title":"redis集群规范笔记",
+	"Date": "2015-05-26T20:41:42Z",
+	"Category":"分布式",
+	"Tags": [
+		"redis"
+	],
+	"File": "redis-cluster.md"
+}
+{
 	"Title":"scheme编译为c",
 	"Date": "2015-05-20T02:01:42Z",
 	"Category":"编译器",
