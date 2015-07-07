@@ -1,4 +1,13 @@
 {
+	"Title":"chicken scheme实践",
+	"Date": "2015-07-07T15:16:42Z",
+	"Tags": [
+	    "chicken",
+	    "scheme"
+	],
+	"File": "chicken-scheme-practice.md"
+}
+{
 	"Title":"Go1.5的垃圾回收",
 	"Date": "2015-06-30T13:02:42Z",
 	"Tags": [
