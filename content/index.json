@@ -1,4 +1,16 @@
 {
+	"Title":"zanshin--写个虚拟机用于调试",
+	"Date": "2015-07-31T16:03:42Z",
+	"Category":"编译器",
+	"Tags": [
+	    "golang",
+	    "VM",
+	    "调试",
+	    "scheme"
+	],
+	"File": "zanshin.md"
+}
+{
 	"Title":"chicken scheme实践",
 	"Date": "2015-07-07T15:16:42Z",
 	"Tags": [
