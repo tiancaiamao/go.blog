@@ -1,0 +1,119 @@
+从call/cc到srfi-18
+2015-08-04
+Category: 高性能服务器
+Tags: call/cc, srfi-18, continuation, scheme
+
+* 写个队列
+
+	(define ready-head '())
+	(define ready-tail '())
+	(define (ready-enqueue v)
+	  (if (null? ready-tail)
+	      (begin
+		(set! ready-head (cons v '()))
+		(set! ready-tail ready-head))
+	      (let ((node (cons v '())))
+		(set-cdr! ready-tail node)
+		(set! ready-tail node))))
+	(define (ready-dequeue)
+	  (let ((ret (car ready-head)))
+	    (set! ready-head (cdr ready-head))
+	    (if (null? ready-head) (set! ready-tail '()))
+	    ret))
+
+简单的单链表的队列实现，ready-head和ready-tail分别记录头尾指针。
+
+* call/cc的使用
+
+	(ready-enqueue
+	 (lambda (_)
+	   (printf "in A...yield to B~%")
+	   (let ((next (ready-dequeue)))
+	     (call/cc (lambda (save)
+	  		(ready-enqueue save)
+	  		(next 'resume))))))
+
+协程A执行时会打印一行，从队列中拿出一个连续，并将当前连续保存到队列中，切换。
+
+	(begin
+	  (printf "in B...yield to A~%")
+	  (let ((next (ready-dequeue)))
+	    (call/cc (lambda (save)
+	  	       (ready-enqueue save)
+	  	       (next 'resume))))
+	  (printf "in B again~%"))
+
+协程B打印一行，从队列中取出之前保存的连续，切换。返回后，B会再打印一行。
+
+* 抽象出switch，schedule和yield
+
+	(let ((next (ready-dequeue)))
+	  (call/cc (lambda (save)
+		     (ready-enqueue save)
+		     (next 'resume))))
+
+这一段模式是重复代码，抽取出来，变成switch，schedule和yield三个函数。
+
+	(define (switch to)
+	  (call/cc
+	   (lambda (save)
+	     (ready-enqueue save)
+	     (to 'resume))))
+
+	(define (schedule)
+	  (let ((next (ready-dequeue)))
+	    (switch next)))
+
+	(define (yield)
+	  (or (ready-empty?) (schedule)))
+
+schedule之后会做更复杂的工作。yield判断不为空才切换。
+
+* 使用yield改写之前的代码
+
+	(ready-enqueue
+	 (lambda (_)
+	   (printf "in A...yield to B~%")
+	   (yield)))
+
+	(begin
+	  (printf "in B...yield to A~%")
+	  (yield)
+	  (printf "in B again~%")
+	  (yield))
+
+清爽了许多多。
+
+存在问题：即使协程A结束了，也未将它的连续从队列中清除。
+
+* thread-start!函数
+
+	(define (A)
+	  (printf "in A...yield to B~%")
+	  (yield))
+
+	(define (thread-start! thunk)
+	  (ready-enqueue
+	   (lambda (_)
+	     (thunk)
+	     (or (ready-empty)
+		 ((ready-dequeue) 'resume)))))
+
+通过thread-start!函数，我们对原始thunk包裹了一层退出代码。
+
+* 再多几个协程
+
+	(define (A)
+	  (printf "in A...yield to B~%")
+	  (yield)
+	  (printf "exit A~%"))
+	(define (C) (printf "insert C"))
+
+	(thread-start! A)
+	(thread-start! C)
+	(begin
+	  (printf "in B...yield to A~%")
+	  (yield)
+	  (printf "in B again~%")
+	  (yield)
+	  42)

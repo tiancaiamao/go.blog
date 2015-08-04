@@ -1,4 +1,16 @@
 {
+	"Title":"从call/cc到srfi-18",
+	"Date": "2015-08-04T20:44:42Z",
+	"Category":"高性能服务器",
+	"Tags": [
+	    "call/cc",
+	    "srfi-18",
+	    "continuation",
+	    "scheme"
+	],
+	"File": "callcc-srfi18.slide"    
+}
+{
 	"Title":"zanshin--写个虚拟机用于调试",
 	"Date": "2015-07-31T16:03:42Z",
 	"Category":"编译器",
