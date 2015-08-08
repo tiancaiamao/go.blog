@@ -6,6 +6,12 @@
 (define project-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/")
 (define content-path (string-append project-path "content"))
 
+(define (send-sxml sxml)
+  (let ((body (with-output-to-string 
+		(lambda () 
+		  (SXML->HTML sxml)))))
+    (send-response body: body)))
+
 (define (md-handler filename)
   (with-input-from-file (string-append (root-path) filename)
     (lambda ()
