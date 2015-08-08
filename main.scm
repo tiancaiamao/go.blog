@@ -5,6 +5,10 @@
 
 (define project-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/")
 (define content-path (string-append project-path "content"))
+(define INDEX 
+  (with-input-from-file (string-append content-path "/index.json")
+    (lambda ()
+      (read-json))))
 
 (define (send-sxml sxml)
   (let ((body (with-output-to-string 
@@ -15,39 +19,15 @@
 (define (md-handler filename)
   (with-input-from-file (string-append (root-path) filename)
     (lambda ()
+      ;; TODO check in INDEX
       (receive (content _) (markdown->sxml (current-input-port))
-	       (let ((body (with-output-to-string 
-			     (lambda () 
-			       (SXML->HTML (page "title" (cons content '()) '() '()))))))
-		 (send-response body: body))))))
-
-(define (index->sxml data)
-  (define (item field x)
-    (cdr (assq field x)))
-  (define fn
-    (lambda (x)
-      `(p (@ (class "blogtitle"))
-	  (a (@ (href ,(item 'File x)))
-	     ,(item 'Title x))
-	  (br (span (@ (class "date")) (item 'Date x))))))
-  (map fn data))
+	       (send-sxml (page "title" (article "title" content '() #f #f)))))))
 
 (define (blog-handler)
-  (with-input-from-file (string-append content-path "/index.json")
-    (lambda ()
-      (let* ((data (read-json))
-	     (bloglist (index->sxml (vector->list data)))
-	     (content (list '(h1 (@ (class "title")) "Article index") bloglist)))
-	(let ((body (with-output-to-string 
-		      (lambda () 
-			(SXML->HTML (page "title" content '() '()))))))
-	  (send-response body: body))))))
+  (send-sxml (page "blog" (blog (vector->list INDEX)))))
 
 (define (about-handler)
-  (let ((body (with-output-to-string 
-		(lambda () 
-		  (SXML->HTML (page "About" (cons about '()) '() '()))))))
-    (send-response body: body)))
+  (send-sxml (page "About" (about))))
 
 (define router
   (lambda (continue)
