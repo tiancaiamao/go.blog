@@ -1,6 +1,5 @@
 (use spiffy lowdown sxml-transforms intarweb uri-common files medea)
 
-(include "template/about.scm")
 (include "template/root.scm")
 
 (define project-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/")
