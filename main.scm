@@ -16,17 +16,20 @@
     (send-response body: body)))
 
 (define (md-handler filename)
-  (with-input-from-file (string-append (root-path) filename)
-    (lambda ()
-      ;; TODO check in INDEX
-      (receive (content _) (markdown->sxml (current-input-port))
-	       (send-sxml (page "title" (article "title" content '() #f #f)))))))
+  (send-sxml (page "title" 
+		   (container
+		    (with-input-from-file (string-append content-path "/" filename)
+		      (lambda ()
+			;; TODO check in INDEX
+			(receive (content _) (markdown->sxml (current-input-port))
+				 (article "title" "2014-01-23" content '() #f #f))))))))
 
 (define (blog-handler)
-  (send-sxml (page "blog" (blog (vector->list INDEX)))))
+  (send-sxml (page "blog" 
+		   (container (blog (vector->list INDEX))))))
 
 (define (about-handler)
-  (send-sxml (page "About" (about))))
+  (send-sxml (page "About" (container (about)))))
 
 (define router
   (lambda (continue)
