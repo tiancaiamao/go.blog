@@ -1,6 +1,7 @@
 (use spiffy lowdown sxml-transforms intarweb uri-common files medea)
 
-(load "template/root.scm")
+(include "template/about.scm")
+(include "template/root.scm")
 
 (define project-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/")
 (define content-path (string-append project-path "content"))
@@ -26,7 +27,7 @@
   (map fn data))
 
 (define (blog-handler)
-  (with-input-from-file (string-append content-path "/out.json")
+  (with-input-from-file (string-append content-path "/index.json")
     (lambda ()
       (let* ((data (read-json))
 	     (bloglist (index->sxml (vector->list data)))
@@ -35,6 +36,12 @@
 		      (lambda () 
 			(SXML->HTML (page "title" content '() '()))))))
 	  (send-response body: body))))))
+
+(define (about-handler)
+  (let ((body (with-output-to-string 
+		(lambda () 
+		  (SXML->HTML (page "About" (cons about '()) '() '()))))))
+    (send-response body: body)))
 
 (define router
   (lambda (continue)
@@ -47,7 +54,7 @@
 	    (cond
 	     ((string=? p "") 1)
 	     ((string=? p "index") (blog-handler))
-	     ((string=? p "about") 3)
+	     ((string=? p "about") (about-handler))
 	     ((string=? p "category") 4)
 	     ((string=? p "tags") 5)
 	     ((string=? p "feed.atom") 6)
