@@ -1,12 +1,4 @@
-flash4libgdx
-2013-06-21
-Category:Android游戏开发
-Tags: flash, libgdx
-
-毛康力
-DoodleMobile
-
-* libgdx的flash工具
+## libgdx的flash工具
 
 libgdx是没有直接支持flash导入的。网上找了找，没有找到现成可用的东西。倒是找到一个很搞笑的帖子，那哥们说他写这工具写了很久都没搞定，工作也丢了，女朋友也没了...听说咱公司以前也让一个实习生做过，最后那实习生快被搞疯了，走了。
 
@@ -14,7 +6,7 @@ flash动画太重要了。目前公司是有做这样的东西的，但是各种
 
 我不能容忍咋公司的工具做这么糙，必需改进它。于是我花了点时间研究怎么实现。真的很难么？不至于吧。
 
-* xfl格式解析
+## xfl格式解析
 
 xlf是flash的一种导出格式，是xml的，不过也没找到文件格式说明的官方文档。导出目录最重要的两个分别是DOMDocument.xml和Library目录。DOMDocument.xml是存放的对flash内容的描述，Library目录是放的图片资源文件。
 
@@ -28,7 +20,7 @@ http://www.senocular.com/flash/tutorials/transformmatrix/
 
 其实只要把这个xml格式解析出来，然后用libgdx进行render，就能够还原flash动画了。
 
-* libgdx动画渲染
+## libgdx动画渲染
 
 做成一个animation包，其中Parser类是解析DOMDocument.xml文件的，生成我们使用的数据结构Xfl，这个数据结构控制了内容是怎么样播放的，像第几帧中有哪些元素，对它们做什么操作。
 

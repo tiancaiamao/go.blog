@@ -1,11 +1,4 @@
-Go语言的defer，你真的懂了吗？
-2013-04-25
-Category: 编程语言
-Tags: golang
-
-毛康力
-
-* Go语言的defer，你真的懂了吗？
+# Go语言的defer，你真的懂了吗？
 
 example1
 
@@ -39,12 +32,13 @@ example3
 
 额，如果example1中你算的是0，你就错了；如果example2中你觉得是10，你又错了...蒙对的不算...如果example3中觉得得6，你又错了...如果你有算对的，也有算错，好吧...你丫的就是在蒙！不懂的继续往下看啊.....
 
-首先要明确的是：defer是在return之前执行的。这个在 [[http://golang.org/ref/spec#Defer_statements][官方文档]]中明确说明了的。
+首先要明确的是：defer是在return之前执行的。这个在 [官方文档](http://golang.org/ref/spec#Defer_statements)中明确说明了的。
 
 然后是了解defer的实现方式，大致就是在defer出现的地方，插入指令CALL runtime.deferproc，然后在函数返回之前的地方，插入指令CALL runtime.deferreturn。再就是明确go返回值的方式跟C是不一样的，为了支持多值返回，go是用栈返回值的，而C是用寄存器。
 
 最最重要的一点就是：
-*return xxx这一条语句并不是一条原子指令!*
+
+**return xxx这一条语句并不是一条原子指令!**
 
 整个return过程，没有defer之前，先在栈中写一个值，这个值会被当作返回值，然后再调用RET指令返回。return xxx语句汇编后是先给返回值赋值，再做一个空的return，( 赋值指令 ＋ RET指令)。defer的执行是被插入到return指令之前的，有了defer之后，就变成了(赋值指令 + CALL defer指令 + RET指令)。而在CALL defer函数中，有可能将最终的返回值改写了...也有可能没改写。总之，如果改写了，那么看上去就像defer是在return xxx之后执行的~
 
@@ -94,4 +88,5 @@ example3
 所以这个例子的结果是1。
 
 懂了么？
+
 结论：defer确实是在return之前调用的。但表现形式上却可能不像。本质原因是return xxx语句并不是一条原子指令，defer被插入到了赋值 与 RET之前，因此可能有机会改变最终的返回值。当你觉得迷糊时，可以用我给的这套规则转一下代码。

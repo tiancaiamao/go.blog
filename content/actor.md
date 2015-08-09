@@ -1,15 +1,8 @@
-actor模型漫谈
-2012-09-07
-Category:高性能服务器
-Tags: actor model
-
-毛康力
-
-* 摘要
+# 摘要
 
 这篇文章，从go语言的channel，讲到我自己写的线程库task，从分发/订阅模式，讲到actor模型。算是一个漫谈吧，都是围绕actor模型相关的东西，目前我的一些模糊的理解。
 
-* go语言中的actor
+# go语言中的actor
 
 go语言中，通过channel + goroutine配合使用，就能达到actor模型效果了  
 
@@ -28,11 +21,11 @@ Actor行为:
 
 一个goroutine就是一个actor，通信是通过语言提供的管道完成的。go语言的goroutine是非常轻量级的，又可以充分发挥多核的优势。actor模式的核心就在这里，无锁+充分利用多核，actor之间通过消息通信共同工作。
 
-* actor模型分类
+# actor模型分类
 
 Actor模型的任务调度方式分为“基于线程（thread-based）的调度”以及“基于事件（event-based）的调度”两种。
 
-** 基于线程的   
+## 基于线程的   
 
 基于线程的调度为每个Actor分配一个线程，在接受一个消息（如在Scala Actor中使用receive）时，如果当前Actor的“邮箱（mail box）”为空，则会阻塞当前线程直到获得消息为止。   
 
@@ -44,7 +37,7 @@ Actor模型的任务调度方式分为“基于线程（thread-based）的调度
 
 因此基于线程的调度是一个拥有重大缺陷的实现，现有的Actor Model大都不会采取这种方式。
 
-** 基于事件的   
+## 基于事件的   
 
 于是另一种Actor模型的任务调度方式便是基于事件的调度。“事件”在这里可以简单理解为“消息到达”事件，而此时才会为Actor的任务分配线程并执行。   
 
@@ -52,7 +45,7 @@ Actor模型的任务调度方式分为“基于线程（thread-based）的调度
 
 在Scala Actor中也可以选择使用“react”而不是“recive”方法来使用基于事件的方式来执行任务。
 
-* 线程级actor模型的实现
+# 线程级actor模型的实现
 
 go语言中的goroutine和channel自是不用说。goroutine是非常轻量，而且调度器会使用多核。这个语言的设计就是打算这么干的。   
 
@@ -61,6 +54,7 @@ lua语言中的coroutine协程，在某种程度上也可以完成actor模型的
 我自己写过一个[[https://github.com/tiancaiamao/task][线程库]]，类似coroutine做的事情，有点像lua和go中的coroutine的一个结合。像lua一样单线程又像go一样支持channel。可以像线程级actor模型这么用。   
 
 当然，只是玩具代码，通过swapcontext保存上下文实现的，轻量还算是轻量。这么用还是有问题，主要二个:
+
 + 不像go语言，我写的这个东东不能线程的栈自动扩张   
 + 用户级的线程库，完全没有用到多核   
 
@@ -68,7 +62,7 @@ lua语言中的coroutine协程，在某种程度上也可以完成actor模型的
 
 要是真的用C语言搞一个这种东西，搞到最后就是go语言的一个拙劣的模仿品。消息队列和一些数据结构倒是蛮有用。后面再考虑自己写一个actor的框架玩玩吧...等有时间了。  
 
-* RPC与分发/订阅
+# RPC与分发/订阅
 
 本文是actor模型漫谈，为什么会谈到RPC和分发/订阅呢？  
 
@@ -87,13 +81,14 @@ lua语言中的coroutine协程，在某种程度上也可以完成actor模型的
 server如何知道要调用哪个函数？client又如何知道哪个server提供了哪些服务函数呢？这里就要讲到分发/订阅了。   
 
 首先要有一个中心server，它做两件事情：
+
 1. 接受注册事件。某个server提供什么函数，就向中心server注册一下。这就是发布过程。
 2. 响应查询事件。某个client可以向中心server查到谁谁谁，提供了什么样的RPC调用。   
 
 当然中间有点不同的地方。分发/订阅是client消息直接发到中心server，由中心server再发到其它server去执行，其它server充当的是worker的角色。  
 而RPC的中心server只是提供一个查询，返回结果中包含了比如server的端口等一些信息，后面是由client去发消息的。
 
-* actor模型
+# actor模型
 
 前面废话了这么久，最后，想一想怎么设计一个actor模型的编程框架。  
 
@@ -104,6 +99,7 @@ server如何知道要调用哪个函数？client又如何知道哪个server提�
 框架做的事情也很专一：分发消息，调用对应actor的回调函数。有个线程池，actor不等于线程。这是一个基于事件的actor模型。
 
 不管是基于线程，或者是基于事件，总结规律，看它们的共同特点:
+
 1. 都有一个回调函数 
 2. 都有消息队列   
 

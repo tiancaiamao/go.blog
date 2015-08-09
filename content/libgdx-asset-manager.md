@@ -1,9 +1,4 @@
-libgdx的AssetManager相关
-2013-08-13
-Category: Android开发
-Tags: libgdx, AssetManager
-
-* 游戏加载到98%卡死
+## 游戏加载到98%卡死
 
 最近开发中遇到的一个问题是，游戏加载到98%时会卡住。原因是我在afterload函数中做太多事了。
 
@@ -26,7 +21,7 @@ Tags: libgdx, AssetManager
 
 这个过程太耗时了，从外存到内存，然后xml的解析，然后解析后的xml生成我的Xfl结构体，然后还要再关联好Texture生成最终的动画表示。最关键问题，我游戏中有好几十个flash动画，都是在这里一口气加载的！这个是在UI线程中做的，所以导致了屏幕卡死，要停很久才会响应。
 
-* libgdx的AssetManager
+## libgdx的AssetManager
 
 去扫了一下AssetManager的源代码，看看能不能给我的FAnimation写个Loader了让它异步加载。
 
@@ -73,7 +68,7 @@ AssetManager中，setLoader是给某个类设置loader。比如自己写一个FA
 
 折腾了差不多一整天，都没搞定这个问题。搞不定，按AssetManager的规则写Loader弄出来没能正常工作，自己去重写一个AssetManager的代价又有点高。它的整个结构就是一个任务队列，加个异步的线程池，相当于一个小的调度系统了。最蛋疼的是加载过程中有依赖处理，不是从任务队列中取一个就拿去执行了，这个任务可能是带依赖的，需要先处理好依赖。
 
-* 穷人的解决方案
+## 穷人的解决方案
 
 给FAnimation写个完善的loader太疼了，自己去另做一个AssetManager更疼。想了一下穷人的解决方案，明天去试一下。
 

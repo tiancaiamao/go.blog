@@ -1,8 +1,4 @@
-用go语言和org-mode搭建自己的博客环境
-2012-12-23
-Tags: golang, blog, org-mode
-
-* 设计目标
+## 设计目标
 
 半静态的博客。尽量是self-contain的，没有数据库依赖。只要完全基本功能。使用博文头部有元信息来分类别，tag等，go语言后台动态生成按类别浏览。
 
@@ -18,13 +14,13 @@ Tags: golang, blog, org-mode
 - 管理博文的分类，tag，等
 - 评论等功能后期再考虑
 
-* 操作流程
+## 操作流程
 
 手写org格式的博文。文件格式有特殊头部存储博文json格式的meta信息。然后用emacs加工，将org文件转化为html导入到pub/post目录，只生成body部分。
  
 go语言写后台，将pub/post目录的文件结合template/post.tpl生成完整的html输出。写博客只要写org文件就行，发布就是用emacs导出html弄到pub/post目录
 
-* 目录格式
+## 目录格式
 
 生成的博客目录:
 
@@ -81,7 +77,7 @@ pub是生成的站点的根目录，其中:
 
 这个目录存放写的格式博客文件，都是.org格式的。文件头部有特殊meta信息包括发布日期，分类，tag等。
 
-* 博文头部meta格式
+## 博文头部meta格式
 
 	Title string
 	Date Time
@@ -90,7 +86,7 @@ pub是生成的站点的根目录，其中:
 	
 一个例子是：{Title:"hello world", Data: 19890-01-07, Category:["life", "test"], Tags:null }
 
-* 功能实现
+## 功能实现
 
 有几个重要的数据包括:
 

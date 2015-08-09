@@ -1,10 +1,4 @@
-zig-zag编码和group varint编码
-2013-04-18
-Tags: 编码
-
-毛康力
-
-* zig-zag编码
+## zig-zag编码
 
 zig-zag编码是一种将有符整形转化成无符的整形的一种方式。比如int32转uint32:(n<<1)^(n>>31)
 
@@ -30,7 +24,7 @@ zig-zag = E*p+E*2*(1-p) = 2E-Ep
 
 最终就是比较E跟5p的大小决定变长编码之前做zig-zag编码是否划算。如果E小于5p，则做zig-zag是划算的。E小于5p的含义就是按数值部分的变长编码平均字节长度，要小于负数比例的5倍。
 
-* group varint编码
+## group varint编码
 
 group varint编码与varint编码不同。varint编码中用1位来决定下一字节是否还是属于同一个int。而group varint编码的出发点是，用2个位来记录长度。将4个int为一组进行编码，长度信息全部记录在第一个字节中。
 

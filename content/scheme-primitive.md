@@ -1,12 +1,3 @@
-scheme中用lambda实现primitive
-2013-05-15
-Category: 编程语言
-Tags: scheme, primitive
-
-毛康力
-
-* scheme中用lambda实现primitive
-
 以前看scheme时，记得scheme是说只有几个基本的core syntax。而primitive并没有算做这门语言的必须部分。当时觉得不可思议，这门语言怎么能离得开cons,car,cdr这些基本的primitive。不过当时也没有深究。
 
 再回头看SICP时，有点震惊了。原来之后以说这些primitive并不算是语言必须的部分，是因为即使是一些primitive，用lambda,if,begin,define,quote等一些基本的元素也是可以定义出来的。scheme直接对计算本质的抽象是不需要机器的。

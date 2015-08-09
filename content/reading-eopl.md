@@ -1,9 +1,4 @@
-eopl读书笔记
-2013-07-04
-Category: 编程语言
-Tags: eopl scheme lisp
-
-* eopl读书笔记
+# eopl读书笔记
 
 Essential of Programming Language简称EOPL，名字听上去就非常霸气。第一次听到作者Dan FredMan的大名是从王垠那里，他专门写过一篇文章讲导师Dan Fredman，并称他是世界上最懂编程语言的人，你永远不知道他的极限在哪里。大师出的作品肯定是masterpiece啦！
 
