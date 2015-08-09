@@ -1,4 +1,4 @@
-(use spiffy lowdown sxml-transforms intarweb uri-common files medea srfi-69 vector-lib srfi-13 srfi-1)
+(use spiffy lowdown sxml-transforms intarweb uri-common files medea srfi-69 vector-lib srfi-13 srfi-1 atom)
 
 (define project-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/")
 (define content-path (string-append project-path "content"))
@@ -134,6 +134,56 @@
 (define (home-handler)
   (send-sxml (page "Arthur的博客" (container '(p "hello world")))))
 
+(define (read-markdown-as-sxml filename)
+  (with-input-from-file (string-append content-path "/" filename)
+    (lambda ()
+      (receive (ret _) (markdown->sxml (current-input-port)) ret))))
+
+(define (atom-entries)
+  (let loop ((i 0)
+	     (count 0)
+	     (ret '()))
+    (if (< count 10)
+	(let* ((idx (vector-ref INDEX i))
+	       (file (item 'File idx)))
+	  (if (string-suffix-ci? ".md" file)
+	      (loop (+ i 1) 
+		    (+ count 1)
+		    (cons (make-entry 
+			   title: (make-title (item 'Title idx))
+			   links: (list (make-link type: 'html
+						   uri: (string-append "http://www.zenlife.tk/" file)))
+			   id: (string-append "www.zenlife.tk/" file)
+			   updated: (item 'Date idx)
+			   published: (item 'Date idx)
+			   authors: (list (make-author name: "Arthur"
+						       uri: "http://www.zenlife.tk"
+						       email: "tiancaiamao@gmail.com"))
+			   content: (make-content
+				     (sxml->html/string (read-markdown-as-sxml file))
+				     type: 'html)) ret))
+	      (loop (+ i 1) count ret)))
+	ret)))
+
+(define (atom-handler)
+  (send-response 
+   body:
+   (with-output-to-string
+     (lambda ()
+       (write-atom-doc
+	(make-atom-doc
+	 (make-feed
+	  title: (make-title "Arthur的博客")
+	  subtitle: (make-subtitle "伟大的野心家，实践家")
+	  updated: "2005-07-31T12:29:29Z"
+	  id: "www.zenlife.tk"
+	  authors: (list (make-author name: "Arthur" email: "tiancaiamao@gmail.com"))
+	  links: (list (make-link relation: "self"
+				  type: "application/atom+xml"
+				  uri: "http://www.zenlife.tk/feed.atom"))
+	  rights: (make-rights "Copyright (c) 2015, Arthur Mao")
+	  entries: (atom-entries))))))))
+
 (define router
   (lambda (continue)
     (let* ((req (current-request))
@@ -148,7 +198,7 @@
 	     ((string=? p "about") (about-handler))
 	     ((string=? p "category") (summery-handler (uri-query uri) CATEGORY "category"))
 	     ((string=? p "tags") (summery-handler (uri-query uri) TAGS "tags"))
-	     ((string=? p "feed.atom") 6)
+	     ((string=? p "feed.atom") (atom-handler))
 	     ((string-suffix-ci? ".md" p)
 	      (parameterize ((file-extension-handlers 
 			      `(("md" . ,md-handler)))
