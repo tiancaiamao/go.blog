@@ -34,7 +34,7 @@
 		  (when (not (string=? str ""))
 			(if (hash-table-exists? ret str)
 			    (hash-table-set! ret str (cons x (hash-table-ref ret str)))
-			    (hash-table-set! ret str (cons x ret)))))
+			    (hash-table-set! ret str (cons x '())))))
 		(cdr found)))))
      INDEX)
     ret))
@@ -79,6 +79,16 @@
 			    (article title date content tags prev next)))))
 	((handle-not-found) filename))))
 
+(define (summery-handler query type title)
+  (let ((found (assq 'name query)))
+    (or (and found
+	     (let ((cate (cdr found)))
+	       (if (hash-table-exists? type cate)
+		   (send-sxml (page title
+				    (container (blog (hash-table-ref type cate)))))
+		   #f)))
+	((handle-not-found) query))))
+
 (define (blog-handler)
   (send-sxml (page "blog" 
 		   (container (blog (vector->list INDEX))))))
@@ -98,8 +108,8 @@
 	     ((string=? p "") 1)
 	     ((string=? p "index") (blog-handler))
 	     ((string=? p "about") (about-handler))
-	     ((string=? p "category") 4)
-	     ((string=? p "tags") 5)
+	     ((string=? p "category") (summery-handler (uri-query uri) CATEGORY "category"))
+	     ((string=? p "tags") (summery-handler (uri-query uri) TAGS "tags"))
 	     ((string=? p "feed.atom") 6)
 	     ((string-suffix-ci? ".md" p)
 	      (parameterize ((file-extension-handlers 
