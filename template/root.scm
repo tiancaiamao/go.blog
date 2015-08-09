@@ -54,28 +54,27 @@ var disqus_shortname = '{{ .Site.DisqusShortname }}';
 	   )    
       (div
        ,(map (lambda (x)
-	       `(a (@ (href (string-append "/tags/" x))
+	       `(a (@ (href ,(string-append "/tags/" x))
 		      (class "btn btn-info btn-xs"))
-		   x))
+		   ,x))
 	     tags)
 
        (ul (@ (class "pager"))
-	   `(if ,prev
-		(li (@ (class "previous"))
-		    (a (@ (href "xxx")) "上一篇:" ,prev)))
-	   `(if ,next
-		(li (@ (class "next"))
-		    (a (@ (href "xxx")) "下一篇:" ,next)))))
+	   ,(if prev	   
+		`(li (@ (class "previous"))
+		     (a (@ (href ,(item 'File prev))) "上一篇:" ,(item 'Title prev)))
+		'())
+	   ,(if next
+		`(li (@ (class "next"))
+		     (a (@ (href ,(item 'File next))) "下一篇:" ,(item 'Title next)))
+		'())))
       
       ;; disqus here
       )
     ))
 
 (define blog
-  (lambda (data)
-    (define (item field x)
-      (cdr (assq field x)))
-    
+  (lambda (data)    
     (map (lambda (x)
 	   (let ((title (item 'Title x))
 		 (file (item 'File x))

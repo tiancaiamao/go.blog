@@ -1,4 +1,4 @@
-(use spiffy lowdown sxml-transforms intarweb uri-common files medea srfi-69 vector-lib srfi-13)
+(use spiffy lowdown sxml-transforms intarweb uri-common files medea srfi-69 vector-lib srfi-13 srfi-1)
 
 (define project-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/")
 (define content-path (string-append project-path "content"))
@@ -39,6 +39,10 @@
      INDEX)
     ret))
 
+(define (item field x)
+  (cdr (assq field x)))
+
+
 (include "template/root.scm")
 
 (define (send-sxml sxml)
@@ -48,13 +52,32 @@
     (send-response body: body)))
 
 (define (md-handler filename)
-  (send-sxml (page "title" 
-		   (container
-		    (with-input-from-file (string-append content-path "/" filename)
-		      (lambda ()
-			;; TODO check in INDEX
-			(receive (content _) (markdown->sxml (current-input-port))
-				 (article "title" "2014-01-23" content '() #f #f))))))))
+  (define (myfind str vec)
+    (let loop ((idx 0))
+      (if (< idx (vector-length vec))
+	  (let ((x (vector-ref vec idx)))
+	    (if (string=? (item 'File x) str)
+		idx
+		(loop (+ idx 1))))
+	  #f)))
+  
+  (let ((idx (myfind (substring filename 1 (string-length filename)) INDEX))) 
+    (if idx
+	(let* ((data (vector-ref INDEX idx))
+	       (title (item 'Title data))
+	       (date (string-take (item 'Date data) 10))
+	       (tags-vec (item 'Tags data))
+	       (tags (if (vector? tags-vec) (vector->list tags-vec) '()))
+	       (prev (if (> idx 0) (vector-ref INDEX (- idx 1)) #f))
+	       (next (if (< idx (- (vector-length INDEX) 1)) (vector-ref INDEX (+ idx 1)) #f))
+	       (content (with-input-from-file (string-append content-path filename)
+			  (lambda ()
+			    (receive (ret _) (markdown->sxml (current-input-port))
+				     ret)))))
+	  (send-sxml (page title
+			   (container
+			    (article title date content tags prev next)))))
+	((handle-not-found) filename))))
 
 (define (blog-handler)
   (send-sxml (page "blog" 
