@@ -1,17 +1,17 @@
 (define sidebar
-  (lambda (category tags)
+  (lambda ()
     `(div (@ (class "well sidebar-nav"))
 	  (h2 (@ (id "nav-pills")) "Category")
-	  (ul (@ (class "nav nav-pills nav-stacked"))	      
-	      ,(map (lambda (x)
-		      `(li (a (@ (href "/categories/xxx")) "name")))
-		    category))
+	  (ul (@ (class "nav nav-pills nav-stacked"))
+	      ,(map (lambda (name)
+		      `(li (a (@ (href ,(string-append "/categories/" name))) ,name)))
+		    (hash-table-keys CATEGORY)))
 	  (h2 (@ (id "nav-pills")) "Tags")
-	  ,(map (lambda (x)
-		  `(a (@ (href "/tags/xxx"))
-		      (@ (class "btn btn-info btn-xs"))
-		      "name"))
-		tags))))
+	  ,(map (lambda (name)
+		  `(a (@ (href ,(string-append "/tags/" name))
+			 (class "btn btn-info btn-xs"))
+		      ,name))
+		(hash-table-keys TAGS)))))
 
 #|
 (define disqus
@@ -54,7 +54,7 @@ var disqus_shortname = '{{ .Site.DisqusShortname }}';
 	   )    
       (div
        ,(map (lambda (x)
-	       `(a (@ (href "/tags/xxx")
+	       `(a (@ (href (string-append "/tags/" x))
 		      (class "btn btn-info btn-xs"))
 		   x))
 	     tags)
@@ -77,10 +77,11 @@ var disqus_shortname = '{{ .Site.DisqusShortname }}';
       (cdr (assq field x)))
     
     (map (lambda (x)
-	   `(p (@ (class "blogtitle"))
-	       (a (@ (href ,(item 'File x)))
-		  ,(item 'Title x))
-	       (br (span (@ (class "date")) (item 'Date x)))))
+	   (let ((title (item 'Title x))
+		 (file (item 'File x))
+		 (date (item 'Date x)))
+	     `((h2 (a (@ (href ,file)) ,title))
+	       (div (@ (class "meta")) ,(string-take date 10)))))
 	 data)))
 	  
 (define page
@@ -123,7 +124,7 @@ var disqus_shortname = '{{ .Site.DisqusShortname }}';
 	     (div (@ (class "col-sm-3")
 		     (id "sidebar")
 		     (role "navigation"))
-		  ,(sidebar '() '())))))
+		  ,(sidebar)))))
 
 (define about
   (lambda ()
