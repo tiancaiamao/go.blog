@@ -1,5 +1,3 @@
-# acme--失落的黑魔法
-
 [acme](http://research.swtch.com/acme)，这是一个被世人遗忘了的强大工具，我把它称作失落的黑魔法。它是一个shell/窗口管理系统/编辑器。很难对没有使用过它的人描述清楚它是什么。按russ cox的说法，它是一个integrating development environment。(注意IDE中的I是integrated)。
 
 acme出自贝尔实验室的plan9操作系统，由rob pike设计。说到plan9，多扯几句闲话。我最早接触过plan9系统还是在使用emacs之前。装虚拟机进去看了一圈，发现什么都没有，什么都干不了。鼠标手势很奇怪，这是一个跟我接触过的linux/window之类的完全不一样的东西，我立马被吓坏了。

@@ -1,5 +1,3 @@
-# libgdx游戏中整合facebook
-
 ## 跨平台问题
 
 从ligdx调用facebook。由于ApplicationListener是跨平台的，而facebook提供的sdk是跟android绑定的，所以不能让ApplicationListener直接依赖于facebook sdk，否则就会形成跨平台的java依赖于android，这显然是反人类的。
