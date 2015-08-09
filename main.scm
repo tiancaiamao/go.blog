@@ -131,6 +131,9 @@
 (define (about-handler)
   (send-sxml (page "About" (container (about)))))
 
+(define (home-handler)
+  (send-sxml (page "Arthur的博客" (container '(p "hello world")))))
+
 (define router
   (lambda (continue)
     (let* ((req (current-request))
@@ -140,7 +143,7 @@
       (if (null? (cdr pl))
 	  (let ((p (car pl)))
 	    (cond
-	     ((string=? p "") 1)
+	     ((string=? p "") (home-handler))
 	     ((string=? p "index") (blog-handler))
 	     ((string=? p "about") (about-handler))
 	     ((string=? p "category") (summery-handler (uri-query uri) CATEGORY "category"))
