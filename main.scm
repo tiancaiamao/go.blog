@@ -45,22 +45,25 @@
 
 (include "template/root.scm")
 
+(define (sxml->html/string sxml)
+  (with-output-to-string 
+    (lambda () 
+      (SXML->HTML sxml))))
+
 (define (send-sxml sxml)
-  (let ((body (with-output-to-string 
-		(lambda () 
-		  (SXML->HTML sxml)))))
+  (let ((body (sxml->html/string sxml)))
     (send-response body: body)))
 
-(define (md-handler filename)
-  (define (myfind str vec)
-    (let loop ((idx 0))
-      (if (< idx (vector-length vec))
-	  (let ((x (vector-ref vec idx)))
-	    (if (string=? (item 'File x) str)
-		idx
-		(loop (+ idx 1))))
-	  #f)))
-  
+(define (myfind str vec)
+  (let loop ((idx 0))
+    (if (< idx (vector-length vec))
+	(let ((x (vector-ref vec idx)))
+	  (if (string=? (item 'File x) str)
+	      idx
+	      (loop (+ idx 1))))
+	#f)))
+
+(define (md-handler filename)    
   (let ((idx (myfind (substring filename 1 (string-length filename)) INDEX))) 
     (if idx
 	(let* ((data (vector-ref INDEX idx))
@@ -77,6 +80,38 @@
 	  (send-sxml (page title
 			   (container
 			    (article title date content tags prev next)))))
+	((handle-not-found) filename))))
+
+(define (read-file-as-string filename)
+  (with-output-to-string
+    (lambda ()
+      (with-input-from-file filename
+	(lambda ()
+	  (copy-port (current-input-port) (current-output-port)))))))
+
+(define (html-handler filename)   
+  (define (my-string-replace str from to)
+    (let ((start (string-contains str from)))
+      (when start
+	    (let ((end (+ start (string-length from))))
+	      (string-replace str to start end)))))
+  
+  (let ((idx (myfind (substring filename 1 (string-length filename)) INDEX))) 
+    (if idx
+	(let* ((data (vector-ref INDEX idx))
+	       (title (item 'Title data))
+	       (date (string-take (item 'Date data) 10))
+	       (tags-vec (item 'Tags data))
+	       (tags (if (vector? tags-vec) (vector->list tags-vec) '()))
+	       (prev (if (> idx 0) (vector-ref INDEX (- idx 1)) #f))
+	       (next (if (< idx (- (vector-length INDEX) 1)) (vector-ref INDEX (+ idx 1)) #f))
+	       (content (read-file-as-string (string-append content-path filename)))
+	       (sxml (sxml->html/string
+		      (page title
+			    (container
+			     (article title date 'THIS_IS_FOR_REPLACE tags prev next)))))
+	       (body (my-string-replace sxml "THIS_IS_FOR_REPLACE" content)))
+	  (send-response body: body))
 	((handle-not-found) filename))))
 
 (define (summery-handler query type title)
@@ -116,9 +151,14 @@
 			      `(("md" . ,md-handler)))
 			     (root-path content-path))
 			    (continue)))
+	     ((string-suffix-ci? ".html" p)
+	      (parameterize ((file-extension-handlers 
+			      `(("html" . ,html-handler)))
+			     (root-path content-path))
+			    (continue)))
 	     (else
 	      ((handle-not-found) path))))
-	  (parameterize ((root-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/"))
+	  (parameterize ((root-path project-path))
 			(continue))))))
 
 (server-port 8088)
