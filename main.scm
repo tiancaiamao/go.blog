@@ -41,8 +41,8 @@
     ret))
 
 (define INDEX (build-index))
-(define CATEGORY (build-category index))
-(define TAGS (build-tags index))
+(define CATEGORY (build-category INDEX))
+(define TAGS (build-tags INDEX))
 
 (define check-index-update
   (let ((last-update (time->seconds (current-time))))
@@ -199,6 +199,33 @@
 	  rights: (make-rights "Copyright (c) 2015, Arthur Mao")
 	  entries: (atom-entries))))))))
 
+(define style-str
+  (apply string-append
+	 '("@import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);\n"
+	   "@import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);\n"
+	   "@import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);\n"
+	   "\tbody { font-family: 'Droid Serif'; }\n"
+	   "\th1, h2, h3 {\n"
+	   "\t\tfont-family: 'Yanone Kaffeesatz';\n"
+	   "\t\tfont-weight: normal;\n"
+	   "\t}\n"
+	   "\t.remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }\n"
+	   )))
+
+(define (slide-handler file)
+  (send-response
+   body:
+   (with-output-to-string
+     (lambda ()
+       (SRV:send-reply (pre-post-order 
+			(pre-post-order (slide)
+					`(($STYLE$ . ,(lambda (tag) style-str))
+					  ($SCRIPT$ . ,(lambda (tag)
+							 (string-append "var slideshow = remark.create({\n\tsourceUrl: 'content/" file "'\n});")))
+					  (*text* . ,(lambda (tag str) str))
+					  (*default* . ,(lambda x x))))
+			universal-conversion-rules))))))
+
 (define router
   (lambda (continue)
     (let* ((req (current-request))
@@ -225,6 +252,8 @@
 			      `(("html" . ,html-handler)))
 			     (root-path content-path))
 			    (continue)))
+	     ((string-suffix-ci? ".slide" p)
+	      (slide-handler p))
 	     (else
 	      ((handle-not-found) path))))
 	  (parameterize ((root-path project-path))

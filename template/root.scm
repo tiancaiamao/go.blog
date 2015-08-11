@@ -166,12 +166,14 @@ var disqus_shortname = '{{ .Site.DisqusShortname }}';
        (title "title")
        (meta (@ (charset "utf-8")))
        (style
-	   )
+	   ($STYLE$)
+	 )
        )
       (body
        (textarea (@ (id "source")))
        (script (@ (src "https://gnab.github.io/remark/downloads/remark-latest.min.js")))
        (script
+	($SCRIPT$)
 	)
        )
       )))
