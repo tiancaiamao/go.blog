@@ -1,9 +1,16 @@
-y combinator推导
+class: center, middle
+
+# y combinator推导
+
 2014-12-17
+
 Category: 编程语言
+
 Tags: y combinator, lambda
 
-* 定义阶乘函数
+---
+
+# 定义阶乘函数
 
 	(define (fact n)
 	  (if (= n 1)
@@ -19,7 +26,9 @@ Tags: y combinator, lambda
 			
 这一步到下一步的变换是最难理解的，因为即将出现高阶函数			
 
-* meta-fact
+---
+
+# meta-fact
 
 如果可以命名，可以把这个东西叫meta-fact
 meta-fact接受一个函数作为参数，返回一个计算阶乘的函数
@@ -34,7 +43,9 @@ meta-fact接受一个函数作为参数，返回一个计算阶乘的函数
 
 	((meta-fact meta-fact) 5) ;;120
 
-* 继续推导
+---
+
+# 继续推导
 
 好吧，故事继续回到我们不能使用define
 那么(meta-fact meta-fact)需要这样写
@@ -48,7 +59,9 @@ meta-fact接受一个函数作为参数，返回一个计算阶乘的函数
 	      (if (< n 2) 1
 	          (* n ((f f) (- n 1)))))))
 
-* 提取重复的操作
+---
+
+# 提取重复的操作
 
 	((lambda (f)
 	    (lambda (n)
@@ -67,7 +80,9 @@ meta-fact接受一个函数作为参数，返回一个计算阶乘的函数
 	      (if (< n 2) 1
 	          (* n ((f f) (- n 1)))))))
 
-* 继续提取重复部分
+---
+
+# 继续提取重复部分
 
 	((lambda (x) (x x))
 	 (lambda (f)
@@ -86,9 +101,12 @@ meta-fact接受一个函数作为参数，返回一个计算阶乘的函数
 	        (f f))))
 
 call-by-value在这一步会死循环的
+
 oh no!			
 
-* 处理死循环
+---
+
+# 处理死循环
 
 	((lambda (x) (x x))
 	 (lambda (f)
@@ -109,7 +127,9 @@ oh no!
 	            (* n (g (- n 1))))))
 	        (lambda (v) ((f f) v)))))
 
-* 参数化
+---
+
+# 参数化
 
 	((lambda (x) (x x))
 	 (lambda (f)
@@ -130,7 +150,9 @@ oh no!
 	        (if (< n 2) 1
 	            (* n (g (- n 1)))))))
 
-* Y combinator
+---
+
+# Y combinator
 
 	((lambda (F)
 	  ((lambda (x) (x x))
@@ -147,8 +169,10 @@ oh no!
 	  ((lambda (x) (x x))
 	   (lambda (f)
 	     (F (lambda (v) ((f f) v))))))
+
+---
 		 
-* 一些变种写法
+# 一些变种写法
 
 不处理call-by-name
 

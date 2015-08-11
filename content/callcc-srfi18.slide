@@ -1,9 +1,16 @@
-从call/cc到srfi-18
+class: center, middle
+
+# 从call/cc到srfi-18
+
 2015-08-04
+
 Category: 高性能服务器
+
 Tags: call/cc, srfi-18, continuation, scheme
 
-* 写个队列
+---
+
+# 写个队列
 
 	(define ready-head '())
 	(define ready-tail '())
@@ -23,7 +30,9 @@ Tags: call/cc, srfi-18, continuation, scheme
 
 简单的单链表的队列实现，ready-head和ready-tail分别记录头尾指针。
 
-* call/cc的使用
+---
+
+# call/cc的使用
 
 	(ready-enqueue
 	 (lambda (_)
@@ -45,7 +54,9 @@ Tags: call/cc, srfi-18, continuation, scheme
 
 协程B打印一行，从队列中取出之前保存的连续，切换。返回后，B会再打印一行。
 
-* 抽象出switch，schedule和yield
+---
+
+# 抽象出switch，schedule和yield
 
 	(let ((next (ready-dequeue)))
 	  (call/cc (lambda (save)
@@ -69,7 +80,9 @@ Tags: call/cc, srfi-18, continuation, scheme
 
 schedule之后会做更复杂的工作。yield判断不为空才切换。
 
-* 使用yield改写之前的代码
+---
+
+# 使用yield改写之前的代码
 
 	(ready-enqueue
 	 (lambda (_)
@@ -86,7 +99,9 @@ schedule之后会做更复杂的工作。yield判断不为空才切换。
 
 存在问题：即使协程A结束了，也不会它的连续从队列中清除。
 
-* thread-start!函数
+---
+
+# thread-start!函数
 
 	(define (A)
 	  (printf "in A...yield to B~%")
@@ -101,7 +116,9 @@ schedule之后会做更复杂的工作。yield判断不为空才切换。
 
 通过thread-start!函数，我们对原始thunk包裹了一层退出代码。
 
-* 再多几个协程
+---
+
+# 再多几个协程
 
 	(define (A)
 	  (printf "in A...yield to B~%")

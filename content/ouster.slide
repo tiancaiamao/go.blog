@@ -1,51 +1,74 @@
-Ouster的技术分享
+class: center, middle
+
+# Ouster的技术分享
+
 一个Go语言的mmorpg项目
+
 2013-06-10
+
 Category: 后端技术
+
 Tags: ouster, mmorpg
 
-* 大纲
+---
+
+# 大纲
 
 - Ouster项目简介
 - 技术选型
 - 架构
 - 总结
 
-* Ouster项目简介
+---
 
-* 起源
+# Ouster项目简介
 
-.link https://github.com/tiancaiamao/ouster
+---
+
+# 起源
+
+https://github.com/tiancaiamao/ouster
+
 - just for fun! 我喜欢游戏，但不是android小游戏
 - 给自己放个长假，用三个月时间去思考人生
 - 名字来历，ouster是网游darkeden中的一个种族
 
-* 目标
+---
+
+# 目标
 
 - 项目是没有目标的，just for fun! 
 - 做这件事情是为了思考人生。
 - 为三个月后我该做什么寻找答案
 
-* 规划
+---
+
+# 规划
 
 - 客户端基于开源的flare项目，服务端使用Go语言自己实现。
 - 尽量选用开源的代码的工具，以时间成本为最重要考量因素。
 - 只做demo/自己决定需求。
 - 只给自己三个月时间。
 
-* 技术选型
+---
 
-* flare 
+# 技术选型
+
+---
+
+# flare 
 
 客户端基于flare开发。flare是一个开源的，c/c++语言的，类diablo的，单机rpg游戏(引擎)
 
-.link https://github.com/clintbellanger/flare-game
+https://github.com/clintbellanger/flare-game
 
 没有美术/没有时间和精力搞客户端
 
 除了网络模块，该有的都有了，麻雀虽小，五脏惧全
 
-* Go
+---
+
+# Go
 
 服务端使用Go语言自己开发。
 
@@ -55,32 +78,42 @@ Tags: ouster, mmorpg
 
 打个广告 
 
-.link http://github.com/tiancaiamao/go-internals
+http://github.com/tiancaiamao/go-internals
 
-* msgpack
+---
 
-.link http://msgpack.org/
+# msgpack
+
+http://msgpack.org/
 
 一个类似json的数据描述格式，二进制
 
 用于封包模块，标准格式，速度非常快。
 
-.image static/msgpack.png
+![](static/msgpack.png)
 
-* 存储
+---
+
+# 存储
 
 - 不采用数据库，直接使用文件作为存储手段
 - 网游的存储需求跟web其实很不一样
 
-* 架构
+---
 
-* agent
+# 架构
+
+---
+
+# agent
 
 agent是一个独立的goroutine/虚拟机。ouster架构中最核心的一个概念。
 
 为每个玩家的接入提供一个 agent 服务。agent 响应玩家发送过来的数据包，然后给予反馈。状态全部在agent中，客户端只负责显示。
 
-主要参考云风的 [[http://blog.codingnow.com/2012/09/the_design_of_skynet.html][skynet]]的设计。skynet花了很大精力来做一套高性能actor模型的游戏服务器开发框架，而Go语言的goroutine本身非常合适这种任务！
+主要参考云风的 [skynet](http://blog.codingnow.com/2012/09/the_design_of_skynet.html)的设计。
+
+skynet花了很大精力来做一套高性能actor模型的游戏服务器开发框架，而Go语言的goroutine本身非常合适这种任务！
 
 	for {
 		select {
@@ -93,7 +126,9 @@ agent是一个独立的goroutine/虚拟机。ouster架构中最核心的一个�
 		}
 	}
 
-* scene
+---
+
+# scene
 
 每张地图或副本对应一个scene，可以看作地图服务器，也是一个goroutine。
 
@@ -119,17 +154,23 @@ agent是一个独立的goroutine/虚拟机。ouster架构中最核心的一个�
 		}
 	}
 
-* aoi模块
+---
+
+# aoi模块
 
 area of interest的英文缩写。非常核心的模块，减少广播数量。
 
 本质上，网游服务器就是一个分发/订阅的消息推送系统
 
-aoi算法：遍历(n^2)、灯塔((n/m)^2)等。ouster使用云风提的一个 [[http://blog.codingnow.com/2012/03/dev_note_13.html][算法]]
+aoi算法：遍历(n^2)、灯塔((n/m)^2)等。
 
-.image static/TowerAOI.png
+ouster使用云风提的一个[算法](http://blog.codingnow.com/2012/03/dev_note_13.html)
 
-* 场景漫游/同步
+![](static/TowerAOI.png)
+
+---
+
+# 场景漫游/同步
 
 解决的是不同客户端与服务端之间看到的事物的 *时差* 问题。
 
@@ -140,7 +181,9 @@ _玩家A在T1发消息从P1移动到P2，玩家B在T2时刻收到这个消息时
 
 真实世界以服务端时间为基准，真实速度也是以服务端为基准，客户端通过预测，基于真实速度调节一个客户端的伪速度。
 
-* packet模块
+---
+
+# packet模块
 
 接口最重要
 
@@ -161,7 +204,9 @@ _玩家A在T1发消息从P1移动到P2，玩家B在T2时刻收到这个消息时
 
 长连接，单个goroutine会占8k内存，可以考虑连接池和ring buffer
 
-* 战斗/寻路/AI
+---
+
+# 战斗/寻路/AI
 
 相对外围一点但也是非常重要的模块。
 
@@ -169,7 +214,9 @@ _玩家A在T1发消息从P1移动到P2，玩家B在T2时刻收到这个消息时
 
 考虑另外开单独的goroutine提供服务。
 
-* login
+---
+
+# login
 
 跟游戏服务器本身耦合不重，一般的网游服务器会利用login服务器做gate。
 
@@ -177,7 +224,9 @@ ouster直接做成一个简单的模块。单进程，单app。
 
 加密，认证这些都不用考虑得太深，精力有限，先做demo。
 
-* 优化阶段
+---
+
+# 优化阶段
 
 过早优化是万恶之源。代价太大提升太小就不值得优化。目前大多东西都是奔着demo去的。
 
@@ -186,7 +235,9 @@ ouster直接做成一个简单的模块。单进程，单app。
 - 热更新难做
 - 插件系统
 
-* 总结
+---
+
+# 总结
 
 我准备用三个月时间去做一些很理想主义的事情--ouster项目。
 
