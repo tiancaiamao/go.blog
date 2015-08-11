@@ -2,12 +2,13 @@
 
 (define project-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/")
 (define content-path (string-append project-path "content"))
-(define INDEX 
+
+(define (build-index)
   (with-input-from-file (string-append content-path "/index.json")
     (lambda ()
       (read-json))))
 
-(define CATEGORY
+(define (build-category index)
   (let ((ret (make-hash-table)))
     (vector-for-each
      (lambda (i x)
@@ -18,10 +19,10 @@
 		       (if (hash-table-exists? ret str)
 			   (hash-table-set! ret str (cons x (hash-table-ref ret str)))
 			   (hash-table-set! ret str (cons x '()))))))))
-     INDEX)
+     index)
     ret))
 
-(define TAGS
+(define (build-tags index)
   (let ((ret (make-hash-table)))
     (vector-for-each 
      (lambda (_ x)
@@ -36,8 +37,22 @@
 			    (hash-table-set! ret str (cons x (hash-table-ref ret str)))
 			    (hash-table-set! ret str (cons x '())))))
 		(cdr found)))))
-     INDEX)
+     index)
     ret))
+
+(define INDEX (build-index))
+(define CATEGORY (build-category index))
+(define TAGS (build-tags index))
+
+(define check-index-update
+  (let ((last-update (time->seconds (current-time))))
+    (lambda ()
+      (let ((now (time->seconds (current-time))))
+	(when (> (- now last-update) 180)
+	      (set! last-update now)
+	      (set! INDEX (build-index))
+	      (set! CATEGORY (build-category INDEX))
+	      (set! TAGS (build-tags INDEX)))))))
 
 (define (item field x)
   (cdr (assq field x)))
@@ -192,6 +207,7 @@
 	   (pl (cdr path)))
       (if (null? (cdr pl))
 	  (let ((p (car pl)))
+	    (check-index-update)
 	    (cond
 	     ((string=? p "") (home-handler))
 	     ((string=? p "index") (blog-handler))

@@ -158,3 +158,20 @@ var disqus_shortname = '{{ .Site.DisqusShortname }}';
 			    (id "text-3"))
 			 (p (br "可以加我QQ：306345843")
 			    (br "或者发邮件：tiancaiamao at gmail dot com"))))))))
+
+(define slide
+  (lambda ()
+    `(html
+      (head
+       (title "title")
+       (meta (@ (charset "utf-8")))
+       (style
+	   )
+       )
+      (body
+       (textarea (@ (id "source")))
+       (script (@ (src "https://gnab.github.io/remark/downloads/remark-latest.min.js")))
+       (script
+	)
+       )
+      )))
