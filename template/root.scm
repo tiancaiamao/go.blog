@@ -16,9 +16,9 @@
 (define (disqus title url)
   (define script
     (apply string-append
-	   `("var disqus_identifier = '" ,url "';\n"
+	   `("\nvar disqus_identifier = 'http://www.zenlife.tk" ,url "';\n"
 	     "var disqus_title = '" ,title "';\n"
-	     "var disqus_url = '{{with .GetParam \"disqus_url\" }}{{ . | html  }}{{ else }}{{ .Permalink }}{{end}}';\n\n"
+	     "var disqus_url = 'http://www.zenlife.tk" ,url "';\n\n"
 	     "(function() {\n"
 	     "\tvar dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;\n"
 	     "\tdsq.src = '//codingnow.disqus.com/embed.js';\n"
@@ -29,11 +29,12 @@
 	  (div (h2 "Comments"))
 	  (div (@ (id "disqus_thread")))
 	  (script (@ (type "text/javascript"))
-		  ,script
-		  (noscript "Please enable JavaScript to view the " (a (@ (href "http://disqus.com/?ref_noscript")) "comments powered by Disqus."))
-		  (a (@ (href "http://disqus.com")
-			(class "dsq-brlink")) "comments powered by"
-			(span (@ (class "logo-disqus")) "Disqus")))))
+		  ,script		  
+		  )
+	  (noscript "Please enable JavaScript to view the " (a (@ (href "http://disqus.com/?ref_noscript")) "comments powered by Disqus."))
+	  (a (@ (href "http://disqus.com")
+		(class "dsq-brlink")) "comments powered by"
+		(span (@ (class "logo-disqus")) "Disqus"))))
 
 (define article
   (lambda (title date content tags prev next permlink)

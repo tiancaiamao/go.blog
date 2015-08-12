@@ -1,4 +1,5 @@
-[{"Title":"从call/cc到srfi-18","Date":"2015-08-04T20:44:42Z","Category":"高性能服务器","Tags":["call/cc","srfi-18","continuation","scheme"],"File":"callcc-srfi18.slide"},
+[{"Title":"chicken scheme实践之二","Date":"2015-08-12T15:52:42Z","Category":"","Tags":["chicken","scheme","blog"],"File":"chicken-scheme-practice2.md"},
+ {"Title":"从call/cc到srfi-18","Date":"2015-08-04T20:44:42Z","Category":"高性能服务器","Tags":["call/cc","srfi-18","continuation","scheme"],"File":"callcc-srfi18.slide"},
  {"Title":"zanshin--写个虚拟机用于调试","Date":"2015-07-31T16:03:42Z","Category":"编译器","Tags":["golang","VM","调试","scheme"],"File":"zanshin.md"},
  {"Title":"chicken scheme实践","Date":"2015-07-07T15:16:42Z","Category":"","Tags":["chicken","scheme"],"File":"chicken-scheme-practice.md"},
  {"Title":"Go1.5的垃圾回收","Date":"2015-06-30T13:02:42Z","Category":"","Tags":["垃圾回收","golang"],"File":"go-gc1.5.md"},
