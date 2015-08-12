@@ -94,7 +94,7 @@
 				     ret)))))
 	  (send-sxml (page title
 			   (container
-			    (article title date content tags prev next)))))
+			    (article title date content tags prev next filename)))))
 	((handle-not-found) filename))))
 
 (define (read-file-as-string filename)
@@ -124,7 +124,7 @@
 	       (sxml (sxml->html/string
 		      (page title
 			    (container
-			     (article title date 'THIS_IS_FOR_REPLACE tags prev next)))))
+			     (article title date 'THIS_IS_FOR_REPLACE tags prev next filename)))))
 	       (body (my-string-replace sxml "THIS_IS_FOR_REPLACE" content)))
 	  (send-response body: body))
 	((handle-not-found) filename))))

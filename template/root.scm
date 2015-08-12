@@ -13,38 +13,30 @@
 		      ,name))
 		(hash-table-keys TAGS)))))
 
-#|
-(define disqus
-  (lambda ()
-    `(aside (@ (id "comments"))
-	    (div (h2 "Comments"))
-	    
-	    (div (@ (id "disqus_thread")))
-	    (script (@ (type "text/javascript"))
-   
-var disqus_shortname = '{{ .Site.DisqusShortname }}';
-    var disqus_identifier = '{{with .GetParam "disqus_identifier" }}{{ . }}{{ else }}{{ .Permalink }}{{end}}';
-    var disqus_title = '{{with .GetParam "disqus_title" }}{{ . }}{{ else }}{{ .Title }}{{end}}';
-    var disqus_url = '{{with .GetParam "disqus_url" }}{{ . | html  }}{{ else }}{{ .Permalink }}{{end}}';
+(define (disqus title url)
+  (define script
+    (apply string-append
+	   `("var disqus_identifier = '" ,url "';\n"
+	     "var disqus_title = '" ,title "';\n"
+	     "var disqus_url = '{{with .GetParam \"disqus_url\" }}{{ . | html  }}{{ else }}{{ .Permalink }}{{end}}';\n\n"
+	     "(function() {\n"
+	     "\tvar dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;\n"
+	     "\tdsq.src = '//codingnow.disqus.com/embed.js';\n"
+	     "\t(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);\n"
+	     "})();\n")))
 
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-
-)
-
-(noscript "Please enable JavaScript to view the " (a (@ (href "http://disqus.com/?ref_noscript")) "comments powered by Disqus." ))
-(a (@ (href "http://disqus.com")
-      (class "dsq-brlink"))
-   "comments powered by " (span (@ (class "logo-disqus")) "Disqus"))
-
-	    )))
-|#
+  `(aside (@ (id "comments"))
+	  (div (h2 "Comments"))
+	  (div (@ (id "disqus_thread")))
+	  (script (@ (type "text/javascript"))
+		  ,script
+		  (noscript "Please enable JavaScript to view the " (a (@ (href "http://disqus.com/?ref_noscript")) "comments powered by Disqus."))
+		  (a (@ (href "http://disqus.com")
+			(class "dsq-brlink")) "comments powered by"
+			(span (@ (class "logo-disqus")) "Disqus")))))
 
 (define article
-  (lambda (title date content tags prev next)
+  (lambda (title date content tags prev next permlink)
     `((div (@ (id "content"))
 	   (h1 (@ (id "Title")) ,title)
 	   (p ,date)
@@ -70,6 +62,7 @@ var disqus_shortname = '{{ .Site.DisqusShortname }}';
 		'())))
       
       ;; disqus here
+      ,(disqus title permlink)
       )
     ))
 
@@ -161,7 +154,7 @@ var disqus_shortname = '{{ .Site.DisqusShortname }}';
 
 (define slide
   (lambda ()
-    `(html
+    '(html
       (head
        (title "title")
        (meta (@ (charset "utf-8")))
