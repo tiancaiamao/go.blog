@@ -29,7 +29,7 @@
 	  (div (h2 "Comments"))
 	  (div (@ (id "disqus_thread")))
 	  (script (@ (type "text/javascript"))
-		  ,script		  
+		  ,script
 		  )
 	  (noscript "Please enable JavaScript to view the " (a (@ (href "http://disqus.com/?ref_noscript")) "comments powered by Disqus."))
 	  (a (@ (href "http://disqus.com")
@@ -41,10 +41,10 @@
     `((div (@ (id "content"))
 	   (h1 (@ (id "Title")) ,title)
 	   (p ,date)
-	   
+
 	   ,content
-	   
-	   )    
+
+	   )
       (div
        ,(map (lambda (x)
 	       `(a (@ (href ,(string-append "/tags?name=" x))
@@ -53,7 +53,7 @@
 	     tags)
 
        (ul (@ (class "pager"))
-	   ,(if prev	   
+	   ,(if prev
 		`(li (@ (class "previous"))
 		     (a (@ (href ,(item 'File prev))) "上一篇:" ,(item 'Title prev)))
 		'())
@@ -61,14 +61,14 @@
 		`(li (@ (class "next"))
 		     (a (@ (href ,(item 'File next))) "下一篇:" ,(item 'Title next)))
 		'())))
-      
+
       ;; disqus here
       ,(disqus title permlink)
       )
     ))
 
 (define blog
-  (lambda (data)    
+  (lambda (data)
     (map (lambda (x)
 	   (let ((title (item 'Title x))
 		 (file (item 'File x))
@@ -76,13 +76,13 @@
 	     `((h2 (a (@ (href ,file)) ,title))
 	       (div (@ (class "meta")) ,(string-take date 10)))))
 	 data)))
-	  
+
 (define page
   (lambda (title container)
     `(html (@ (lang "zh_CN"))
 	   (head
-	    (meta (@ (charset "utf-8")))	    
-	    (title ,title)	    
+	    (meta (@ (charset "utf-8")))
+	    (title ,title)
 	    (link (@ (rel "stylesheet")
 		     (href "http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"))))
 	   (body
@@ -95,16 +95,16 @@
 			       (li (a (@ href "http://github.com/tiancaiamao") "Project"))
 			       (li (a (@ href "/about") "About"))
 			       (li (a (@ href "/feed.atom") "Rss"))))))
-	    
+
 	    ,container
 
 	    (hr)
-	    
+
 	    (footer
 	     (p (@ (class "nav navbar-nav navbar-right"))
 		"Powered by " (a (@ (href "http://www.call-cc.org")) "chicken")
 		" & " (a (@ (href "http://getbootstrap.com/")) "Bootstrap")))
-	    
+
 	    ) ;; end body
 	   ) ;; end html
     ))
@@ -136,11 +136,11 @@
 	       (div (@ (id "outline-container-2")
 		       (class "outline-2"))
 		    (h2 (@ (id "sec-2")) "关于网站")
-		    
+
 		    (div (@ (class "outline-text-2")
 			    (id "text-2"))
 			 (p
-			  (br (a (@ (href "http://www.call-cc.org")) "chicken") "写的后端。前端使用了" 
+			  (br (a (@ (href "http://www.call-cc.org")) "chicken") "写的后端。前端使用了"
 			      (a (@ (href "http://getbootstrap.com")) "bootstrap") "模板。文章内容使用markdown格式书写。")
 			  (br (a (@ (href "http://github.com/tiancaiamao/go.blog")) "这里") "是这个博客的源代码"))))
 

@@ -61,8 +61,8 @@
 (include "template/root.scm")
 
 (define (sxml->html/string sxml)
-  (with-output-to-string 
-    (lambda () 
+  (with-output-to-string
+    (lambda ()
       (SXML->HTML sxml))))
 
 (define (send-sxml sxml)
@@ -78,7 +78,7 @@
 	      (loop (+ idx 1))))
 	#f)))
 
-(define (md-handler filename)    
+(define (md-handler filename)
   (let ((idx (myfind (substring filename 1 (string-length filename)) INDEX))) 
     (if idx
 	(let* ((data (vector-ref INDEX idx))
@@ -104,13 +104,13 @@
 	(lambda ()
 	  (copy-port (current-input-port) (current-output-port)))))))
 
-(define (html-handler filename)   
+(define (html-handler filename)
   (define (my-string-replace str from to)
     (let ((start (string-contains str from)))
       (when start
 	    (let ((end (+ start (string-length from))))
 	      (string-replace str to start end)))))
-  
+
   (let ((idx (myfind (substring filename 1 (string-length filename)) INDEX))) 
     (if idx
 	(let* ((data (vector-ref INDEX idx))
@@ -140,7 +140,7 @@
 	((handle-not-found) query))))
 
 (define (blog-handler)
-  (send-sxml (page "blog" 
+  (send-sxml (page "blog"
 		   (container (blog (vector->list INDEX))))))
 
 (define (about-handler)
@@ -162,9 +162,9 @@
 	(let* ((idx (vector-ref INDEX i))
 	       (file (item 'File idx)))
 	  (if (string-suffix-ci? ".md" file)
-	      (loop (+ i 1) 
+	      (loop (+ i 1)
 		    (+ count 1)
-		    (cons (make-entry 
+		    (cons (make-entry
 			   title: (make-title (item 'Title idx))
 			   links: (list (make-link type: 'html
 						   uri: (string-append "http://www.zenlife.tk/" file)))
@@ -217,7 +217,7 @@
    body:
    (with-output-to-string
      (lambda ()
-       (SRV:send-reply (pre-post-order 
+       (SRV:send-reply (pre-post-order
 			(pre-post-order (slide)
 					`(($STYLE$ . ,(lambda (tag) style-str))
 					  ($SCRIPT$ . ,(lambda (tag)
@@ -243,12 +243,12 @@
 	     ((string=? p "tags") (summery-handler (uri-query uri) TAGS "tags"))
 	     ((string=? p "feed.atom") (atom-handler))
 	     ((string-suffix-ci? ".md" p)
-	      (parameterize ((file-extension-handlers 
+	      (parameterize ((file-extension-handlers
 			      `(("md" . ,md-handler)))
 			     (root-path content-path))
 			    (continue)))
 	     ((string-suffix-ci? ".html" p)
-	      (parameterize ((file-extension-handlers 
+	      (parameterize ((file-extension-handlers
 			      `(("html" . ,html-handler)))
 			     (root-path content-path))
 			    (continue)))
