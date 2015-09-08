@@ -92,7 +92,7 @@
 			   (ul (@ (class "nav navbar-nav"))
 			       (li (a (@ href "/") "Home"))
 			       (li (a (@ href "/index") "Blog"))
-			       (li (a (@ href "http://github.com/tiancaiamao") "Project"))
+			       (li (a (@ href "/project") "Project"))
 			       (li (a (@ href "/about") "About"))
 			       (li (a (@ href "/feed.atom") "Rss"))))))
 

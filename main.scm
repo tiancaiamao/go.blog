@@ -23,7 +23,7 @@
 
 (define (build-tags index)
   (let ((ret (make-hash-table)))
-    (vector-for-each 
+    (vector-for-each
      (lambda (_ x)
        (let ((found (assq 'Tags x)))
 	 (when (and found
@@ -142,42 +142,49 @@
   (send-sxml (page "blog"
 		   (container (blog (vector->list INDEX))))))
 
+
+(define (static-template-handler name file)
+  (send-sxml (page name (container (read-markdown-as-sxml (string-append template-path "/" file))))))
+
 (define (about-handler)
-  (send-sxml (page "About" (container (about)))))
+  (static-template-handler "About" "about.md"))
+
+(define (project-handler)
+  (static-template-handler "Project" "project.md"))
 
 (define (home-handler)
   (send-sxml (page "Arthur的博客" (container '(p "hello world")))))
 
 (define (read-markdown-as-sxml filename)
-  (with-input-from-file (string-append content-path "/" filename)
+  (with-input-from-file filename
     (lambda ()
       (receive (ret _) (markdown->sxml (current-input-port)) ret))))
 
 (define (atom-entries)
   (let loop ((i 0)
-	     (count 0)
-	     (ret '()))
+             (count 0)
+             (ret '()))
     (if (< count 10)
-	(let* ((idx (vector-ref INDEX i))
-	       (file (item 'File idx)))
-	  (if (string-suffix-ci? ".md" file)
-	      (loop (+ i 1)
-		    (+ count 1)
-		    (cons (make-entry
-			   title: (make-title (item 'Title idx))
-			   links: (list (make-link type: 'html
-						   uri: (string-append "http://www.zenlife.tk/" file)))
-			   id: (string-append "www.zenlife.tk/" file)
-			   updated: (item 'Date idx)
-			   published: (item 'Date idx)
-			   authors: (list (make-author name: "Arthur"
-						       uri: "http://www.zenlife.tk"
-						       email: "tiancaiamao@gmail.com"))
-			   content: (make-content
-				     (sxml->html/string (read-markdown-as-sxml file))
-				     type: 'html)) ret))
-	      (loop (+ i 1) count ret)))
-	ret)))
+        (let* ((idx (vector-ref INDEX i))
+               (file (item 'File idx)))
+          (if (string-suffix-ci? ".md" file)
+              (loop (+ i 1)
+                    (+ count 1)
+                    (cons (make-entry
+                           title: (make-title (item 'Title idx))
+                           links: (list (make-link type: 'html
+                                                   uri: (string-append "http://www.zenlife.tk/" file)))
+                           id: (string-append "www.zenlife.tk/" file)
+                           updated: (item 'Date idx)
+                           published: (item 'Date idx)
+                           authors: (list (make-author name: "Arthur"
+                                                       uri: "http://www.zenlife.tk"
+                                                       email: "tiancaiamao@gmail.com"))
+                           content: (make-content
+                                     (sxml->html/string (read-markdown-as-sxml (string-append content-path "/" filename)))
+                                     type: 'html)) ret))
+              (loop (+ i 1) count ret)))
+        ret)))
 
 (define (atom-handler)
   (send-response 
@@ -238,6 +245,7 @@
 	     ((string=? p "") (home-handler))
 	     ((string=? p "index") (blog-handler))
 	     ((string=? p "about") (about-handler))
+	     ((string=? p "project") (project-handler))
 	     ((string=? p "category") (summery-handler (uri-query uri) CATEGORY "category"))
 	     ((string=? p "tags") (summery-handler (uri-query uri) TAGS "tags"))
 	     ((string=? p "feed.atom") (atom-handler))
