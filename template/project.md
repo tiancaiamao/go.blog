@@ -1,13 +1,10 @@
-## 《深入解析Go》
+下面是我做的一些开源项目：
 
-这是我写的一本关于Go语言的内部实现的开源电子书。
+* [深入解析Go](http://tiancaiamao.gitbooks.io/go-internals/content/zh/index.html)
+一本关于Go语言的内部实现的电子书。
 
-[开始阅读](http://tiancaiamao.gitbooks.io/go-internals/content/zh/index.html)
+* [cora](https://github.com/tiancaiamao/cora)
+一个编译器项目，目标是将scheme语言编译成x86_64汇编代码。进行中...
 
-## cora 
 
-scheme编译器项目，还在[进行中](https://github.com/tiancaiamao/cora)。
-
----------
-
-其它的东西可以去看我的[github](https://github.com/tiancaiamao/)
+[github](https://github.com/tiancaiamao/)里面有放更多一些东西，大多只是些toys。

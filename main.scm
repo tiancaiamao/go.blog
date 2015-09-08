@@ -144,7 +144,10 @@
 
 
 (define (static-template-handler name file)
-  (send-sxml (page name (container (read-markdown-as-sxml (string-append template-path "/" file))))))
+  (send-sxml (page name (container
+                         `(div (@ (id "content"))
+                              ,(read-markdown-as-sxml (string-append template-path "/" file))
+                              )))))
 
 (define (about-handler)
   (static-template-handler "About" "about.md"))
@@ -181,7 +184,7 @@
                                                        uri: "http://www.zenlife.tk"
                                                        email: "tiancaiamao@gmail.com"))
                            content: (make-content
-                                     (sxml->html/string (read-markdown-as-sxml (string-append content-path "/" filename)))
+                                     (sxml->html/string (read-markdown-as-sxml (string-append content-path "/" file)))
                                      type: 'html)) ret))
               (loop (+ i 1) count ret)))
         ret)))
