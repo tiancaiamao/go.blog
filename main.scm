@@ -270,3 +270,5 @@
 			(continue))))))
 
 (vhost-map `((".*" . ,router)))
+(server-port PORT)
+(start-server)
