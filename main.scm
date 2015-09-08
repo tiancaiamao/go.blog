@@ -1,7 +1,6 @@
 (use spiffy lowdown sxml-transforms intarweb uri-common files medea srfi-69 vector-lib srfi-13 srfi-1 atom)
 
-(define project-path "/Users/genius/project/src/github.com/tiancaiamao/go.blog/")
-(define content-path (string-append project-path "content"))
+(load "config.scm")
 
 (define (build-index)
   (with-input-from-file (string-append content-path "/index.json")
@@ -258,7 +257,5 @@
 	      ((handle-not-found) path))))
 	  (parameterize ((root-path project-path))
 			(continue))))))
-
-(server-port 8088)
 
 (vhost-map `((".*" . ,router)))
