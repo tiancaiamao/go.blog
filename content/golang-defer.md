@@ -1,5 +1,3 @@
-# Go语言的defer，你真的懂了吗？
-
 example1
 
 	func f() (result int) {
