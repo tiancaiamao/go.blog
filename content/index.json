@@ -1,4 +1,5 @@
-[{"Title":"无锁并发","Date":"2015-10-01T21:47:42Z","Category":"高性能服务器","Tags":["无锁","CAS"],"File":"lockfree1.md"},
+[{"Title":"动态规划五道题目","Date":"2015-10-02T12:47:42Z","Tags":["动态规划","面试题"],"File":"dynamic-programming.md"},
+ {"Title":"无锁并发","Date":"2015-10-01T21:47:42Z","Category":"高性能服务器","Tags":["无锁","CAS"],"File":"lockfree1.md"},
  {"Title":"文件分发系统","Date":"2015-09-18T00:50:42Z","Category":"分布式","Tags":["delivery","p2p"],"File":"delivery.md"},
  {"Title":"chicken scheme实践之二","Date":"2015-08-12T15:52:42Z","Category":"","Tags":["chicken","scheme","blog"],"File":"chicken-scheme-practice2.md"},
  {"Title":"从call/cc到srfi-18","Date":"2015-08-04T20:44:42Z","Category":"高性能服务器","Tags":["call/cc","srfi-18","continuation","scheme"],"File":"callcc-srfi18.slide"},
