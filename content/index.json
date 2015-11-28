@@ -1,4 +1,5 @@
-[{"Title":"网络知识笔记","Date":"2015-11-13T23:48:42Z","Tags":["网络"],"File":"network.md"},
+[{"Title":"从raft看failure的处理","Date":"2015-11-28T23:54:42Z","Category":"分布式","Tags":["raft"],"File":"raft-fault-tolerance.md"},
+ {"Title":"网络知识笔记","Date":"2015-11-13T23:48:42Z","Tags":["网络"],"File":"network.md"},
  {"Title":"恶补基础知识","Date":"2015-11-04T14:27:42Z","Tags":["面试题"],"File":"恶补基础知识.md"},
  {"Title":"Go的变量到底在堆还是栈中分配","Date":"2015-10-22:11:42Z","Category":"编程语言","Tags":["golang"],"File":"go-allocated-on-heap-or-stack.md"},
  {"Title":"如何做系统设计的面试题","Date":"2015-10-07T16:11:42Z","Tags":["面试题"],"File":"如何做系统设计的面试题.md"},
