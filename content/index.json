@@ -1,4 +1,5 @@
-[{"Title":"CockroachDB中的SQL：将表数据映射为key-value存储","Date":"2015-12-20T16:24:42Z","Category":"分布式","Tags":["cockroach","sql","kv","翻译"],"File":"sql-in-cockroachdb.md"},
+[{"Title":"上线流程规范","Date":"2015-12-20T16:24:42Z","Tags":null,"File":"上线流程规范.md"},
+ {"Title":"CockroachDB中的SQL：将表数据映射为key-value存储","Date":"2015-12-20T16:24:42Z","Category":"分布式","Tags":["cockroach","sql","kv","翻译"],"File":"sql-in-cockroachdb.md"},
  {"Title":"lua试玩感受","Date":"2015-12-09T01:00:42Z","Category":"编程语言","Tags":["lua"],"File":"lua-practice.md"},
  {"Title":"从raft看failure的处理","Date":"2015-11-28T23:54:42Z","Category":"分布式","Tags":["raft"],"File":"raft-fault-tolerance.md"},
  {"Title":"网络知识笔记","Date":"2015-11-13T23:48:42Z","Tags":["网络"],"File":"network.md"},
