@@ -1,4 +1,5 @@
-[{"Title":"Rust语言初步印象","Date":"2016-03-20T11:01:42Z","Category":"编程语言","Tags":["Rust"],"File":"rust.md"},
+[{"Title":"raft实现如何做测试","Date":"2016-04-15T11:59:42Z","Category":"分布式","Tags":["raft"],"File":"raft-implementation-test.md"},
+{"Title":"Rust语言初步印象","Date":"2016-03-20T11:01:42Z","Category":"编程语言","Tags":["Rust"],"File":"rust.md"},
 {"Title":"cracking the code interview读书笔记","Date":"2016-03-19T16:01:42Z","Tags":["面试题","读书笔记"],"File":"ctci.md"},
 {"Title":"leetcode刷题","Date":"2016-03-02T23:24:42Z","Tags":["leetcode","面试题"],"File":"leetcode.md"},
 {"Title":"多资源select操作的实现模式","Date":"2016-02-24T22:13:42Z","Tags":["channel","select","golang","ltask","云风"],"File":"select-channel.md"},
