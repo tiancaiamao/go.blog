@@ -39,11 +39,9 @@ send_requestvote，send_appendentries这些涉及到网络传输的丢出去，a
 
 我们可以把传输抽象成一个这样的接口：
 
-```
     type Transport interface {
         Send(RaftMsg) (Result, error)
     }
-```
 
 然后我们模拟各种网络错误。制造网络慢，丢包，包乱序。
 
