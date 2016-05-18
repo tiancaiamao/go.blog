@@ -1,4 +1,4 @@
-[{"Title":"聊聊实现分布式事务","Date":"2016-05-19T00:49:42Z","Tags":["transaction","事务","分布式","spanner","可串行化"],"File":"distributed-transaction.md"},
+[{"Title":"聊聊实现分布式事务","Date":"2016-05-19T00:49:42Z","Tags":["transaction","事务","分布式","spanner","可串行化"],"Category":"分布式","File":"distributed-transaction.md"},
     {"Title":"利用编译技术异步转同步想法","Date":"2016-05-15T12:48:42Z","Tags":["coroutine","同步","continuation","interpret"],"File":"value-of-k.md"},
  {"Title":"封装socket","Date":"2016-05-03T02:19:42Z","Category":"高性能服务器","Tags":["lua","socket"],"File":"wrap-socket.md"},
  {"Title":"异步烧脑业务场景","Date":"2016-04-29T22:09:42Z","Tags":null,"File":"异步烧脑业务场景.md"},
