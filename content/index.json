@@ -1,4 +1,5 @@
-[{"Title":"可线性化验证","Date":"2016-07-03T21:26:42Z","Category":"分布式","Tags":["SQL"],"File":"linearizability-verify.md"},
+[{"Title":"parser的故事","Date":"2016-07-07T23:43:42Z","Tags":["SQL","parser"],"File":"parser-story.md"},
+ {"Title":"可线性化验证","Date":"2016-07-03T21:26:42Z","Category":"分布式","Tags":["SQL"],"File":"linearizability-verify.md"},
  {"Title":"查询编译","Date":"2016-06-27T14:16:42Z","Tags":["SQL"],"File":"query-compiler.md"},
  {"Title":"聊聊实现分布式事务","Date":"2016-05-19T00:49:42Z","Tags":["transaction","事务","分布式","spanner","可串行化"],"Category":"分布式","File":"distributed-transaction.md"},
  {"Title":"利用编译技术异步转同步想法","Date":"2016-05-15T12:48:42Z","Tags":["coroutine","同步","continuation","interpret"],"File":"value-of-k.md"},
