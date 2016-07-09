@@ -1,4 +1,5 @@
-[{"Title":"parser的故事","Date":"2016-07-07T23:43:42Z","Tags":["SQL","parser"],"File":"parser-story.md"},
+[{"Title":"Go中实现手动内存分配的坑","Date":"2016-07-10T01:53:42Z","Tags":["allocator","golang","内存池"],"File":"go-allocator-trap.md"},
+ {"Title":"parser的故事","Date":"2016-07-07T23:43:42Z","Tags":["SQL","parser"],"File":"parser-story.md"},
  {"Title":"可线性化验证","Date":"2016-07-03T21:26:42Z","Category":"分布式","Tags":["SQL"],"File":"linearizability-verify.md"},
  {"Title":"查询编译","Date":"2016-06-27T14:16:42Z","Tags":["SQL"],"File":"query-compiler.md"},
  {"Title":"聊聊实现分布式事务","Date":"2016-05-19T00:49:42Z","Tags":["transaction","事务","分布式","spanner","可串行化"],"Category":"分布式","File":"distributed-transaction.md"},
