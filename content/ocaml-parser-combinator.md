@@ -94,7 +94,7 @@ parser combinator，顾名思义，就是把一些最基本的parser像搭积木
 
 可以看到，ocaml这样的函数式语言，表达能力上面还是非常强大的，一个基本的C的parser估计也就400~500行的样子能搞定。不过写代码时死掉的脑细胞就不能用代码行数来衡量了，理解monad就是一个坎。
 
-想了解下函数式语言的，推荐ocaml语言。入门书的话推荐[《Developing Applications With》](http://caml.inria.fr/pub/docs/oreilly-book/html/index.html)。
+想了解下函数式语言的，推荐ocaml语言。入门书的话推荐[《Developing applications with Objective Caml》](http://caml.inria.fr/pub/docs/oreilly-book/html/index.html)。
 
 说到ocaml，看起来跟rust语法有那么一点相似的感觉，rust早期的编译器也是用ocaml写的。不过语法是非常表面的东西，两者完全不一样，rust根本不是一门函数式语言，大概类型推导是唯一从ocaml那里借鉴到一点有价值的东西。
 
