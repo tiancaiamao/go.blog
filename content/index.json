@@ -1,4 +1,5 @@
-[{"Title":"ocaml试玩：写一个parser combinator","Date":"2016-08-07T23:21:42Z","Tags":["ocaml","monad","parser","combinator"],"File":"ocaml-parser-combinator.md"},
+[{"Title":"ZINC以及partial apply","Date":"2016-09-22T18:28:42Z","Tags":["ocaml","currying","ZINC","abstract machine"], "Category":"编译器","File":"zinc.md"},
+ {"Title":"ocaml试玩：写一个parser combinator","Date":"2016-08-07T23:21:42Z","Tags":["ocaml","monad","parser","combinator"],"File":"ocaml-parser-combinator.md"},
  {"Title":"Go中实现手动内存分配的坑","Date":"2016-07-10T01:53:42Z","Tags":["allocator","golang","内存池"],"File":"go-allocator-trap.md"},
  {"Title":"parser的故事","Date":"2016-07-07T23:43:42Z","Tags":["SQL","parser"],"File":"parser-story.md"},
  {"Title":"可线性化验证","Date":"2016-07-03T21:26:42Z","Category":"分布式","Tags":["SQL"],"File":"linearizability-verify.md"},
