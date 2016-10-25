@@ -1,5 +1,3 @@
-# 现代OpenGL介绍
-
 [缓冲和纹理](http://www.zenlife.tk/an-intro-to-modern-opengl-2-1.md)包含了OpenGL程序所需要的原材料，但是没有着色器，它们只是无效的字节块。如果你还记得我们概要中的[绘图管线](http://www.zenlife.tk/an-intro-to-modern-opengl-1.md)，渲染需要一个顶点着色器将我们的顶点映射到屏幕空间，还需要一个片元着色器，对生成的三角形的光栅化片元进行着色。OpenGL中的着色器是使用一种叫作GLSL(GL Shading Language)的语言写的，它看起来跟C语言很像。在这篇文章中，我们将展示我们的"hello world"程序的着色器代码，然后写C代码来加载，编译并将它链接到OpenGL。
 
 ## 顶点着色器
@@ -198,4 +196,4 @@ GLSL链接器将一个GLint位置赋值到每个uniform变量和顶点的attribu
 
 我知道我在吊你胃口，最后部分还没完成，还没有一个完整的可以运行的程序。我将在在下次，也就是本章最后一部分，修复它，到时我会写代码让绘图管线运作起来渲染我们的场景。
 
-[<< 上一节](http://www.zenlife.tk/an-intro-to-modern-opengl-2-1.md) | [目录](http://www.zenlife.tk/an-intro-to-modern-opengl-0.md) | [下一节 >>](http://www.zenlife.tk/an-intro-to-modern-opengl-2-3.md)
+[<< 上一节](an-intro-to-modern-opengl-2-1.md) | [目录](an-intro-to-modern-opengl-0.md) | [下一节 >>](an-intro-to-modern-opengl-2-3.md)

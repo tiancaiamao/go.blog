@@ -1,5 +1,3 @@
-# 现代OpenGL介绍
-
 [上一次](http://www.zenlife.tk/an-intro-to-modern-opengl-2.md)，我们得到了一个打开的窗口并等待渲染我们的hello world程序的指令。但是在我们实际画任何东西之前，我们必须通过创建各种各样的对象并将它们作为数据传给OpenGL。让我们过一遍我们需要设置的对象：
 
 ## 再看管线
@@ -157,4 +155,4 @@ OpenGL操作对象的约定有点不同寻常。你可以通过使用`glGen*s`�
 
 我们现在已经准备好我们的顶点和图片数据了，并且准备好启动我们的绘图管线。下一步将是写着色器来通过GPU操控数据并将它加载到屏幕上。这将是我们这一章的下一部分要做的。
 
-[<< 第二章](http://www.zenlife.tk/an-intro-to-modern-opengl-2.md) | [目录](http://www.zenlife.tk/an-intro-to-modern-opengl-0.md) | [下一节 >>](http://www.zenlife.tk/an-intro-to-modern-opengl-2-2.md)
+[<< 第二章](an-intro-to-modern-opengl-2.md) | [目录](an-intro-to-modern-opengl-0.md) | [下一节 >>](an-intro-to-modern-opengl-2-2.md)
