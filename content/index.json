@@ -139,7 +139,7 @@
  {"Title":"gitbbs创业idea","Date":"2013-03-14T00:00:00Z","Category":"","Tags":null,"File":"gitbbs.html"},
  {"Title":"golang internals","Date":"2012-04-16T00:00:00Z","Category":"编程语言","Tags":["golang","源代码分析"],"File":"golang-internals.html"},
  {"Title":"hash the ultimate","Date":"2012-07-30T00:00:00Z","Category":"","Tags":["hash"],"File":"hash-the-ulterminate.html"},
- {"Title":"lease机制","Date":"2012-09-12T00:00:00Z","Category":"分布式","Tags":["lease"],"File":"lease.html"},
+ {"Title":"lease机制","Date":"2012-09-12T00:00:00Z","Category":"分布式","Tags":["lease"],"File":"lease.md"},
  {"Title":"linux内存布局","Date":"2012-12-15T00:00:00Z","Category":"","Tags":["linux"],"File":"linux内存布局.html"},
  {"Title":"一些不错的lisp文章","Date":"2011-12-29T00:00:00Z","Category":"","Tags":["lisp"],"File":"lisp.html"},
  {"Title":"内存池设计","Date":"2012-06-29T00:00:00Z","Category":"","Tags":["mempool"],"File":"mempool.html"},
