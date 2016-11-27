@@ -1,4 +1,5 @@
-[{"Title":"Go语言是如何实现race dectect的","Date":"2016-11-20T21:19:42Z","Tags":["race","dectect","golang"], "File":"race-dectect.md"},
+[{"Title":"局部时间戳能否实现分布式事务(上)","Date":"2016-11-27T23:09:42Z","Tags":["logical clock","transaction"], "File":"local-timestamps-transaction.md"},
+ {"Title":"Go语言是如何实现race dectect的","Date":"2016-11-20T21:19:42Z","Tags":["race","dectect","golang"], "File":"race-dectect.md"},
  {"Title":"有界连续","Date":"2016-11-13T13:29:42Z","Tags":["delimited","continuation","shift","reset","call/cc"], "Category":"编译器","File":"delimited-continuation.md"},
  {"Title":"Go程序内存泄漏的分析以及避免","Date":"2016-10-18T01:49:42Z","Tags":["golang","leak"], "Category":"编程语言","File":"go-leak.md"},
  {"Title":"类型系统","Date":"2016-10-13T02:11:42Z","Tags":["类型系统","HM","type infer"], "Category":"编译器","File":"type-system.md"},
