@@ -91,17 +91,24 @@ let blog_handler conn req body =
              |> Html.htmlToString
   in Server.respond_string `OK blog ()
 
+let about_handler conn req body =
+  let file = load_file "../generated/about.out" in
+  let content = container (Html.text file) Html.emptyText
+            |> page "about"
+            |> Html.htmlToString
+  in Server.respond_string `OK content ()
+
 let router conn req body =
   let uri = req |> Request.uri |> Uri.path in
   match uri with
-  | "/" -> home_handler conn req body
+  | "/" -> blog_handler conn req body
   | "/index" -> blog_handler conn req body
-  (* | "/about" -> about_handler *)
+  | "/about" -> about_handler conn req body
   (* | "/feed.atom" -> atom_handler *)
   | _ -> if has_suffix ".md" uri
       then md_handler conn uri body
       else Server.respond_string `OK uri ()
 
-let server = Server.create ~mode:(`TCP (`Port 8080)) (Server.make router ())
+let server = Server.create (Server.make router ())
 
 let () = ignore (Lwt_main.run server)
