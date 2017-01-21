@@ -56,3 +56,32 @@ let container content sidebar =
 let blog title file date =
   [tag "h2" [] [aHref file title];
    div ["class", "meta"] (text date)]
+
+let feed attr li = tag "feed" attr li
+let autohr = tag "author" []
+let author li = tag "author" [] li
+let name s = tag "name" [] (text s)
+let email s = tag "email" [] (text s)
+let uri s = tag "uri" [] (text s)
+let id s = tag "id" [] (text s)
+let updated s = tag "updated" [] (text s)
+let published s = tag "published" [] (text s)
+let title s = tag "title" ["type","text"] (text s)
+let rights s = tag "rights" ["type","text"] (text s)
+let subtitle s = tag "subtitle" ["type","text"] (text s)
+
+let feed entries = tag "feed" ["xmlns","http://www.w3.org/2005/Atom"] ([
+    author [
+       name "Arthur";
+       email "tiancaiamao@gmail.com";
+    ];
+    id "www.zenlife.tk";
+    tag "generator" ["uri","http://3e8.org/chickadee/atom";"version","0.1.1"] (text "atom egg for Chicken");
+    tag "link" [("href","http://www.zenlife.tk/feed.atom");
+          ("rel","self");
+          ("type", "application/atom+xml")] [];
+    rights  "Copyright (c) 2015, Arthur";
+    subtitle "伟大的野心家，实践家";
+    title "Arthur的博客";
+    updated "2005-07-31T12:29:29Z";
+] @ entries);;

@@ -126,15 +126,17 @@ redis集群支持在运行时添加和删除节点。实际上添加和删除节
 
 手动迁移命令：
 
-* CLUSTER ADDSLOTS slot1 [slot2] ... [slotN]
-* CLUSTER DELSLOTS slot1 [slot2] ... [slotN]
-* CLUSTER SETSLOT slot NODE node
-* CLUSTER SETSLOT slot MIGRATING node
-* CLUSTER SETSLOT slot IMPORTING node
+```
+CLUSTER ADDSLOTS slot1 [slot2] ... [slotN]
+CLUSTER DELSLOTS slot1 [slot2] ... [slotN]
+CLUSTER SETSLOT slot NODE node
+CLUSTER SETSLOT slot MIGRATING node
+CLUSTER SETSLOT slot IMPORTING node
+```
 
 前两个是简单的将slot赋到redis节点。ADDSLOTS通常是创建新集群的时候用。DELSLOTS主要用于手动修改集群配置或者调试，实际上很少使用。
 
-SETSLOT <slot> NODE形式的子命令用于将一个slot赋给特定的节点ID。MIGRATING和IMPORTING用于迁移hash slot从一个节点到其它节点。
+SETSLOT slot NODE形式的子命令用于将一个slot赋给特定的节点ID。MIGRATING和IMPORTING用于迁移hash slot从一个节点到其它节点。
 
 * 如果一个slot状态是MIGRATING，如果请求的key存在，节点会接受查询请求，否则会返回一个-ASK重定向。
 * 如果一个slot的状态是IMPORTING，节点会接受所有的查询请求，但是只处理ASKING命令，如果不是ASKING命令，会返回-MOVED重定向。

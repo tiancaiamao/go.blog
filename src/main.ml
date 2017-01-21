@@ -47,14 +47,13 @@ let post_content title date content=
 let load_md (e : entity) =
   let base = String.sub e.file 0 ((String.length e.file)-3) in
   let file = "../generated/" ^ base ^ ".out" in
-  let content = load_file file in
-  View.page e.title (post_content e.title e.date content);;
+  load_file file
 
 let build_index (entities : entity list) =
   let hash = Hashtbl.create 300 in
   entities
   |> List.filter (fun x -> (has_suffix ".md" x.file))
-  |> List.iter (fun x -> Hashtbl.add hash x.file (load_md x));
+  |> List.iter (fun x -> Hashtbl.add hash x.file (x, (load_md x)));
   hash
 
 let build_category (entities : entity list) =
@@ -76,7 +75,9 @@ let home_handler conn req body =
 
 let md_handler conn uri body =
   try
-    let html = Hashtbl.find iNDEX (String.sub uri 1 ((String.length uri)-1)) in
+    let file = (String.sub uri 1 ((String.length uri)-1)) in
+    let (e, content) = Hashtbl.find iNDEX file in
+    let html = View.page e.title (post_content e.title e.date content) in
     let str = html |> Html.htmlToString in
     Server.respond_string `OK str ()
   with _ -> Server.respond_string `OK uri ()
@@ -94,9 +95,31 @@ let blog_handler conn req body =
 let about_handler conn req body =
   let file = load_file "../generated/about.out" in
   let content = container (Html.text file) Html.emptyText
-            |> page "about"
-            |> Html.htmlToString
+                |> page "about"
+                |> Html.htmlToString
   in Server.respond_string `OK content ()
+
+let entry (e : entity) = Html.tag "entry" [] [
+    author [
+      name "Arthur";
+      uri "http://www.zenlife.tk";
+      email "tiancaiamao@gmail.com";
+    ];
+    Html.tag "content" ["type","html"] (Html.text (load_md e));
+    id ("www.zenlife.tk/" ^ e.file);
+    published e.date;
+    title e.title;
+    updated e.date;
+    Html.tag "link" ["href", "http://www.zenlife.tk/" ^ e.file; "rel","alternate"; "type","text/html"] (Html.text "");
+  ]
+
+let atom_handler conn req body =
+  let content = entities
+                |> List.filter (fun x -> (has_suffix ".md" x.file))
+                |> List.map entry
+                |> View.feed
+                |> Html.htmlToString
+  in Server.respond_string `OK ("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" ^ content) ()
 
 let router conn req body =
   let uri = req |> Request.uri |> Uri.path in
@@ -104,10 +127,10 @@ let router conn req body =
   | "/" -> blog_handler conn req body
   | "/index" -> blog_handler conn req body
   | "/about" -> about_handler conn req body
-  (* | "/feed.atom" -> atom_handler *)
+  | "/feed.atom" -> atom_handler conn req body
   | _ -> if has_suffix ".md" uri
-      then md_handler conn uri body
-      else Server.respond_string `OK uri ()
+    then md_handler conn uri body
+    else Server.respond_string `OK uri ()
 
 let server = Server.create (Server.make router ())
 
