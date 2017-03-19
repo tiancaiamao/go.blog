@@ -1,4 +1,5 @@
-[{"Title":"枚举类型在Go语言中的一种写法","Date":"2017-03-06T13:50:42Z","Tags":["golang"],"File":"go-enum.md"},
+[{"Title":"错误处理与资源释放","Date":"2017-03-20T00:33:42Z","Tags":["golang"],"File":"error-handle.md"},
+ {"Title":"枚举类型在Go语言中的一种写法","Date":"2017-03-06T13:50:42Z","Tags":["golang"],"File":"go-enum.md"},
  {"Title":"内存占用过高","Date":"2017-02-18T17:55:42Z","Tags":["memory"],"File":"huge-memory.md"},
  {"Title":"又搞了一次事故","Date":"2017-01-27T23:33:42Z","Tags":null,"File":"another-accident.md"},
  {"Title":"2016年终总结","Date":"2016-12-31T12:27:42Z","Tags":["年终总结"],"File":"2016.md"},
