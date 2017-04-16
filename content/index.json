@@ -1,5 +1,6 @@
-[{"Title":"TiDB如何实现版本升级","Date":"2017-04-01T13:41:42Z","Tags":["TiDB"],"File":"tidb-upgrade-safety.md"},
-    {"Title":"错误处理与资源释放","Date":"2017-03-20T00:33:42Z","Tags":["golang"],"File":"error-handle.md"},
+[{"Title":"优化online schema change的等待时间","Date":"2017-04-16T22:43:42Z","Tags":["TiDB","lease"],"File":"online-schema-change-optimize.md"},
+ {"Title":"TiDB如何实现版本升级","Date":"2017-04-01T13:41:42Z","Tags":["TiDB"],"File":"tidb-upgrade-safety.md"},
+ {"Title":"错误处理与资源释放","Date":"2017-03-20T00:33:42Z","Tags":["golang"],"File":"error-handle.md"},
  {"Title":"枚举类型在Go语言中的一种写法","Date":"2017-03-06T13:50:42Z","Tags":["golang"],"File":"go-enum.md"},
  {"Title":"内存占用过高","Date":"2017-02-18T17:55:42Z","Tags":["memory"],"File":"huge-memory.md"},
  {"Title":"又搞了一次事故","Date":"2017-01-27T23:33:42Z","Tags":null,"File":"another-accident.md"},
