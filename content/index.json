@@ -1,4 +1,5 @@
-[{"Title":"morestack与goroutine pool","Date":"2017-07-21T23:30:42Z","Tags":["golang","morestack","goroutine","pool"],"File":"goroutine-pool.md"},
+[{"Title":"怎么做分布式存储的面试?","Date":"2017-08-12T22:49:42Z","Tags":["面试题"],"Category":"分布式","File":"interview-for-distributed-storage.md"},
+{"Title":"morestack与goroutine pool","Date":"2017-07-21T23:30:42Z","Tags":["golang","morestack","goroutine","pool"],"File":"goroutine-pool.md"},
 {"Title":"没有宏的pattern match","Date":"2017-07-08T18:36:42Z","Tags":["pattern match","lisp"],"File":"pattern-match-without-macro.md"},
 {"Title":"variant的类型应该是它本身","Date":"2017-06-29T23:54:42Z","Tags":["类型系统","type infer","variant"],"File":"type-of-variant.md"},
 {"Title":"缤果盒子","Date":"2017-06-21T02:12:42Z","Tags":["缤果盒子"],"File":"bingobox.md"},
