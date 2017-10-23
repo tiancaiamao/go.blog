@@ -164,7 +164,7 @@
 
 我从函数式语言那边受了很多启发，很多时候它都教会我写更好的代码。当然，面向对象也有教我很多东西。
 
-之前我们的[项目里面有一个IndexLookUpExecutor](https://github.com/pingcap/tidb/blob/a264f81acc1e69d3f20cb2815873e7659843e675/executor/new_distsql.go#L280)，这个东西做的事情是由多个goroutine并行地从数据库里读索引，解析索引数据，再利用索引数据里面解析出来的信息去并行地读数据库的表数据。这块代码很乱，经常出各种bug，比较退出有goroutine泄漏，或者关闭channel时卡死。一方面原因是逻辑比较复杂，涉及到goroutine的并行，并且状态比较多。另一个更重要原因，就是代码写的烂（陈年老代码，经过很多人的手，逻辑复杂，不敢动，逢改必引入bug，这种代码最让人咬牙切齿）。怎么重构它呢？我仔细分析了复杂性的原因：数据结构内部维护了太多状态。
+之前我们的[项目里面有一个IndexLookUpExecutor](https://github.com/pingcap/tidb/blob/a264f81acc1e69d3f20cb2815873e7659843e675/executor/new_distsql.go#L280)，这个东西做的事情是由多个goroutine并行地从数据库里读索引，解析索引数据，再利用索引数据里面解析出来的信息去并行地读数据库的表数据。这块代码很乱，经常出各种bug，比如退出有goroutine泄漏，或者关闭channel时卡死。一方面原因是逻辑比较复杂，涉及到goroutine的并行，并且状态比较多。另一个更重要原因，就是代码写的烂（陈年老代码，经过很多人的手，逻辑复杂，不敢动，逢改必引入bug，这种代码最让人咬牙切齿）。怎么重构它呢？我仔细分析了复杂性的原因：数据结构内部维护了太多状态。
 
 那么基于面向对象的思维，将它拆小，IndexLookUpExecutor被做成了indexHandler，tableHandler，每个对象只管理自己的内部状态，goroutine相关的控制也移到对象内部。IndexLookUpExecutor不再关注对象内部的状态，通过方法来交互indexHandler和tableHandler。对象各自管理自己的内部状态，并且状态小了之后，一下子就可维护了。
 
