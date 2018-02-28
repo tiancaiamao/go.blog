@@ -26,6 +26,8 @@ shen-c 是完全基于解释器实现的，太挫了就不想说它了。
 
 shen-scheme 在 chibi-schem 下的实现，大概是22s的级别。这也是一个字节码实现，还是 C 语言做的，只比我 bytecode 未优化的时候略快一点，也算是挺挫的了。无节操的推测一下可能是scheme的异常处理机制拖累了它。
 
+shen-elisp 是编译到 emacs lisp 的 bytecode，速度大概在30秒刚出头。elisp 不算一门正儿八经的编程语言啦。
+
 shen-jvm 是直接编译到 JVM 的，速度大概在 4.几秒的样子。
 
 shen-cl 官方维护的版本，通过 common lisp 编译到 native 的实现，速度大概也是同样量级，4.5s。比 shen-jvm 慢一点点。
