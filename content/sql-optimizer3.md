@@ -48,3 +48,5 @@ select min(id) from (select id from t order by id limit 1 where id is not null) 
 注意 canEliminate 那个参数，它是代表是否处于一个可被消除的“上下文”里面。比如 Projection(A) -> Projection(A, B, C) 或者 Aggregation -> Projection 递归调用到孩子结点 Projection 时，该 Projection 就处理一个 canEliminate 的上下文。
 
 说白了就是，一个 Projection 结点是否可消除，一方面由它父结点告诉它，它是否是一个冗余的 Projection 操作，另一方面是由它自己和孩子结点的输入列做比较，看是否是可消除的。
+
+[下一篇](sql-optimizer4.md)
