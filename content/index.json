@@ -1,4 +1,5 @@
-[{"Title":"表达式计算实现模式","Date":"2018-04-10T09:30:42Z","Tags":["expression","codegen"],"File":"expression-implementation.md"},
+[{"Title":"相见恨晚的 Erlang","Date":"2018-04-28T01:30:42Z","Tags":["erlang"],"Category":"编程语言","File":"erlang.md"},
+ {"Title":"表达式计算实现模式","Date":"2018-04-10T09:30:42Z","Tags":["expression","codegen"],"File":"expression-implementation.md"},
  {"Title":"SQL优化器庖丁解牛篇（四）","Date":"2018-04-01T20:43:42Z","Tags":["sql"],"File":"sql-optimizer4.md"},
  {"Title":"DDL 模块的设计和演化","Date":"2018-03-25T00:58:42Z","Tags":["TiDB","ddl"],"File":"ddl-evolution.md"},
  {"Title":"我不想优化VM，只想要eval","Date":"2018-03-13T03:02:42Z","Tags":["eval"],"File":"eval-as-universal-machine.md"},
