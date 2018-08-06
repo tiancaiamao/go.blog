@@ -1,4 +1,5 @@
-[{"Title":"shen-go 下一版的胡思乱想","Date":"2018-07-15T16:51:42Z","Tags":["shen","golang","lisp"],"Category":"编译器","File":"shen-go-next-notes.md"},
+[{"Title":"编写安全的代码","Date":"2018-08-07T01:53:42Z","Tags":[],"Category":"","File":"write-safe-code.md"},
+    {"Title":"shen-go 下一版的胡思乱想","Date":"2018-07-15T16:51:42Z","Tags":["shen","golang","lisp"],"Category":"编译器","File":"shen-go-next-notes.md"},
 {"Title":"简单，正确性和性能","Date":"2018-06-09T01:18:42Z","Tags":["KISS","编程感悟"],"File":"simple-correct-performance.md"},
 {"Title":"在 PingCAP 的一些技术挑战","Date":"2018-06-02T11:38:42Z","Category":"高性能服务器","Tags":["TiDB"],"File":"challenge-at-pingcap.md"},
 {"Title":"常量传播","Date":"2018-05-28T01:24:42Z","Tags":["constant propagate"],"File":"constant-propagate.md"},
