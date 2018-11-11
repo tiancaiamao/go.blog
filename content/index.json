@@ -1,4 +1,5 @@
-[{"Title":"scheme 卫生宏实现介绍","Date":"2018-10-22T15:48:42Z","Tags":["hygiene","scheme","macro"],"Category":"编程语言","File":"scheme-hygiene-macro.md"},
+[{"Title":"使用 explicit renaming 实现卫生宏", "Date":"2018-11-04T12:49:42Z","Tags":["hygiene","scheme","lisp","macro","er-macro-transform"],"Category":"编程语言","File":"explicit-renaming-macro.md"},
+ {"Title":"scheme 卫生宏实现介绍","Date":"2018-10-22T15:48:42Z","Tags":["hygiene","scheme","macro"],"Category":"编程语言","File":"scheme-hygiene-macro.md"},
  {"Title":"性能分析方法论","Date":"2018-10-19T01:27:42Z","Tags":["性能"],"Category":"","File":"performance-analysis.md"},
  {"Title":"事务的锁调度","Date":"2018-10-11T11:26:42Z","Tags":["transaction","调度器"],"Category":"分布式","File":"contention-aware-lock-schedule.md"},
  {"Title":"七夕快到了，做点好玩的","Date":"2018-08-12T11:20:42Z","Tags":[],"Category":"","File":"chinese-valentine-day.md"},

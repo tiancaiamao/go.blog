@@ -153,6 +153,8 @@ syntax-rule 的一个好处，它可以避免过程宏的这种问题，写出�
 
 有了 module 和 separate compilation 之后，其个宏要引入其它模块函数，而在使用这个模块的宏，另外模块还没有编译，这里面的依赖就会有些难搞。
 
+[接下篇...](explicit-renaming-macro.md)
+
 ## 参考资料
 
 [macro systems and chicken](https://lists.gnu.org/archive/html/chicken-users/2008-04/msg00013.html)
