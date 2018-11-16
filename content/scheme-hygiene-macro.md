@@ -157,7 +157,7 @@ syntax-rule 的一个好处，它可以避免过程宏的这种问题，写出�
 
 ## 参考资料
 
-[macro systems and chicken](https://lists.gnu.org/archive/html/chicken-users/2008-04/msg00013.html)
-[评论区 groovy2shoes 的回复](https://news.ycombinator.com/item?id=15394603)
-[Implementing Lexically Scoped Macros](http://mumble.net/~jar/pubs/scheme-of-things/easy-macros.pdf)
-[Binding as Sets of Scopes](http://www.cs.utah.edu/plt/scope-sets/index.html)
+* [macro systems and chicken](https://lists.gnu.org/archive/html/chicken-users/2008-04/msg00013.html)
+* [评论区 groovy2shoes 的回复](https://news.ycombinator.com/item?id=15394603)
+* [Implementing Lexically Scoped Macros](http://mumble.net/~jar/pubs/scheme-of-things/easy-macros.pdf)
+* [Binding as Sets of Scopes](http://www.cs.utah.edu/plt/scope-sets/index.html)
