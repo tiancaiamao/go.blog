@@ -1,4 +1,5 @@
-[{"Title":"基于时间的定制分配器", "Date":"2018-11-17T02:27:42Z","Tags":["allocator"],"Category":"","File":"time-based-allocator.md"},
+[{"Title":"关于 Go1.11 module 和语义版本", "Date":"2018-11-18T13:06:42Z","Tags":["golang", "module"],"Category":"","File":"go-module-semantic-version.md"},
+ {"Title":"基于时间的定制分配器", "Date":"2018-11-17T02:27:42Z","Tags":["allocator"],"Category":"","File":"time-based-allocator.md"},
  {"Title":"一个更优雅的 lisp 语法设计", "Date":"2018-11-11T18:30:42Z","Tags":["scheme","lisp","cora"],"Category":"","File":"lisp-better-syntax.md"},
  {"Title":"使用 explicit renaming 实现卫生宏", "Date":"2018-11-04T12:49:42Z","Tags":["hygiene","scheme","lisp","macro","er-macro-transform"],"Category":"编程语言","File":"explicit-renaming-macro.md"},
  {"Title":"scheme 卫生宏实现介绍","Date":"2018-10-22T15:48:42Z","Tags":["hygiene","scheme","macro"],"Category":"编程语言","File":"scheme-hygiene-macro.md"},
