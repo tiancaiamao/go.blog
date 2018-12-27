@@ -1,4 +1,17 @@
-(use spiffy lowdown sxml-transforms intarweb uri-common files medea srfi-69 vector-lib srfi-13 srfi-1 atom)
+(import (chicken port))
+(import spiffy)
+(import lowdown)
+(import sxml-transforms)
+(import intarweb)
+(import uri-common)
+(import medea)
+(import vector-lib)
+(import atom)
+(import (chicken io))
+(import srfi-69)
+(import srfi-13)
+(import srfi-18)
+(import srfi-1)
 
 (load "config.scm")
 
