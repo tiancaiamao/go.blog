@@ -1,4 +1,5 @@
-[{"Title":"并发同时保序", "Date":"2018-12-25T20:34:42Z","Tags":["golang"],"Category":"","File":"concurrency-with-keep-order.md"},
+[{"Title":"2018年终总结","Date":"2018-12-30T01:00:42Z","Tags":["年终总结"],"File":"2018.md"},
+ {"Title":"并发同时保序", "Date":"2018-12-25T20:34:42Z","Tags":["golang"],"Category":"","File":"concurrency-with-keep-order.md"},
  {"Title":"关于 Go1.11 module 和语义版本", "Date":"2018-11-18T13:06:42Z","Tags":["golang", "module"],"Category":"","File":"go-module-semantic-version.md"},
  {"Title":"基于时间的定制分配器", "Date":"2018-11-17T02:27:42Z","Tags":["allocator"],"Category":"","File":"time-based-allocator.md"},
  {"Title":"一个更优雅的 lisp 语法设计", "Date":"2018-11-11T18:30:42Z","Tags":["scheme","lisp","cora"],"Category":"","File":"lisp-better-syntax.md"},
