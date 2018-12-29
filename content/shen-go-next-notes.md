@@ -10,8 +10,6 @@
 
 Go 语言可以 load 插件，这个让我萌生一个想法：其实可以把 shen 编译到 Go 的源代码，然后生成二进制的 plugin，再 load 进来调用。在[之前的一篇博客](http://www.zenlife.tk/expression-implementation.md)里面，也已经提到过。这种 code gen 的方式，就等于是在做 AOT 编译了。
 
-顺带说一说，Go 的 plugin 其实是有一点 ugly 的，我在看了下实现才发现，它是走的 cgo，调用 dlopen。cgo 是一个我希望避免的事情，普通的 Go 函数调用大概在 4-5ns，而一个 cgo 函数调用要到 70ns。那么其它方式直接 load Go 的程序执行？[当然也有人造过轮子了](https://github.com/dearplain/goloader)。
-
 另外一个想法是关于 fixnum tagging。假设我实现了 shen 编译到 Go，那么，不做 fixnum tagging 肯定不能忍。这个优化对 runtime 的性能影响太重要了。编译成 Go 却不做这个，就像配电脑，配置了一个顶级的 CPU，结果只给它配了 256M 的内存条。
 
 我甚至一度以为找到了一种 fixnum tagging 的简单实现方式。在 new 一个对象的时候，返回的是 uintptr，但是额外用一个地方记录下分配的对象的指针或者 unsafe.Pointer。比如用一个全局的数组记录。uintptr 不具备保护功能，但只要那个数组里面还有引用，就能保护该对象不被 GC 掉。
