@@ -1,4 +1,5 @@
-[{"Title":"cockroachdb 的事务流水线", "Date":"2019-01-26T16:58:42Z", "Tags":["cockroach"],"Category":"", "File":"cockroach-transaction-pipeline.md"},
+[{"Title":"union store 数据一致性以及约束检查", "Date":"2019-01-26T17:31:42Z", "Tags":["union store","contract"],"Category":"", "File":"unionstore-contract.md"},
+ {"Title":"cockroachdb 的事务流水线", "Date":"2019-01-26T16:58:42Z", "Tags":["cockroach"],"Category":"", "File":"cockroach-transaction-pipeline.md"},
  {"Title":"错误处理与自动重试","Date":"2019-01-18T12:55:42Z","Tags":["错误处理"],"File":"error-retry.md"},
  {"Title":"2018年终总结","Date":"2018-12-30T01:00:42Z","Tags":["年终总结"],"File":"2018.md"},
  {"Title":"并发同时保序", "Date":"2018-12-25T20:34:42Z","Tags":["golang"],"Category":"","File":"concurrency-with-keep-order.md"},
