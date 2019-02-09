@@ -1,4 +1,4 @@
-[这篇文章]((https://www.cockroachlabs.com/blog/transaction-pipelining/))很有意思，简单写几句。
+[这篇文章](https://www.cockroachlabs.com/blog/transaction-pipelining/)很有意思，简单写几句。
 
 早期 cockroachdb 在 begin ... commit 之间，每执行一条 SQL 语句都是把 write intents 完全写到存储之后，才返回给客户端。这样导致一个问题，整个的事务执行时间是跟 statement 数量正相关。performance 上不去，为此他们进行了优化。
 
