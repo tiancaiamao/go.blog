@@ -6,20 +6,24 @@ chicken提供了许许多多的eggs，相当于其它语言中的标准库或者
 
 使用spiffy很容易，最简单的例子：
 
-	(use spiffy)
-	(root-path "/var/www")
-	(server-port 8088)
-	(start-server)
+```scheme
+(use spiffy)
+(root-path "/var/www")
+(server-port 8088)
+(start-server)
+```
 
 root-path是静态的网站文件，可以打开本地的8080访问。
 
-这个博客文件是用markdown写的，还有rss输出之类的东西，并不是完全静态的，所以还得做一些工作，首先是路由。
+这个博客文件是用 markdown 写的，还有 rss 输出之类的东西，并不是完全静态的，所以还得做一些工作，首先是路由。
 
 ### router
 
 spiffy的路由是用一个动态变量vhost-map来决定的。有一张表，前面的参数是正则式，后面的参数是具体的handler函数。我把整个路由都自己接管了，所以直接匹配.*的正则。
 
-	(vhost-map `((".*" . ,router)))
+```scheme
+(vhost-map `((".*" . ,router)))
+```
 
 接下来我可以在router中做自己的派发。规则很简单，主要的博客文章都是用markdown写的，文件名是以.md结尾。有一些旧版的文件是用emacs的org-mode生成的html。还有一些以前用Go的present格式写的文件我已经手动改成markdown格式了。为不同的文件格式做不同的处理，各自有自己的handler。
 
@@ -91,14 +95,14 @@ handler是一个类似如下形式的函数
 
 之前一直偷懒，这次重写顺带把评论的功能加上去了，disqus做的。
 
-还有运维方面一些变化，之前Go版本的博客是托管在heroku上面的，每次git push代码，那边会自动重新编译，重启。这次打算丢到自己的vps上面去，一直是markdown格式来写博客，直接git push的方式发布。现在没有推代码自动重编译了，没有重启和重新加载数据，所以呢，就改改代码周期性的读文件重建索引吧。
+还有运维方面一些变化，之前 Go 版本的博客是托管在 heroku 上面的，每次 git push 代码，那边会自动重新编译，重启。这次打算丢到自己的 vps 上面去，一直是 markdown 格式来写博客，直接 git push 的方式发布。现在没有推代码自动重编译了，没有重启和重新加载数据，所以呢，就改改代码周期性的读文件重建索引吧。
 
 ## 结语
 
-chicken scheme确实是一个非常不错的scheme的实现，它的实现方式非常hack-friendly，而且周边的生态都很好，库也很丰富。
+chicken scheme 确实是一个非常不错的 scheme 的实现，它的实现方式非常 hack-friendly，而且周边的生态都很好，库也很丰富。
 
-这次拿它来重写博客练手，也算是用scheme语言做一些“实际”的东西吧。
+这次拿它来重写博客练手，也算是用 scheme 语言做一些“实际”的东西吧。
 
 代码还是在 [https://github.com/tiancaiamao/go.blog](https://github.com/tiancaiamao/go.blog)
 
-哦，下次我想做一个web的性能测试，对比一下Go和chicken scheme谁更高一些。
+哦，下次我想做一个 web 的性能测试，对比一下 Go 和 chicken scheme 谁更高一些。
