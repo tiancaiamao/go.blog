@@ -15,5 +15,3 @@ scheme 语言很小众，chicken 的使用者可能也不多，现在也我用�
 基本照着[这个教程](https://practicalli.github.io/clojure-webapps/)做的。这跟我上一版的实现很接近，都是 router，handler 这些。然后之前用的 sxml 的模板，现在用 hiccup，虽然变了点，大同小异，DSL 就是好用。
 
 顺便清理掉了一些很老的 html 内容，以前写的一些东西，排版真是一塌糊涂。
-
-rss 还没有恢复，先恢复程序吧，让网站可以访问，一步一步来。

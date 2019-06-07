@@ -1,11 +1,14 @@
 (ns blog.core
   (:require [clojure.data.json :as json]
+            [clojure.string :refer [ends-with?]]
+            [clojure.data.xml :refer [sexp-as-element indent-str]]
             [ring.adapter.jetty :as jetty]
             [ring.middleware.reload :refer [wrap-reload]]
             [compojure.core :refer [defroutes GET]]
             [compojure.route :as route]
             [compojure.handler]
             [hiccup.core :refer :all]
+            [hiccup.util :refer [escape-html]]
             [hiccup.page :refer :all]
             [markdown-to-hiccup.core :as md]
             [blog.template :refer :all]
@@ -114,6 +117,53 @@
                     (container0 (map blog-item found))))
         (route/not-found name)))))
 
+(defn make-entry
+  [title file update-time content]
+  [:entry
+   [:title title]
+   [:link {:href (str "http://www.zenlife.tk/" file) :type "text/html" :rel "alternate"}]
+   [:id (str "http://www.zenlife.tk/" file)]
+   [:updated update-time]
+   [:published update-time]
+   [:author
+    [:name "Arthur"]
+    [:uri "http://www.zenlife.tk"]
+    [:email "tiancaiamao@gmail.com"]]
+   [:content {:type "html"}
+    content]])
+
+(defn atom-entries []
+  (->> INDEX
+      (take 10)
+      (map (fn [x]
+             (let [file (get x "File")
+                   content (md/file->hiccup (str content-path "/" file))]
+               (if (ends-with? file ".md")
+                 (make-entry
+                  (get x "Title")
+                  file
+                  (get x "Date")
+                  (escape-html (html content)))))))))
+
+(defn atom-handler
+  [request]
+  {:status 200
+   :body (indent-str
+          (sexp-as-element
+           [:feed {:xmlns "http://www.w3.org/2005/Atom"}
+            [:title "Arthur 的博客"]
+            [:subtitle "伟大的野心家，实践家"]
+            [:updated "2005-07-31T12:29:29Z"]
+            [:link {:rel "self"
+                    :type "application/atom+xml"
+                    :href "http://www.zenlife.tk/feed.atom"}]
+            [:rights "Copyright (c) 2015, Arthur Mao"]
+            [:id "http://www.zenlife.tk/"]
+            [:author
+             [:name "Arthur"]
+             [:email "tiancaiamao@gmail.com"]]
+            (atom-entries)]))})
+
 (defroutes app
   (GET "/" [] home-handler)
   (GET "/index" [] blog-handler)
@@ -123,7 +173,7 @@
        (fn [request] (html (md-handler (str filename ".md")))))
   (GET "/category" [name] (summery-handler name CATEGORY "category"))
   (GET "/tags" [name] (summery-handler name TAGS "tags"))
-  ;; (GET "/feed.atom" [] atom-handler)
+  (GET "/feed.atom" [] atom-handler)
   (route/resources "/")
   (route/not-found "<h1> 404 page no found</h1>"))
 

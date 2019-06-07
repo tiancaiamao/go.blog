@@ -9,7 +9,7 @@
                  [compojure "1.6.1"]
                  [hiccup "1.0.5"]
                  [markdown-to-hiccup "0.6.2"]
-                 [clj-rss "0.2.5"]]
+                 [org.clojure/data.xml "0.0.8"]]
   :main blog.core
   :aot :all
   :profiles {:dev {:main blog.core/-dev-main}}
