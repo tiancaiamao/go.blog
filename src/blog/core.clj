@@ -9,7 +9,8 @@
             [hiccup.page :refer :all]
             [markdown-to-hiccup.core :as md]
             [blog.template :refer :all]
-            [blog.config :refer :all]))
+            [blog.config :refer :all])
+  (:gen-class))
 
 (defn build-index []
   (with-open [r (clojure.java.io/reader (str content-path "index.json"))]

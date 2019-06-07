@@ -83,29 +83,29 @@
 (defn article
   [title date content tags prev next permlink]
   (list [:div {:id "content"}
-    [:h1 {:id "Title"} title]
-    [:p date]
+         [:h1 {:id "Title"} title]
+         [:p date]
 
-    content
+         content
 
-    ]
-   [:div
-    (map (fn [x]
-           [:a { :href (str "/tags?name=" x)
-                :class "btn btn-info btn-xs"}
-            x]) tags)
+         ]
+        [:div
+         (map (fn [x]
+                [:a { :href (str "/tags?name=" x)
+                     :class "btn btn-info btn-xs"}
+                 x]) tags)
 
-    [:ul {:class "pager"}
-     (if prev
-       [:li {:class "previous"}
-        [:a {:href (get prev "File")} "上一篇:" (get prev "Title")]]
-       '[])
-     (if next
-       [:li {:class "next"}
-        [:a {:href (get next "File")} "下一篇:" (get next "Title")]]
-       '[])]]
+         [:ul {:class "pager"}
+          (if prev
+            [:li {:class "previous"}
+             [:a {:href (get prev "File")} "上一篇:" (get prev "Title")]]
+            )
+          (if next
+            [:li {:class "next"}
+             [:a {:href (get next "File")} "下一篇:" (get next "Title")]]
+            )]]
 
-   ;; disqus here
-   (disqus title permlink)
-   )
+        ;; disqus here
+        (disqus title permlink)
+        )
   )

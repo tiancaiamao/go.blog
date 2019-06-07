@@ -1,4 +1,4 @@
-[{"Title":"TiDB Transaction Internals", "Date":"2019-04-06T11:35:42Z", "Tags":["tidb","transaction"],"Category":"分布式", "File":"tidb-transaction-internals.md"},
+[
  {"Title":"aurora paper reading", "Date":"2019-02-10T20:04:42Z", "Tags":["aurora"],"Category":"分布式", "File":"aurora.md"},
  {"Title":"JVM 指令集快速记忆", "Date":"2019-02-09T13:26:42Z", "Tags":["JVM","bytecode"],"Category":"编译器", "File":"jvm-instructions.md"},
  {"Title":"calvin paper reading", "Date":"2019-01-27T20:29:42Z", "Tags":["calvin"],"Category":"分布式", "File":"calvin.md"},

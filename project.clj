@@ -8,7 +8,9 @@
                  [ring "1.7.1"]
                  [compojure "1.6.1"]
                  [hiccup "1.0.5"]
-                 [markdown-to-hiccup "0.6.2"]]
+                 [markdown-to-hiccup "0.6.2"]
+                 [clj-rss "0.2.5"]]
   :main blog.core
+  :aot :all
   :profiles {:dev {:main blog.core/-dev-main}}
   )
