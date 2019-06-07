@@ -153,7 +153,7 @@
            [:feed {:xmlns "http://www.w3.org/2005/Atom"}
             [:title "Arthur 的博客"]
             [:subtitle "伟大的野心家，实践家"]
-            [:updated (let [post (nth 0 INDEX)]
+            [:updated (let [post (nth INDEX 0)]
                         (if post (get post "Date")
                             "2005-07-31T12:29:29Z"))]
             [:link {:rel "alternate"
