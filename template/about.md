@@ -12,9 +12,9 @@
 
 ## 关于网站
 
-[clojure](https://clojure.org/)写的后端。前端使用了[bootstrap](http://getbootstrap.com/)模板。文章内容使用markdown格式书写。
+[clojure](https://clojure.org/) 写的后端。前端使用了[bootstrap](http://getbootstrap.com/) 模板。文章内容使用 markdown 格式书写。
 
-[这里](http://github.com/tiancaiamao/go.blog)是这个博客的源代码
+[这里](http://github.com/tiancaiamao/go.blog) 是这个博客的源代码
 
 ## 联系我
 

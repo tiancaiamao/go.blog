@@ -66,13 +66,6 @@
 (defn project-handler [request]
   (static-template-handler "Project" "project.md"))
 
-(defn request-info
-  "View the information contained in the request, useful for debugging"
-  [request]
-  {:status 200
-   :body (pr-str request)
-   :headers {}})
-
 (defn home-handler
   [request]
   (html (page "Arthur的博客" (container0 [:p "hello world"]))))
@@ -132,9 +125,7 @@
   (GET "/tags" [name] (summery-handler name TAGS "tags"))
   ;; (GET "/feed.atom" [] atom-handler)
   (route/resources "/")
-  (route/not-found "<h1> this is not you're looking for </h1><p> Sorry , page no found</p>"))
-
-;; (def xxxhandler (-> app compojure.handler/api))
+  (route/not-found "<h1> 404 page no found</h1>"))
 
 (defn -main
   "A very simple web server using Ring & Jetty"
