@@ -154,6 +154,9 @@
             [:title "Arthur 的博客"]
             [:subtitle "伟大的野心家，实践家"]
             [:updated "2005-07-31T12:29:29Z"]
+            [:link {:rel "alternate"
+                    :type "text/html"
+                    :href "http://www.zenlife.tk/"}]
             [:link {:rel "self"
                     :type "application/atom+xml"
                     :href "http://www.zenlife.tk/feed.atom"}]
