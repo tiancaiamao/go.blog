@@ -8,7 +8,6 @@
             [compojure.route :as route]
             [compojure.handler]
             [hiccup.core :refer :all]
-            [hiccup.util :refer [escape-html]]
             [hiccup.page :refer :all]
             [markdown-to-hiccup.core :as md]
             [blog.template :refer :all]
@@ -134,16 +133,16 @@
 
 (defn atom-entries []
   (->> INDEX
-      (take 10)
-      (map (fn [x]
-             (let [file (get x "File")
-                   content (md/file->hiccup (str content-path "/" file))]
-               (if (ends-with? file ".md")
-                 (make-entry
-                  (get x "Title")
-                  file
-                  (get x "Date")
-                  (escape-html (html content)))))))))
+       (take 10)
+       (map (fn [x]
+              (let [file (get x "File")
+                    content (md/file->hiccup (str content-path "/" file))]
+                (if (ends-with? file ".md")
+                  (make-entry
+                   (get x "Title")
+                   file
+                   (get x "Date")
+                   [:-cdata (html (md/component content))])))))))
 
 (defn atom-handler
   [request]
