@@ -6,7 +6,7 @@
 * [shen-go](https://github.com/tiancaiamao/shen-go)
 	一个 Shen 语言的实现
 
-* [cora](https://github.com/tiancaiamao/cora/tree/go)
+* [cora](https://github.com/tiancaiamao/cora)
 	每个 lisp 程序员都应该发明自己的编程语言
 
 [github](https://github.com/tiancaiamao/) 里面有放更多一些东西，大多只是些toys

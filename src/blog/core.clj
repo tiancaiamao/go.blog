@@ -95,7 +95,7 @@
                         (md/component))]
         (page title
               (container0
-               (article title date content tags prev next filename))))
+               (article title date content tags prev next (str "/" filename)))))
       (route/not-found filename))))
 
 (defn blog-item [x]
