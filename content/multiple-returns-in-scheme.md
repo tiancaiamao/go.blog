@@ -2,19 +2,21 @@
 
 假设有个函数，它接受的参数是整数的list，返回所有list中的奇数构成的list，并返回所有的偶数之和，偶数之积。这就是一个需要返回多个值的场景。
 
-	(define func
-	  (lambda (lon col)
-	    (if (null? lon)
-	        (col '() 0 1)
-	        (if (odd? (car lon))
-	            (func (cdr lon)
-	             (lambda (l sum fac)
-	               (col (cons (car lon) l) sum fac)))
-	            (func (cdr lon)
-	             (lambda (l sum fac)
-	               (col l (+ (car lon) sum) (* (car lon) fac))))))))
+```scheme
+(define func
+  (lambda (lon col)
+    (if (null? lon)
+        (col '() 0 1)
+        (if (odd? (car lon))
+            (func (cdr lon)
+              (lambda (l sum fac)
+                (col (cons (car lon) l) sum fac)))
+            (func (cdr lon)
+              (lambda (l sum fac)
+                (col l (+ (car lon) sum) (* (car lon) fac))))))))
 
-	(func '(1 2 3 4 5 6 7) (lambda (l sum fac) (cons sum (cons fac l))))
+(func '(1 2 3 4 5 6 7) (lambda (l sum fac) (cons sum (cons fac l))))
+```
 
 scheme中地道的多值返回是通过collector实现的。
 
