@@ -11,12 +11,13 @@ scheme 语言里面，宏是一个很让人误解的话题，它使用是 syntax
 再来说卫生宏。卫生或者不卫生，跟高级宏过程宏其实是不相关的概念。如果用两个维度来分类，那么 syntax-rules 是高级宏，是卫生宏。而一些 lisp 的 defmacro 是非卫生宏，是过程宏。
 还有另外一些系统，是卫生的，却是过程宏。
 
-    defmacro	过程宏	不卫生
-    syntax-rules	高级宏	卫生
-    syntatic-closure	过程宏	可实现卫生
-    explicit-renaming	过程宏	可实现卫生
-    syntax-case	可过程或高级	可实现卫生
 
+    defmacro	        过程宏	    不卫生
+    syntax-rules	    高级宏	    卫生
+    syntatic-closure	过程宏	    可实现卫生
+    explicit-renaming	过程宏	    可实现卫生
+    syntax-case	        可过程或高级	可实现卫生
+    
 ## 什么是卫生
 
 **卫生或者不卫生的本质问题，还是作用域问题**，理解这个了，对于卫生宏就理解了。
@@ -47,7 +48,7 @@ scheme 语言里面，宏是一个很让人误解的话题，它使用是 syntax
 调用宏展开
 
     (let ((x 'world))
-        (test****
+        (test))
         
 得到的结果是 hello 还是 world 呢？这个点就能体现卫生宏和非卫生宏的本质区别了。一个符号 x，它在宏定义的位置是代表的什么含义，以及它在宏展开的位置代表的是什么含义。**非卫生宏是做 sexp 的无脑替换。卫生宏是需要理解语义的**。
 
