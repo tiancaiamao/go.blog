@@ -1,4 +1,5 @@
 [
+    {"Title":"shen-go v1.0 RC 发布", "Date":"2019-10-23T03:13:42Z", "Tags":["shen"],"Category":"编译器", "File":"shen-go-v1.0-rc.md"},
     {"Title":"协变逆变", "Date":"2019-10-12T00:34:42Z", "Tags":["covariance"],"Category":"编程语言", "File":"covariance-contravariance.md"},
     {"Title":"数据库中执行器层到底在做什么？", "Date":"2019-10-06T14:51:42Z", "Tags":["executor","database"],"Category":"分布式", "File":"what-does-database-do.md"},
     {"Title":"无脑 CPS 变换", "Date":"2019-08-26T14:32:42Z", "Tags":["lisp","cps"],"Category":"编译器", "File":"no-brain-cps.md"},
