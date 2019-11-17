@@ -1,4 +1,5 @@
 [
+    {"Title":"cockroachdb 的并行提交", "Date":"2019-11-17T11:17:42Z", "Tags":["transaction","cockroachdb"], "Category":"分布式事务","File":"cockroach-parallel-commits.md"},
     {"Title":"shen-go v1.0 RC 发布", "Date":"2019-10-23T03:13:42Z", "Tags":["shen"],"Category":"编译器", "File":"shen-go-v1.0-rc.md"},
     {"Title":"协变逆变", "Date":"2019-10-12T00:34:42Z", "Tags":["covariance"],"Category":"编程语言", "File":"covariance-contravariance.md"},
     {"Title":"数据库中执行器层到底在做什么？", "Date":"2019-10-06T14:51:42Z", "Tags":["executor","database"],"Category":"分布式", "File":"what-does-database-do.md"},
@@ -12,7 +13,7 @@
     {"Title":"JVM 指令集快速记忆", "Date":"2019-02-09T13:26:42Z", "Tags":["JVM","bytecode"],"Category":"编译器", "File":"jvm-instructions.md"},
     {"Title":"calvin paper reading", "Date":"2019-01-27T20:29:42Z", "Tags":["calvin"],"Category":"分布式", "File":"calvin.md"},
     {"Title":"union store 数据一致性以及约束检查", "Date":"2019-01-26T17:31:42Z", "Tags":["union store","contract"],"Category":"", "File":"unionstore-contract.md"},
-    {"Title":"cockroachdb 的事务流水线", "Date":"2019-01-26T16:58:42Z", "Tags":["cockroach"],"Category":"", "File":"cockroach-transaction-pipeline.md"},
+    {"Title":"cockroachdb 的事务流水线", "Date":"2019-01-26T16:58:42Z", "Tags":["cockroachdb"],"Category":"", "File":"cockroach-transaction-pipeline.md"},
     {"Title":"错误处理与自动重试","Date":"2019-01-18T12:55:42Z","Tags":["错误处理"],"File":"error-retry.md"},
     {"Title":"2018年终总结","Date":"2018-12-30T01:00:42Z","Tags":["年终总结"],"File":"2018.md"},
     {"Title":"并发同时保序", "Date":"2018-12-25T20:34:42Z","Tags":["golang"],"Category":"","File":"concurrency-with-keep-order.md"},
@@ -90,7 +91,7 @@
     {"Title":"可串行化快照隔离","Date":"2016-01-13T17:37:42Z","Tags":["serializable","snapshot","isolation","database"],"File":"serializable-snapshot-isolation.md"},
     {"Title":"2015年终总结","Date":"2015-12-29T21:37:42Z","Tags":["年终总结"],"File":"2015.md"},
     {"Title":"上线流程规范","Date":"2015-12-20T16:24:42Z","Tags":null,"File":"上线流程规范.md"},
-    {"Title":"CockroachDB中的SQL：将表数据映射为key-value存储","Date":"2015-12-20T16:24:42Z","Category":"分布式","Tags":["cockroach","sql","kv","翻译"],"File":"sql-in-cockroachdb.md"},
+    {"Title":"cockroachdb中的SQL：将表数据映射为key-value存储","Date":"2015-12-20T16:24:42Z","Category":"分布式","Tags":["cockroachdb","sql","kv","翻译"],"File":"sql-in-cockroachdb.md"},
     {"Title":"lua试玩感受","Date":"2015-12-09T01:00:42Z","Category":"编程语言","Tags":["lua"],"File":"lua-practice.md"},
     {"Title":"从raft看failure的处理","Date":"2015-11-28T23:54:42Z","Category":"分布式","Tags":["raft"],"File":"raft-fault-tolerance.md"},
     {"Title":"网络知识笔记","Date":"2015-11-13T23:48:42Z","Tags":["网络"],"File":"network.md"},
