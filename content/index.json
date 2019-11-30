@@ -1,4 +1,5 @@
 [
+    {"Title":"支持大事务简要 notes", "Date":"2019-12-01T01:47:42Z", "Tags":["transaction"], "Category":"分布式事务","File":"large-txn.md"},
     {"Title":"cockroachdb 的并行提交", "Date":"2019-11-17T11:17:42Z", "Tags":["transaction","cockroachdb"], "Category":"分布式事务","File":"cockroach-parallel-commits.md"},
     {"Title":"shen-go v1.0 RC 发布", "Date":"2019-10-23T03:13:42Z", "Tags":["shen"],"Category":"编译器", "File":"shen-go-v1.0-rc.md"},
     {"Title":"协变逆变", "Date":"2019-10-12T00:34:42Z", "Tags":["covariance"],"Category":"编程语言", "File":"covariance-contravariance.md"},
