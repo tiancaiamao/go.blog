@@ -8,5 +8,8 @@
 
 * [cora](https://github.com/tiancaiamao/cora)
 	每个 lisp 程序员都应该发明自己的编程语言
+    
+* [TiDB](https://github.com/pingcap/tidb)
+    目前 top3 contributor
 
 [github](https://github.com/tiancaiamao/) 里面有放更多一些东西，大多只是些toys
