@@ -1,4 +1,4 @@
-[
+[   {"Title":"inferno 的并发垃圾回收算法", "Date":"2020-06-02T10:47:42Z", "Tags":["垃圾回收", "inferno"], "Category":"", "File":"inferno-concurrent-gc.md"},
     {"Title":"一种有趣的测试方法：pivoted query synthesis", "Date":"2020-04-16T01:15:42Z", "Tags":["test"], "Category":"", "File":"pivoted-query-synthesis.md"},
     {"Title":"Go 语言是如何捕获 panic 栈的", "Date":"2020-04-04T22:29:42Z", "Tags":["golang"], "Category":"编程语言", "File":"how-go-capture-panic-stack.md"},
     {"Title":"权限系统设计", "Date":"2020-03-21T17:20:42Z", "Tags":["privilege"], "Category":"", "File":"privilege-system-design.md"},
@@ -9,7 +9,7 @@
     {"Title":"oberon 操作系统", "Date":"2020-01-06T16:02:42Z", "Tags":["oberon"], "File":"oberon.md"},
     {"Title":"如何 200 代码内实现垃圾回收", "Date":"2019-12-29T16:51:42Z", "Tags":["垃圾回收", "cora"], "File":"200-lines-gc.md"},
     {"Title":"2019 年终总结", "Date":"2019-12-28T17:18:42Z", "Tags":["年终总结"], "File":"2019.md"},
-    {"Title":"支持大事务简要 notes", "Date":"2019-12-01T01:47:42Z", "Tags":["transaction"], "Category":"分布式事务","File":"large-txn.md"},
+    {"Title":"支持大事务简要 notes", "Date":"2019-12-01T01:47:42Z", "Tags":["transaction"], "Category":"分布式","File":"large-txn.md"},
     {"Title":"cockroachdb 的并行提交", "Date":"2019-11-17T11:17:42Z", "Tags":["transaction","cockroachdb"], "Category":"分布式事务","File":"cockroach-parallel-commits.md"},
     {"Title":"shen-go v1.0 RC 发布", "Date":"2019-10-23T03:13:42Z", "Tags":["shen"],"Category":"编译器", "File":"shen-go-v1.0-rc.md"},
     {"Title":"协变逆变", "Date":"2019-10-12T00:34:42Z", "Tags":["covariance"],"Category":"编程语言", "File":"covariance-contravariance.md"},
