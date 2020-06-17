@@ -1,4 +1,5 @@
-[{"Title":"microKanren 学习笔记", "Date":"2020-06-15T14:54:42Z", "Tags":["miniKanren", "microKanren"], "Category":"编程语言", "File":"micro-kanren.md"},
+[{"Title":"域名忘记续期了", "Date":"2020-06-17T14:54:42Z", "Tags":["domain", "zenlife"], "Category":"", "File":"domain-expire.md"},
+{"Title":"microKanren 学习笔记", "Date":"2020-06-15T14:54:42Z", "Tags":["miniKanren", "microKanren"], "Category":"编程语言", "File":"micro-kanren.md"},
     {"Title":"inferno 的并发垃圾回收算法", "Date":"2020-06-02T10:47:42Z", "Tags":["垃圾回收", "inferno"], "Category":"", "File":"inferno-concurrent-gc.md"},
     {"Title":"一种有趣的测试方法：pivoted query synthesis", "Date":"2020-04-16T01:15:42Z", "Tags":["test"], "Category":"", "File":"pivoted-query-synthesis.md"},
     {"Title":"Go 语言是如何捕获 panic 栈的", "Date":"2020-04-04T22:29:42Z", "Tags":["golang"], "Category":"编程语言", "File":"how-go-capture-panic-stack.md"},
