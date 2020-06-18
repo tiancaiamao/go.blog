@@ -1,4 +1,4 @@
-[{"Title":"老司机带你读 CockroachDB 的 SIGMOD 论文", "Date":"2020-06-18T19:20:42Z", "Tags":["cockroachdb", "transaction", "HLC"], "Category":"分布式", "File":"cockroach-paper.md"},
+[{"Title":"老司机带你读 CockroachDB 的论文", "Date":"2020-06-18T19:20:42Z", "Tags":["cockroachdb", "transaction", "HLC"], "Category":"分布式", "File":"cockroach-paper.md"},
 {"Title":"域名忘记续期了", "Date":"2020-06-17T14:24:42Z", "Tags":["domain", "zenlife"], "Category":"", "File":"domain-expire.md"},
 {"Title":"microKanren 学习笔记", "Date":"2020-06-15T14:54:42Z", "Tags":["miniKanren", "microKanren"], "Category":"编程语言", "File":"micro-kanren.md"},
     {"Title":"inferno 的并发垃圾回收算法", "Date":"2020-06-02T10:47:42Z", "Tags":["垃圾回收", "inferno"], "Category":"", "File":"inferno-concurrent-gc.md"},
