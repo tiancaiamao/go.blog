@@ -44,4 +44,4 @@ A xor C = B
 //            // this three steps are done in check_scramble()
 ```
 
-其实道理是一样的，其中 hash 方法选用的是 sha1(sha1(password))，然后魔数 A 选的是 sha1(password)。
+其实道理是一样的，其中 hash 方法选用的是 sha1(sha1(password))，然后魔数 A 选的是 sha1(seed, hash(password))。
