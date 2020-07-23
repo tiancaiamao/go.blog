@@ -1,4 +1,5 @@
-[{"Title":"事务模型：两个时间戳，或是一个时间戳", "Date":"2020-07-15T16:08:42Z", "Tags":["transaction"], "Category":"分布式", "File":"two-tso-or-one-tso.md"}
+[{"Title":"避免明文密码的一个简单算法", "Date":"2020-07-23T13:13:42Z", "Tags":["authentication", "encrypt"], "Category":"", "File":"avoid-plain-text-password.md"},
+    {"Title":"事务模型：两个时间戳，或是一个时间戳", "Date":"2020-07-15T16:08:42Z", "Tags":["transaction"], "Category":"分布式", "File":"two-tso-or-one-tso.md"}
     {"Title":"分布式死锁检测", "Date":"2020-06-27T14:30:42Z", "Tags":["deadlock", "distributed"], "Category":"分布式", "File":"distributed-deadlock-detection.md"},
 {"Title":"老司机带你读 CockroachDB 的论文", "Date":"2020-06-18T19:20:42Z", "Tags":["cockroachdb", "transaction", "HLC"], "Category":"分布式", "File":"cockroach-paper.md"},
 {"Title":"域名忘记续期了", "Date":"2020-06-17T14:24:42Z", "Tags":["domain", "zenlife"], "Category":"", "File":"domain-expire.md"},
