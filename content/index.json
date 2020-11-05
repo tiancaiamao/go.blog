@@ -1,4 +1,5 @@
 [
+    {"Title":"搭建 TiDB 集群并运行 TPCC 测试", "Date":"2020-11-05T15:52:42Z", "Tags":["tidb"], "Category":"", "File":"run-tpcc-with-tidb.md"},
     {"Title":"binlog 的并行重放问题", "Date":"2020-09-11T10:05:42Z", "Tags":["binlog"], "Category":"", "File":"concurrent-binlog-replay.md"},
     {"Title":"避免明文密码的一个简单算法", "Date":"2020-07-23T13:13:42Z", "Tags":["authentication", "encrypt"], "Category":"", "File":"avoid-plain-text-password.md"},
     {"Title":"事务模型：两个时间戳，或是一个时间戳", "Date":"2020-07-15T16:08:42Z", "Tags":["transaction"], "Category":"分布式", "File":"two-tso-or-one-tso.md"}

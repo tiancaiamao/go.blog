@@ -55,7 +55,7 @@
     [:meta {:charset "utf-8"}]
     [:title title]
     [:link {:rel "stylesheet"
-            :href "http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"}]]
+            :href "//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"}]]
    [:body
     [:div {:class "navbar navbar-inverse"}
      [:div {:class "container"}
@@ -74,7 +74,7 @@
     [:footer
      [:p {:class "nav navbar-nav navbar-right"}
       "Powered by " [:a {:href "https://clojure.org/"} "Clojure"]
-      " & " [:a {:href "http://getbootstrap.com/"} "Bootstrap"]]]
+      " & " [:a {:href "//getbootstrap.com/"} "Bootstrap"]]]
 
     ] ;; end body
    ] ;; end html

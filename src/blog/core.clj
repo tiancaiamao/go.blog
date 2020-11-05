@@ -120,8 +120,8 @@
   [title file update-time content]
   [:entry
    [:title title]
-   [:link {:href (str "http://www.zenlife.tk/" file) :type "text/html" :rel "alternate"}]
-   [:id (str "http://www.zenlife.tk/" file)]
+   [:link {:href (str "//www.zenlife.tk/" file) :type "text/html" :rel "alternate"}]
+   [:id (str "//www.zenlife.tk/" file)]
    [:updated update-time]
    [:published update-time]
    [:author
@@ -157,12 +157,12 @@
                             "2005-07-31T12:29:29Z"))]
             [:link {:rel "alternate"
                     :type "text/html"
-                    :href "http://www.zenlife.tk/"}]
+                    :href "//www.zenlife.tk/"}]
             [:link {:rel "self"
                     :type "application/atom+xml"
-                    :href "http://www.zenlife.tk/feed.atom"}]
+                    :href "//www.zenlife.tk/feed.atom"}]
             [:rights "Copyright (c) 2015, Arthur Mao"]
-            [:id "http://www.zenlife.tk/"]
+            [:id "//www.zenlife.tk/"]
             [:author
              [:name "Arthur"]
              [:email "tiancaiamao@gmail.com"]]
