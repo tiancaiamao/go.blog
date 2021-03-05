@@ -1,4 +1,5 @@
 [
+    {"Title":"强一致的缓存设计", "Date":"2021-03-05T10:12:42Z", "Tags":["cache"], "Category":"分布式", "File":"consistent-cache.md"},
     {"Title":"Makefile 自动生成依赖", "Date":"2021-02-23T19:43:42Z", "Tags":["makefile"], "Category":"", "File":"makefile-auto-dependency-generation.md"},
     {"Title":"写在 shen-go 1.0 发布之际", "Date":"2021-02-22T22:41:42Z", "Tags":["shen", "lisp"], "Category":"编程语言", "File":"shen-go-v1.0.md"},
     {"Title":"写入热点打散的问题", "Date":"2021-01-27T02:04:42Z", "Tags":["database", "hotspot"], "Category":"分布式", "File":"hot-region.md"},
