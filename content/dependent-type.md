@@ -26,7 +26,7 @@ Simpler 这篇文章里面用的 weak head normal form，并选择了 lazy evalu
 
 第三篇，这一篇是最合我味口的，它并没有从 untyped lambda calculus 开始讲。没有一点废话，不服就干，直接上代码。我就喜欢这种风格。然后代码也很简短。
 
-原本实现是 ocaml 语言的，我在边看边学习，把它的代码 port 到了 lisp，上代码 https://github.com/tiancaiamao/cora/blob/dd1f6c0efe53dc2e2a78601507dbec68b1ab1211/lib/dt.cora
+原本实现是 ocaml 语言的，我在边看边学习，把它的代码 port 到了 lisp，上[代码](https://github.com/tiancaiamao/cora/blob/dd1f6c0efe53dc2e2a78601507dbec68b1ab1211/lib/dt.cora)
 
 接下来的内容是一点点笔记了。
 
