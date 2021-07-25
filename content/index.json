@@ -1,4 +1,6 @@
 [
+    {"Title":"想到一个 idea", "Date":"2021-07-25T23:34:42Z", "Tags":["shen", "cora"], "Category":"编程语言", "File":"recent-idea-2021-07.md"},
+    {"Title":"koka 语言的卖点", "Date":"2021-07-25T23:30:42Z", "Tags":["引用计数", "koka", "effect"], "Category":"编程语言", "File":"koka-papers.md"},
     {"Title":"学习 dependent type", "Date":"2021-07-11T07:33:42Z", "Tags":["type", "dependent"], "Category":"编程语言", "File":"dependent-type.md"},
     {"Title":"开源天之炼狱", "Date":"2021-06-11T10:23:42Z", "Tags":["darkeden"], "Category":"高性能服务器", "File":"opendarkeden.md"},
     {"Title":"如何进行 code review", "Date":"2021-06-01T16:01:42Z", "Tags":["code review"], "Category":"", "File":"code-review.md"},
@@ -17,9 +19,9 @@
     {"Title":"避免明文密码的一个简单算法", "Date":"2020-07-23T13:13:42Z", "Tags":["authentication", "encrypt"], "Category":"", "File":"avoid-plain-text-password.md"},
     {"Title":"事务模型：两个时间戳，或是一个时间戳", "Date":"2020-07-15T16:08:42Z", "Tags":["transaction"], "Category":"分布式", "File":"two-tso-or-one-tso.md"}
     {"Title":"分布式死锁检测", "Date":"2020-06-27T14:30:42Z", "Tags":["deadlock", "distributed"], "Category":"分布式", "File":"distributed-deadlock-detection.md"},
-{"Title":"老司机带你读 CockroachDB 的论文", "Date":"2020-06-18T19:20:42Z", "Tags":["cockroachdb", "transaction", "HLC"], "Category":"分布式", "File":"cockroach-paper.md"},
-{"Title":"域名忘记续期了", "Date":"2020-06-17T14:24:42Z", "Tags":["domain", "zenlife"], "Category":"", "File":"domain-expire.md"},
-{"Title":"microKanren 学习笔记", "Date":"2020-06-15T14:54:42Z", "Tags":["miniKanren", "microKanren"], "Category":"编程语言", "File":"micro-kanren.md"},
+    {"Title":"老司机带你读 CockroachDB 的论文", "Date":"2020-06-18T19:20:42Z", "Tags":["cockroachdb", "transaction", "HLC"], "Category":"分布式", "File":"cockroach-paper.md"},
+    {"Title":"域名忘记续期了", "Date":"2020-06-17T14:24:42Z", "Tags":["domain", "zenlife"], "Category":"", "File":"domain-expire.md"},
+    {"Title":"microKanren 学习笔记", "Date":"2020-06-15T14:54:42Z", "Tags":["miniKanren", "microKanren"], "Category":"编程语言", "File":"micro-kanren.md"},
     {"Title":"inferno 的并发垃圾回收算法", "Date":"2020-06-02T10:47:42Z", "Tags":["垃圾回收", "inferno"], "Category":"", "File":"inferno-concurrent-gc.md"},
     {"Title":"一种有趣的测试方法：pivoted query synthesis", "Date":"2020-04-16T01:15:42Z", "Tags":["test"], "Category":"", "File":"pivoted-query-synthesis.md"},
     {"Title":"Go 语言是如何捕获 panic 栈的", "Date":"2020-04-04T22:29:42Z", "Tags":["golang"], "Category":"编程语言", "File":"how-go-capture-panic-stack.md"},
