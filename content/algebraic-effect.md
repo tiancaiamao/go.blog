@@ -183,3 +183,61 @@ k ...
 
 algebraic effect 它的表达能力跟 delimited continuation 是等价的，可以实现异常，generator，async/await，协程等等基础设施。
 现在我知道了怎么样直接转成 lambda calcalus，这将会非常有用。
+
+
+-----------------------------------------------
+
+又发现了一个问题，前面的场景想得太简单了，只是 handle effect 的某一种特殊形式。假设嵌套了多层函数，就不太一样了：
+
+```
+try (begin 1 2
+	        (f ...)
+			4 5 6)
+
+f = (lambda (...)
+	    (g ...))
+
+g = (lambda ...
+	   (throw 3))
+```
+
+
+f 调用 g，g 调用 h，然后在里面才做 throw，这里如果只能 g 里面 throw 之后部分提取成连续，那效果并不是回到 try 的那一层，在那个位置重新 recover。
+它会从 g 做 throw 之后的地方 recover，再一级一级返回 g，返回 f，返回到 try 的调用位置，这显然跟 algebraic effect 的要求是对不上的。
+
+
+跨函数调用栈之后，连续的处理就变了。需要用 cps 的形式处理：
+
+
+```
+(begin 1 2
+       (f ... (lambda (v)
+                  4 5 6))
+
+f = (lambda (x .. k)
+    	    (g .. k.))
+
+g = (lambda (...k)
+    	    (throw 3)
+	    ...)
+
+g = (lambda (...  k)
+    	    (handle v1 (lambda (v2)
+	    	           (k v2))))
+```
+
+
+```
+(begin 1 2
+       (do
+	 v  (f ...)
+	 4 5 6))
+```
+
+函数 f 必须是 cps 形式，函数 g 必须是 cps 形式，直到 throw 的位置。也就是从 try 开始的点，到中间的多层调用，都需要变成 cps 形式。这就跟 delimited continuation 一个样子了。
+如果把前面一篇 [continuation monad](continuation-monad.md) 跟这一篇结合起来，也不是不能做。
+
+...就是仍然有点麻烦。需要自动地决定是否需要改写成 cps 形式，改写取决于某个函数有没有被 try throw 的调用栈路径上面使用过，如果是，就需要转换。
+
+
+
