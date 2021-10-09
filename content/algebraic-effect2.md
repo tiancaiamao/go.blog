@@ -19,7 +19,7 @@
 关门，放 [oleg](http://okmij.org/ftp/Computation/free-monad.html)
 
 free monad 这种方式实现 algebraic effect 的优化是对语言完成无侵入，可以做成库的形式。缺点是...额，理解 monad 容易造成不可逆的脑损伤。
-之前读过一篇很好的博客，自己终于把 Free monad 在做什么大概的理解了，不过现在已经忘记是哪篇博客了。说说理解，本质就是 effect 和 handle 那些东西，变成了编码，然后外层的语言，是变成了一个解释器，来驱动编码的执行。
+之前读过一篇很好的博客，自己终于把 Free monad 在做什么大概的理解了，不过现在已经~~忘记是哪篇~~[博客](https://www.haskellforall.com/2012/06/you-could-have-invented-free-monads.html)了。说说理解，本质就是 effect 和 handle 那些东西，变成了编码，然后外层的语言，是变成了一个解释器，来驱动编码的执行。
 通过 monad 表示，effect 的代码被变成了数据结构了，free monad 的执行过程就是解释和驱动数据结构变化的过程。
 
 4. 基于 yield/generator 等野路子
