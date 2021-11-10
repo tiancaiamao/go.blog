@@ -1,4 +1,5 @@
 [
+    {"Title":"基于 docker 和 plan9port 搭建开发环境", "Date":"2021-11-10T20:17:42Z", "Tags":["开发环境","plan9"], "File":"docker-plan9port.md"},
     {"Title":"关于提升软件质量", "Date":"2021-10-20T16:40:42Z", "Tags":["软件工程"], "File":"software-quality-how.md"},
     {"Title":"使用 algebraic effect 实现协程和异步IO", "Date":"2021-10-09T15:42:42Z", "Tags":["algebraic effect"], "Category":"编程语言", "File":"use-algebraic-effect.md"},
     {"Title":"algebraic effect 推导(下)", "Date":"2021-08-08T22:17:42Z", "Tags":["algebraic effect"], "Category":"编程语言", "File":"algebraic-effect2.md"},
@@ -22,7 +23,7 @@
     {"Title":"搭建 TiDB 集群并运行 TPCC 测试", "Date":"2020-11-05T15:52:42Z", "Tags":["tidb"], "Category":"", "File":"run-tpcc-with-tidb.md"},
     {"Title":"binlog 的并行重放问题", "Date":"2020-09-11T10:05:42Z", "Tags":["binlog"], "Category":"", "File":"concurrent-binlog-replay.md"},
     {"Title":"避免明文密码的一个简单算法", "Date":"2020-07-23T13:13:42Z", "Tags":["authentication", "encrypt"], "Category":"", "File":"avoid-plain-text-password.md"},
-    {"Title":"事务模型：两个时间戳，或是一个时间戳", "Date":"2020-07-15T16:08:42Z", "Tags":["transaction"], "Category":"分布式", "File":"two-tso-or-one-tso.md"}
+    {"Title":"事务模型：两个时间戳，或是一个时间戳", "Date":"2020-07-15T16:08:42Z", "Tags":["transaction"], "Category":"分布式", "File":"two-tso-or-one-tso.md"},
     {"Title":"分布式死锁检测", "Date":"2020-06-27T14:30:42Z", "Tags":["deadlock", "distributed"], "Category":"分布式", "File":"distributed-deadlock-detection.md"},
     {"Title":"老司机带你读 CockroachDB 的论文", "Date":"2020-06-18T19:20:42Z", "Tags":["cockroachdb", "transaction", "HLC"], "Category":"分布式", "File":"cockroach-paper.md"},
     {"Title":"域名忘记续期了", "Date":"2020-06-17T14:24:42Z", "Tags":["domain", "zenlife"], "Category":"", "File":"domain-expire.md"},
