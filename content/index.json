@@ -1,5 +1,6 @@
 [
-    {"Title":"TiDB 的事务模块演进", "Date":"2021-12-06T08:58:42Z", "Tags":["tidb"], "File":"tidb-transaction-evoluation.md"},
+    {"Title":"闭包即代码生成", "Date":"2021-12-21T17:39:42Z", "Tags":["shen-go","lisp","code generation", "closure"],"Category":"编程语言", "File":"closure-as-code-generation.md"},
+    {"Title":"TiDB 的事务模块演进", "Date":"2021-12-06T08:58:42Z", "Tags":["tidb","transaction"], "File":"tidb-transaction-evoluation.md"},
     {"Title":"良性循环 -- 软件开发中的一些小故事", "Date":"2021-11-21T15:06:42Z", "Tags":["软件工程"], "File":"positive-cycle.md"},
     {"Title":"基于 docker 和 plan9port 搭建开发环境", "Date":"2021-11-10T20:17:42Z", "Tags":["开发环境","plan9"], "File":"docker-plan9port.md"},
     {"Title":"关于提升软件质量", "Date":"2021-10-20T16:40:42Z", "Tags":["软件工程"], "File":"software-quality-how.md"},
