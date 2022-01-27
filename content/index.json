@@ -1,4 +1,5 @@
 [
+    {"Title":"CI 优化计划 -- Make CI great again!", "Date":"2022-01-27T22:52:42Z", "Tags":["CI"],"File":"make-ci-great-again.md"},
     {"Title":"2021 年终总结", "Date":"2021-12-31T22:52:42Z", "Tags":["年终总结"],"File":"2021.md"},
     {"Title":"2020 年终总结(存档版)", "Date":"2021-12-22T10:42:42Z", "Tags":["年终总结"],"File":"2020.md"},
     {"Title":"闭包即代码生成", "Date":"2021-12-21T17:39:42Z", "Tags":["shen","lisp","code generation", "closure"],"Category":"编程语言", "File":"closure-as-code-generation.md"},
