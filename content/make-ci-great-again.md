@@ -49,11 +49,13 @@ go test -test.run TestXXX
 
 使用方式：
 
->	make ut // 跑所有测试
->	make ut X='list' // 列举有哪些包
->	make ut X='list session' // 列举 session 包下有哪些 test case
->	make ut X='run planner/core' // 并行执行 planner/core 包下的所有 case
->	make ut X='run util/ranger TestTableRange' // 执行 util/ranger 包的单个测试函数
+```
+	make ut // 跑所有测试
+	make ut X='list' // 列举有哪些包
+	make ut X='list session' // 列举 session 包下有哪些 test case
+	make ut X='run planner/core' // 并行执行 planner/core 包下的所有 case
+	make ut X='run util/ranger TestTableRange' // 执行 util/ranger 包的单个测试函数
+```
 
 ## 具体实施
 
