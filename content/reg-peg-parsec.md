@@ -37,20 +37,20 @@ pattern 有几种基本操作：或，且，非。这里分别是用的 `'+`  `'
 
 比如说想要匹配数字，这个 PEG 可以写成用"或"处理 0~9 的每一个：
 
-```
+```lisp
 (set '<digits> ['+ "0" ['+ "1" ['+ "2" ['+ "3"
    ['+ "4" ['+ "5" ['+ "6" ['+ "7" ['+ "8" "9"]]]]]]]]])
 ```
 
 然后日期中的年是一个四位数字，就可以用顺序的串起来 4 个 digits：
 
-```
+```lisp
 (set '<year> ['* <digits> ['* <digits> ['* <digits> <digits>]]])
 ```
 
 如果我们想要匹配 "2019-06-10" 这样的日期，完整的 PEG 语法就类似这样子：
 
-```
+```lisp
 (set '<digits> ['+ "0" ['+ "1" ['+ "2" ['+ "3"
    ['+ "4" ['+ "5" ['+ "6" ['+ "7" ['+ "8" "9"]]]]]]]]])
 (set '<year> ['* <digits> ['* <digits> ['* <digits> <digits>]]])
@@ -61,7 +61,7 @@ pattern 有几种基本操作：或，且，非。这里分别是用的 `'+`  `'
 
 然后就可以执行：
 
-```
+```lisp
 (match-peg <iso-date> "2019-06-10")
 ```
 
@@ -78,7 +78,7 @@ demo 的代码在[这里](https://github.com/tiancaiamao/cora/blob/a49e88d286c60
 
 我尝试了一下 parser combinator 用 Go 的实现做，首先是定义一个接口：
 
-```
+```Go
 type Parser interface {
 	Parse(input string) (bool, string)
 }
@@ -87,7 +87,7 @@ type Parser interface {
 然后可以定义一些基础的 parser，比如专门解析字符串常量的 parser：
 
 
-```
+```Go
 type Literal string
 
 func (s Literal) Parse(input string) (bool, string) {
@@ -102,7 +102,7 @@ func (s Literal) Parse(input string) (bool, string) {
 接下来是核心部分，组合子。比如说 OR 组合子接受多个 Parser，返回一个新的 Parser。效果是其中某一个 Parser 能解析输入，则处理成功。
 
 
-```
+```Go
 func OR(ps ...Parser) Parser {
 	return orC(ps)
 }
@@ -120,10 +120,10 @@ func (c orC) Parse(input string) (bool, string) {
 }
 ```
 
-SEQ 组合子接受多个 parser，用它们依次按顺序去解析文本。每一个成功后，再用每二个解析剩下的文本。如果中间有失败了，就失败了。
+SEQ 组合子接受多个 parser，用它们依次按顺序去解析文本。第一个成功后，再用第二个解析剩下的文本。如果中间有失败了，就失败了。
 关键点是，通过组合子，能够可以把一些基础的 parser 组合起来，变成处理复杂语法的 parser。还是上面的处理 iso date 的例子，可以这么弄：
 
-```
+```Go
 func TestISODate(t *testing.T) {
 	var tmp [10]Byte
 	for i := '0'; i < '9'; i++ {
@@ -150,7 +150,7 @@ parser combinator 的组合能力，跟 PEG 的组合能力是一样强大的。
 我试着写了一点代码来解析 Go 的 benchmark 时打印的像这样 "Benchmark FuncnameXXX 23132 ns/op     823032 bytes/op    41 allocs/op" 的文本。
 
 
-```
+```Go
 type BenchResult struct {
 	OP    Number
 	Byte  Number
