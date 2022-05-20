@@ -17,13 +17,13 @@ severless 之后，客户不再需要考虑机器的问题，只为真正的使�
 
 多租户的时候如何处理呢？假如共享整个计算层和存储层，资源隔离是特别难做的。因为 SQL 可以很复杂，单个 SQL 可以把整个集群的资源都吃尽，如果同进程供不同租户使用，服务质量得不到保证。而如果每个租户独享各自的计算层和存储层，也就是回到了每个租户一套集群的模式，前面也说了问题：成本下不来。所以最好的方式是，独享计算层，共享存储层。上层的 SQL 是租户之间物理隔离的，下面的 kv 存储是由所有租户去共享的。
 
-共享存储层之后，需要区分哪些数据是属于哪个用户的，cockroachdb 使用的方法是在 key 的编码中添加了 tenant-id，多租户模式下，SQL 的表的数据映射成 kv 数据，最终的编码是 /\<tenant-id\>/\<table-id\>/\<index-id\>/\<key\> 这样子的。
+共享存储层之后，需要区分哪些数据是属于哪个用户的，cockroachdb 使用的方法是在 key 的编码中添加了 tenant-id，多租户模式下，SQL 的表的数据映射成 kv 数据，最终的编码是 /tenant-id/table-id/index-id/key 这样子的。
 
 这里有一个细节，是衡量资源的使用。每个租户不能够对存储层产生的负载太猛，而影响其它租户的服务质量。不过相对于 SQL 来说，kv 的使用模式相对简单，会在 kv 这一层对多租户衡量其它吞吐量并限制不要超过阀值。
 
 cockroachdb 是用 k8s 来操作集群，k8s 集群里面有(多租户共享的)存储节点和每个租户独享的 SQL 计算节点。SQL 资源的使用可以通过 k8s 的 pod 来控制。
 
-<img src="https://crl2020.imgix.net/img/serverless-white-paper-illustrations-05-1.png?auto=format,compress&max-w=300" width="300" height="300" \>
+<img src="https://crl2020.imgix.net/img/serverless-white-paper-illustrations-05-1.png?auto=format,compress&max-w=700" width="700" height="700" \>
 
 其中有个角色是 proxy 节点。其实 proxy 节点的角色就是上一篇里面讲的 [session manager](session-manager.md)，它可以把租户的请求路由到正确的 SQL 节点上面；它可以处理 SQL 节点的负载均衡；一个很关键的一点，它还可以处理 SQL 节点重启/升级之类的对应用层无感知。
 
