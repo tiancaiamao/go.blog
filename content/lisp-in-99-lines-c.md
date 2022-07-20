@@ -1,6 +1,3 @@
-lisp 中一种巧妙的 GC 实现方式
-
-
 我发现 [Lisp in 99 lines of C](https://github.com/Robert-van-Engelen/tinylisp) 和 [SectorLisp](https://justine.lol/sectorlisp2/) 里面都用到了这个 trick，挺有意思的，记录一下。
 
 把对象只分为 atom(symbol) 和 cons 两类，cons 就是 stack 下移两个格子，存入 car 和 cdr。
