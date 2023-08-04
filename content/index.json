@@ -1,4 +1,5 @@
 [
+    {"Title":"排队延迟", "Date":"2023-08-04T16:11:42Z", "Tags":["queueing", "queueing theory", "queueing delay"], "File":"queueing-delay.md"},
     {"Title":"库 vs 框架", "Date":"2023-08-04T00:01:42Z", "Tags":["framework", "library"], "File":"library-vs-framework.md"},
     {"Title":"union scan的技术债务", "Date":"2023-07-06T11:56:42Z", "Tags":["technical debt", "union scan"], "File":"union-scan-technical-debt.md"},
     {"Title":"patch Go 以及关于 bazel 的反思", "Date":"2023-06-15T15:11:42Z", "Tags":["bazel", "go", "patch"], "File":"patch-go-and-bazel-rethink.md"},
