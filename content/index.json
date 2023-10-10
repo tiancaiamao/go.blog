@@ -1,4 +1,5 @@
 [
+    {"Title":"copy-and-patch JIT", "Date":"2023-10-11T12:35:42Z", "Tags":["copy-and-patch","jit"], "File":"copy-and-patch-jit.md"},
     {"Title":"cora 又双叕重写了", "Date":"2023-08-19T16:13:42Z", "Tags":["cora","threaded-code"], "File":"cora-interpreter.md"},
     {"Title":"排队论公式笔记", "Date":"2023-08-04T10:06:42Z", "Tags":["queueing theory"], "File":"queueing-theory-basics.md"},
     {"Title":"排队延迟", "Date":"2023-08-04T16:11:42Z", "Tags":["queueing", "queueing theory", "queueing delay"], "File":"queueing-delay.md"},
