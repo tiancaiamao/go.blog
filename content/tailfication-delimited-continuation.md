@@ -70,7 +70,7 @@ VM 有自己的栈，局部变量在 VM 的栈里面，不会像 CPS 变换那�
 
 x 是函数 f 里面的局部变量，它在 `(g y)` 调用之后，还存活着，所以 cps 变换过后，它需要变成闭包变量。而 y 变量，则在函数 `(g y)` 调用之后，再也不会使用了，于是 y 的生命期到这里就结束了。
 
-Wingo 在 scheme to wasm 里面提到的 tailification 的做法就是，只对像 x 这样的变量，似乎于 VM 的方式维护在 VM 的栈上分配，而像 y 这样的变量则可以在宿主语言的栈上。由于我们自己的 VM 栈是暴露出来的，我们仍然可以通过拷贝自己维护的栈，来实现 continuation。对应的最关键的几页 PPT 是这样的：
+Wingo 在 scheme to wasm 里面提到的 tailification 的做法就是，只对像 x 这样的变量，类似于 VM 的方式维护在 VM 的栈上分配，而像 y 这样的变量则可以在宿主语言的栈上。由于我们自己的 VM 栈是暴露出来的，我们仍然可以通过拷贝自己维护的栈，来实现 continuation。对应的最关键的几页 PPT 是这样的：
 
 Delimited continuations are stack slices
 
@@ -89,8 +89,8 @@ Before a non-tail-call:
 
 Return from call via pop and tail call:
 
-(return_call_ref (call $pop-return)
-                 (i32.const 0))
+(return-call-ref (call $pop-return) (i32.const 0))
+
 After return, continuation pops state from stacks
 
 那边的博客里面也给了一个具体的例子：
@@ -109,7 +109,7 @@ After return, continuation pops state from stacks
 
 至于实现细节，它则是直接给的代码 tailify.scm，我就没有去读了。这儿理论上可以通过静态分析 liveness analyze 实现。
 
-我自己思考了一下，倒是想了一个自己的方式：先做闭包变换，后做 cps，然后再一遍类似闭包变换的操作。
+**我自己思考了一下，倒是想了一个自己的方式达成类似的效果：先做闭包变换，后做 cps，然后再一遍类似闭包变换的操作**。
 
 
 ```
