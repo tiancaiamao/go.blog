@@ -1,4 +1,5 @@
 [
+    {"Title":"论设计对代码健壮性的影响", "Date":"2023-11-09T22:57:42Z", "Tags":["design","clean code"], "File":"bad-design-cause-weak-code.md"},
     {"Title":"通过 tailification 实现 delimited continuation -- scheme to C", "Date":"2023-10-24T23:22:42Z", "Tags":["scheme","tailfication", "delimited-continuation"], "File":"tailfication-delimited-continuation.md"},
     {"Title":"关于Go应用程序支持FIPS", "Date":"2023-10-20T15:26:42Z", "Tags":["fips","go"], "File":"about-fips-and-go-app.md"},
     {"Title":"copy-and-patch JIT", "Date":"2023-10-11T12:35:42Z", "Tags":["copy-and-patch","jit"], "File":"copy-and-patch-jit.md"},
