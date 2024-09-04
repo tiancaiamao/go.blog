@@ -68,9 +68,8 @@
 (defn project-handler [request]
   (static-template-handler "Project" "project.md"))
 
-(defn home-handler
-  [request]
-  (html (page "Arthur的博客" (container0 [:p "hello world"]))))
+(defn home-handler [request]
+  (static-template-handler "Home" "home.md"))
 
 (defn myfind [str vec]
   (loop [idx 0]
