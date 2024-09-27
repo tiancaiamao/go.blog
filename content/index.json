@@ -1,5 +1,5 @@
 [
-    {"Title":"cora 0.2 release", "Date":"2024-09-27T23:23:42Z", "Category":"编译器", "Tags":["cora"], "File":"cora-0.2.md.md"},
+    {"Title":"cora 0.2 release", "Date":"2024-09-27T23:23:42Z", "Category":"编译器", "Tags":["cora"], "File":"cora-0.2.md"},
     {"Title":"C 语言中实现高效尾递归的一个技巧", "Date":"2024-09-21T16:20:42Z", "Category":"编译器", "Tags":["tailcall", "trampoline"], "File":"tail-call-in-c.md"},
     {"Title":"cora 语言对垃圾回收实现的探索", "Date":"2024-09-10T11:43:42Z", "Category":"编译器", "Tags":["垃圾回收", "GC","cora", "mostly-copying", "mark-sweep"], "File":"cora-gc.md"},
     {"Title":"通过 namespace 实现 r7rs 的 library 相关的语法", "Date":"2024-09-06T10:41:42Z", "Tags":["package","module", "library", "namespace", "r7rs"], "File":"r7rs-library-implement.md"},
