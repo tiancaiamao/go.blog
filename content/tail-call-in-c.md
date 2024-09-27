@@ -52,7 +52,7 @@ trampoline(struct Ctx *ctx, basicBlock pc) {
 ```
 
 trampoline 的优点是它是最为通用的办法。但是对比前一种情况可以发现，它的性能不是最优的。在函数退出前需要设置下一条函数需要执行什么，`ctx->pc` 这个是非寄存器的赋值。然后 `label2` 函数的退出会涉及 ret 指令，这是第一次跳转。
-退出函数后，它是在 while 语句里面的，while 会有条件检查指令和跳转。接着调用 `ctx->pc(ctx)` 这又涉及一次 call 指令。如果从汇编这种很微观的角度观看，trampoline 的y方式实现尾递归的开销，是远高于一条 goto 指令的。
+退出函数后，它是在 while 语句里面的，while 会有条件检查指令和跳转。接着调用 `ctx->pc(ctx)` 这又涉及一次 call 指令。如果从汇编这种很微观的角度观看，trampoline 的方式实现尾递归的开销，是远高于一条 goto 指令的。
 
 
 技巧就是：灵活地将第二种方式和第三种方式混用!
@@ -105,4 +105,4 @@ basicBlock* xxx(struct Ctx *ctx) {
 
 只要是在内部跳转，代价是比较低的。而跨块的跳转走 trampoline 相对的代价就会高一些。
 
-按照[论文 Compiling higher-order languages into fully tail-recursive portable C](https://www-labs.iro.umontreal.ca/~feeley/papers/FeeleyMillerRozasWilsonDIRO1078.pdf)中的说法，这样将 scheme 编译到 C 的性能大概就是 C 的 2-4 倍，这种级别的速度还是挺强的。跳转这种代价大概占到了程序整体代价的 8% 左右。
+按照论文 [Compiling higher-order languages into fully tail-recursive portable C](https://www-labs.iro.umontreal.ca/~feeley/papers/FeeleyMillerRozasWilsonDIRO1078.pdf)中的说法，这样将 scheme 编译到 C 的性能大概就是 C 的 2-4 倍，这种级别的速度还是挺强的。跳转这种代价大概占到了程序整体代价的 8% 左右。
