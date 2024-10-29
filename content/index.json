@@ -1,4 +1,5 @@
 [
+    {"Title":"函数式语言中隐藏全局变量赋值的一个技巧", "Date":"2024-10-29T12:22:42Z", "Category":"编程语言", "Tags":["monad","FP"], "File":"fp-assign-trick.md"},
     {"Title":"一个强大灵活且巧妙的 type checker 实现思路", "Date":"2024-10-22T11:37:42Z", "Category":"编程语言", "Tags":["type checker","HM"], "File":"type-checker.md"},
     {"Title":"concurrent ml 和 Go 的并发模型对比", "Date":"2024-10-16T21:14:42Z", "Category":"高性能服务器", "Tags":["cml","cora"], "File":"cml-vs-go.md"},
     {"Title":"cora 0.2 release", "Date":"2024-09-27T23:23:42Z", "Category":"编译器", "Tags":["cora"], "File":"cora-0.2.md"},
@@ -286,7 +287,7 @@
     {"Title":"Think2Go戈登营首期review","Date":"2013-09-14T11:00:00Z","Category":"","Tags":["golang","cdn","微博数据分析"],"File":"think2go-camp.md"},
     {"Title":"pprof的原理","Date":"2013-08-09T11:00:00Z","Category":"","Tags":["pprof"],"File":"how-pprof-implement.md"},
     {"Title":"libgdx的AssetManager相关","Date":"2013-08-13T11:00:00Z","Category":"Android游戏开发","Tags":["libgdx","AssetManager"],"File":"libgdx-asset-manager.md"},
-    {"Title":"scheme中实现多值返回","Date":"2013-07-18T11:00:00Z","Category":"编程语言","Tags":["scheme","lambda","多值返回","lisp"],"File":"multiple-returns-in-scheme.md"},
+    {"Title":"scheme中实现多值返回","Date":"2013-07-18T11:00:00Z","Category":"编程语言","Tags":["scheme","lambda","多值返回","lisp","FP"],"File":"multiple-returns-in-scheme.md"},
     {"Title":"无锁哈希表","Date":"2013-07-15T11:00:00Z","Category":"高性能服务器","Tags":["数据结构","hash","无锁","CAS"],"File":"lockfree-hash.md"},
     {"Title":"eopl读书笔记","Date":"2013-07-04T11:00:00Z","Category":"编程语言","Tags":["eopl","scheme","lisp","读书笔记"],"File":"reading-eopl.md"},
     {"Title":"Petrescue中的算法","Date":"2013-06-10T11:00:00Z","Category":"Android游戏开发","Tags":["petrescue"],"File":"petrescue.slide"},
