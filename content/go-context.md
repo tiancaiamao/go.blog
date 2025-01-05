@@ -33,7 +33,7 @@ context是一层一层往下传的，如果全局都是使用同一个传递下�
         case <-context.Done():
     }
     
-大家都在同一个对象上面调用的Done函数，channel操作最终会加锁。<del>这个是在etcd项目里面发现的一个问题，他们改了我们也跟着改了</del>。在起goroutine的时候，一般不要用原来的context了，而是新建一个context，原始的context作为父context。这样不同goroutine就不会抢同一个锁。
+大家都在同一个对象上面调用的Done函数，channel操作最终会加锁。~~这个是在etcd项目里面发现的一个问题，他们改了我们也跟着改了~~。在起goroutine的时候，一般不要用原来的context了，而是新建一个context，原始的context作为父context。这样不同goroutine就不会抢同一个锁。
 
 一般是用的`context.WitCancel()`这个函数：
 

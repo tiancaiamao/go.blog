@@ -97,7 +97,7 @@ quickering 就是这个思路。
 pypy 和 graalvm 这一种的，写解释器得编译器，不过两者具体的实现思路不一样。然而我都觉得理解起来复杂了。
 
 yjit 是一个 ruby 的 JIT 实现，我看了一下它用到的技术所引用的论文是 (Basic Block Version)BBV，BBV 更早是 Marc Feeley 的学生提出来的一篇论文
-<Removing Dynamic Type Tests with Context-Driven Basic Block Versioning>。大略读了一下，感觉更多是在动态类型特化成具体类型那块的代码生成比较精彩，它也是 self-modify 的 ast 解释器。哦，Marc Feeley 是谁? gambit scheme 的作者!我好像说过 Marc Feeley 的论文都值得一读这类的话。
+"Removing Dynamic Type Tests with Context-Driven Basic Block Versioning"。大略读了一下，感觉更多是在动态类型特化成具体类型那块的代码生成比较精彩，它也是 self-modify 的 ast 解释器。哦，Marc Feeley 是谁? gambit scheme 的作者!我好像说过 Marc Feeley 的论文都值得一读这类的话。
 
 路线一的方式都是 self-modify 的 ast 解释器，我对这一块接触得有限，所以总是觉得虽然看起来 "写解释器得编译器" 很有诱惑力...但是吧，复杂度还是太高了。
 
