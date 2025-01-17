@@ -1,4 +1,5 @@
 [
+    {"Title":"cora 的模块系统重新实现", "Date":"2025-01-17T17:24:42Z", "Tags":["cora", "module"], "File":"define-library.md"},
     {"Title":"2024 年终总结", "Date":"2025-01-05T17:24:42Z", "Tags":["年终总结"], "File":"2024.md"},
     {"Title":"cora 0.3 release", "Date":"2024-11-12T04:19:42Z", "Category":"编译器", "Tags":["cora"], "File":"cora-0.3.md"},
     {"Title":"函数式语言中隐藏全局变量赋值的一个技巧", "Date":"2024-10-29T12:22:42Z", "Category":"编程语言", "Tags":["monad","FP"], "File":"fp-assign-trick.md"},
