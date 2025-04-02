@@ -106,7 +106,7 @@ time dd of=/dev/null if=largefile bs=4k count=200000
 
 改成手动 mount 之后，samba 的读写速度就快了许多，分别到了 61MB/s 和 42.7MB/s：
 
-> sudo mount //192.168.0.11/DATA DATA -t cifs -o username=samba,iocharset=utf8,password=5858,uid=1000,gid=1000
+> sudo mount //192.168.0.11/DATA DATA -t cifs -o username=samba,iocharset=utf8,password=xxx,uid=1000,gid=1000
 
 
 ```
@@ -160,4 +160,78 @@ dd of=/dev/null if=largefile bs=4k count=200000  0.04s user 0.59s system 98% cpu
 
 ## 配置旁路由
 
-参照[这篇](https://xiguashu.medium.com/%E6%8A%8A-linux-%E8%AE%BE%E7%BD%AE%E4%B8%BA%E6%97%81%E8%B7%AF%E7%94%B1-7ba91373a67f)
+sing-box，配置很复杂，网上可以找到一个配置的[视频讲解](https://www.youtube.com/watch?v=oKvYpGo_kvw)。
+
+服务端配置见[这篇](https://apad.pro/sing-box-trojan/)。
+
+```
+{
+  "inbounds": [
+    {
+      "type": "trojan",
+      "listen": "0.0.0.0",
+      "listen_port": 3443,
+      "tcp_fast_open": true,
+      "udp_fragment": true,
+      "users": [
+        {
+          "name": "xxxx",
+          "password": "xxxxxxxx"
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "xxxxxxxxxxx.nip.io",
+        "alpn": [
+          "h2",
+          "http/1.1"
+        ],
+        "min_version": "1.2",
+        "max_version": "1.3",
+        "cipher_suites": [
+        "TLS_CHACHA20_POLY1305_SHA256",
+        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+        ],
+        "acme": {
+          "domain": ["xxx.xxx.xxx.xxx.nip.io"],
+          "data_directory": "/usr/local/etc/sing-box",
+          "email": "xxx.xxx.xxx.xxx@nip.io",
+          "provider": "letsencrypt"
+        }
+      },
+      "fallback": {
+        "server": "127.0.0.1",
+        "server_port": 8080
+      }
+    }
+  ]
+}
+```
+
+客户端配置如果是浏览器使用，这个已经够了:
+
+```
+{
+    "inbounds": [
+        {
+            "type": "mixed",
+            "listen": "::",
+            "listen_port": 1180
+        }
+    ],
+    "outbounds": [
+        {
+            "type": "trojan",
+            "server": "xxx.xxx.xxx.xxx.nip.io",
+            "server_port": 3443,
+            "password": "xxxxxxx",
+            "tls": {
+                    "enabled": true
+            }
+        }
+    ]
+}
+```
+
+不过配置旁路由就复杂许多，[这里的配置](https://github.com/mario-huang/sing-box-bypass-router-transparent-proxy-configuration/blob/7b0c49b9337724c82b3d5d376c53ccebf0874549/README.md)可以参考。或者[这个](https://icloudnative.io/posts/sing-box-tutorial/)。
