@@ -1,0 +1,20 @@
+<p>同一个函数，即使用递归和非递归两种形式实现，其计算结果都可能不相同。</p><p>比如计算 1+e2+e3+&amp;hellip;+en</p><pre><code>double f(int n)
+{
+        if(n == 0)
+                return exp(0);
+        else
+                return exp(n) + f(n-1);
+}
+</code></pre><p>对比下面</p><pre><code>sum = 0;
+for(int i=0; i&amp;lt;n; i++)
+{
+        sum += exp(i);
+}
+</code></pre><p>有什么区别呢？计算顺序不同。</p><p>上面的是递归到函数栈的底部，回去的时候计算的。也就是说它的计算顺序是：</p><pre><code>f(n) = exp(n) + f(n-1)
+=exp(n) + exp(n-1) + f(n-2)
+=exp(n) + exp(n-1) + exp(n-2) + f(n-3)
+...
+=exp(n) + exp(n-1) + exp(n-2) + &amp;hellip; + f(2)
+=exp(n) + exp(n-1) + exp(n-2) + &amp;hellip; + exp(2) + f(1)
+=exp(n) + exp(n-1) + exp(n-2) + &amp;hellip; + exp(2) + exp(0)
+</code></pre><p>是从exp(n)加到exp(0)的，与for那个的计算顺序相反。</p><p>两者加的数都是一样的。但计算顺序不一样。由于浮点运算的误差集累，最终得到的结果不一样。</p><p>这样带来的误差看似微小，但在某些场合积累下来之后误差却是惊人的。</p>

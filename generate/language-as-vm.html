@@ -1,0 +1,141 @@
+<p>整个周末这两天都在密集地写代码，为 <a href="cora.md">cora 语言</a>实现编译，以至于家里人认为我有点走火入魔了。是啊，掐指一算，又一个七夕都快要到了，为毛我今年还在敲代码？<a href="chinese-valentine-day.md">去年的这个时候</a>就挺魔性的。进入正题，今天说的是 cora 语言的编译器的实现方案。</p><p>之前我在实现 shen 语言的时候，快速撸了一个纯 AST 的解释器，然后实现了字节码的编译和虚拟机和<a href="shen-go-v0.2.md">优化</a>，以及<a href="shen-go-next-notes.md">后来的一些探索</a>，再就感觉那个方向能优化的东西做不下去了。这次在实现 cora 语言的时候，我直接先回退到了更简单的解释器方案。不过之前已经提到过了，来自 gambit 的启发 -- <strong>语言即虚拟机</strong>。我准备把 cora 编译到其它语言，最终直接生成二进制，像最近出来的 v 语言就是这么干的。</p><p>gambit 将 scheme 生成到 gvm 的虚拟机，gvm 虚拟机的设计很奇特，它设计的目的是用于做代码生成的，它可以适配到各个语言上面，默认是生成 C 代码，最新的 gambit 似乎把生成到 javascript 之类的也支持了。</p><p>实现里面会先做 cps 变换，经过 cps 变换之后，函数调用就直接可以变成 jump 了。然后是闭包变换，处理 scheme 编译到 C 的时候的闭包。gvm 生成的代码不会使用宿主机语言的栈，也不会使用函数调用协议，它只用到了最基本的一些东西：变量，跳转这些。每个语言至少都有这些，如此一来，gvm 可以非常方便地生成到各种语言。</p><p>性能方面，生成出来的代码跟原生的 C 代码是一样性能的。看看 <a href="https://ecraven.github.io/r7rs-benchmarks/">scheme 语言实现的性能 PK</a>，你会发现 gambit 是排在 top3 的。</p><p>gambit 的作者做过一个 <a href="http://churchturing.org/y/90-min-scc.pdf">scheme 编译到 C</a> 的 talk，网上搜索 &quot;90 minute Scheme to C compiler&quot; 能找到视频。在那个 demo 里面，代码生成是生成到了一个基于栈的虚拟机。这是一个简化的版本，真实的 gvm 设定是有寄存器的设计的。</p><p>我觉得在代码生成这种场景下，设计成栈虚拟机还是挺影响性能的。所以在 cora 的实现里面，我做成了一个基于寄存器的虚拟机。具体的 cps 变换和闭包变量跟那个 &quot;scheme 编译到 C&quot; 里面讲的做法差不多，其实我<a href="scheme-to-c.md">以前也做过类似的东西</a>，只是每回头看一遍，都会多加深一些理解。我们来重点看一下代码生成的过程。</p><p>如果是基于栈虚拟机，编译的时候 <code>(+ a b)</code> 就是编译 a，进栈，编译 b，进栈，然后执行加操作。代码生成类似于：</p><pre><code>push(stack, a)
+push(stack, b)
+add
+</code></pre><p>在 cora 里面，我是拿语言的局部变量当寄存器用了，这样一来，语言就是一个无限寄存器虚拟机。为每一个表达式，结果都将会对应分配到一个寄存器(变量)上。</p><pre><code>reg1 &lt;- a
+reg2 &lt;- b
+reg3 &lt;- (+ reg1 reg2)
+</code></pre><p>虚拟机的定义类似这样子：</p><pre><code>type VM struct {
+    pc    func(*VM1)
+    stack []Obj
+}
+</code></pre><p>这个代码生成的算法实现是，维护一个变量到&quot;寄存器&quot;的映射 m，如果遇到新变量，则把映射添加到 m 里面。如果不是新变量，就直接返回寄存器值。寄存器数量是无限的，每次需要新的 reg 加加就好了。</p><p>函数调用协议是走 <code>VM</code> 里面的 <code>stack</code> 进行数据交换，不使用宿主语言原始的栈。这样参数是从虚拟机的栈里面拿到，比如这个函数头部：</p><pre><code>(lambda (a b c) ...)
+</code></pre><p>生成得到：</p><pre><code>reg1 &lt;- vm.stack[0]
+reg2 &lt;- vm.stack[1]
+reg3 &lt;- vm.stack[2]
+...
+</code></pre><p>同时修改变量到寄存器的映射：</p><pre><code>a =&gt; reg1
+b =&gt; reg2
+c =&gt; reg3
+</code></pre><p>如果后面代码中再遇到，比如 <code>(+ a b)</code> 的时候，由于 a b 都分别分配在 reg1 reg2 上面，所以就是</p><pre><code>reg3 &lt;- (+ reg1 reg2)
+</code></pre><p>对于 if 我暂时没有弄成跳转，而是使用语言本身的 if 指令。 <code>(if a 1 b)</code> 这个生成出来是类似于：</p><pre><code>reg1 &lt;- a
+reg2 &lt;- 1
+reg3 &lt;- b
+if reg1 { reg4 &lt;- reg2 } else { reg4 &lt;- reg3 }
+</code></pre><p>函数调用的生成，就是直接 jump，因为经过 cps 变换是不需要再返回的。假设变量 f a b c 在映射中对应的寄存器分别是 reg0 reg1 reg2 reg3，函数调用的代码：</p><pre><code>(f a b c)
+</code></pre><p>将会生成</p><pre><code>vm.pc &lt;- reg0
+vm.stack[0] &lt;- reg1
+vm.stack[1] &lt;- reg2
+vm.stack[2] &lt;- reg3
+jump
+</code></pre><p>如果换一个角度看，其实生成结果是一个 <a href="https://en.wikipedia.org/wiki/Static_single_assignment_form">ssa</a> 形式的中间表示！所以如果想生成到比如 LLVM 的 IR，理论上也是可行的。不过生成到语言的好处，是不用拘泥于形式，语言即虚拟机。像使用 LLVM 的话这里的函数调用协议就受到限制了。反正最终都变成了机器指令，而且性能上也不会有啥差别。</p><p>开发和调试的时候，用解释器就够用了。只有真正上线生产使用才需要编译。目前编译到 Go 代码，就是用 cora 的解释器写的，完全不用考虑性能。</p><p>看一下最终效果，先是 cps 变换：</p><pre><code><class>language-lisp</class><@ />198 #&gt; (cps-convert '(do
+                  (set 'square (lambda (x) (* x x)))
+                  (+ (square 5) 1)))
+((lambda (#arg39291) ((lambda (_) ((lambda (#f39238) (#f39238 (lambda (#arg39211) (halt (+ #arg39211 1))) 5)) square)) (set (quote square) #arg39291))) (lambda (#k39311 x) (#k39311 (* x x))))
+
+</code></pre><p>或许写成 let 形式好读一些， <code>((lambda (a b) body) 1 2)</code> 跟 <code>(let ((a 1) (b 2)) body)</code> 等价的，简化一下就是：</p><pre><code>(let #arg36517 (lambda (#k36537 x)
+                 (#k36537 (* x x)))
+     (let _ (set (quote square) #arg36517)
+          (square (lambda (#arg36437)
+                    (halt (+ #arg36437 1))) 5)))
+</code></pre><p>然后做闭包变换：</p><pre><code><class>language-lisp</class><@ />197 #&gt; (closure-convert '((lambda (#arg36517)
+   ((lambda (_)
+      ((lambda (#f36464)
+         (#f36464 (lambda (#arg36437)
+                    (halt (+ #arg36437 1))) 5)) square))
+    (set (quote square) #arg36517)))
+ (lambda (#k36537 x)
+   (#k36537 (* x x)))))
+((#clofun39179 (lambda () ((lambda (#arg36517) ((lambda (_) ((lambda (#f36464) ((%closure-func #f36464) #f36464 (%closure #clofun39075) 5)) square)) (set (quote square) #arg36517))) (%closure #clofun39175)))) (#clofun39175 (lambda (#clo38831 #k36537 x) ((%closure-func #k36537) #k36537 (* x x)))) (#clofun39075 (lambda (#clo38586 #arg36437) (halt (+ #arg36437 1)))))
+198 #&gt; 
+</code></pre><p>写成简化后的 let 是：</p><pre><code>((#clofun37868
+  (lambda ()
+    (let #arg36517 (%closure #clofun37864)
+         (let _ (set (quote square) #arg36517)
+              ((%closure-func square #f36464)
+               #f36464 (%closure #clofun37764) 5) ))))
+ (#clofun37864
+  (lambda (#clo37520 #k36537 x)
+    ((%closure-func #k36537) #k36537 (* x x))))
+ (#clofun37764
+  (lambda (#clo37275 #arg36437)
+    (halt (+ #arg36437 1)))))
+</code></pre><p>这里变成了三个全局函数，lambda 变成了 <code>%closure</code>，函数调用变成了 <code>(%closure-func ...)</code>。</p><p>再经过 code-generate 之后，变成这样的三段代码：</p><pre><code>199 #&gt; (code-generate '((#clofun37868
+  (lambda ()
+    ((lambda (#arg36517)
+       ((lambda (_)
+          ((lambda (#f36464)
+             ((%closure-func #f36464)
+              #f36464 (%closure #clofun37764) 5)) square))
+        (set (quote square) #arg36517)))
+     (%closure #clofun37864))))
+ (#clofun37864
+  (lambda (#clo37520 #k36537 x)
+    ((%closure-func #k36537) #k36537 (* x x))))
+ (#clofun37764
+  (lambda (#clo37275 #arg36437)
+    (halt (+ #arg36437 1))))))
+(((label #clofun37868) (&lt;- #reg39402 closure #clofun37864) (&lt;- #reg39465 intern square) (&lt;- #reg39488 (set #reg39465 #reg39402)) (&lt;- #reg39553 square) (&lt;- pc #reg39553) (&lt;- #reg39669 closure #clofun37764) (&lt;- #reg39689 5) (&lt;- stack 0 #reg39553) (&lt;- stack 1 #reg39669) (&lt;- stack 2 #reg39689) jump) ((label #clofun37864) (&lt;- #reg39725 stack 0) (&lt;- #reg39729 stack 1) (&lt;- #reg39733 stack 2) (&lt;- pc #reg39729) (&lt;- #reg39894 (* #reg39733 #reg39733)) (&lt;- stack 0 #reg39729) (&lt;- stack 1 #reg39894) jump) ((label #clofun37764) (&lt;- #reg39927 stack 0) (&lt;- #reg39931 stack 1) (&lt;- #reg40005 1) (&lt;- #reg40006 (+ #reg39931 #reg40005)) (&lt;- stack 0 #reg40006) halt))
+</code></pre><p>其实是三个函数：</p><pre><code>(label #clofun35259)
+(&lt;- #reg35801 closure #clofun35255)
+(&lt;- #reg35864 intern square)
+(&lt;- #reg35887 (set #reg35864 #reg35801))
+(&lt;- #reg35952 square)
+(&lt;- pc #reg35952)
+(&lt;- #reg36068 closure #clofun35155)
+(&lt;- #reg36088 5)
+(&lt;- stack 0 #reg35952)
+(&lt;- stack 1 #reg36068)
+(&lt;- stack 2 #reg36088)
+jump
+</code></pre><pre><code>(label #clofun35255)
+(&lt;- #reg36124 stack 0)
+(&lt;- #reg36128 stack 1)
+(&lt;- #reg36132 stack 2)
+(&lt;- pc #reg36128)
+(&lt;- #reg36293 (* #reg36132 #reg36132))
+(&lt;- stack 0 #reg36128)
+(&lt;- stack 1 #reg36293)
+jump
+</code></pre><pre><code>(label #clofun35155)
+(&lt;- #reg36326 stack 0)
+(&lt;- #reg36330 stack 1)
+(&lt;- #reg36404 1)
+(&lt;- #reg36405 (+ #reg36330 #reg36404))
+(&lt;- stack 0 #reg36405)
+halt
+</code></pre><p>只做到了生成出虚拟的指令，还没有做完自动转 Go 的那一步。
+如果手动转换成 Go 代码，效果是这样子的：</p><pre><code>func clofun35259(m *VM1) {
+    reg35801 := makeClosure(clofun35255)
+    reg35864 := MakeSymbol(&quot;square&quot;)
+    reg35887 := funSet(reg35864, reg35801)
+    reg35952 := reg35887
+    m.pc = closureFn(reg35952)
+    reg36068 := makeClosure(clofun35155)
+    reg36088 := makeInteger(5)
+    m.stack[0] = reg35952
+    m.stack[1] = reg36068
+    m.stack[2] = reg36088
+    return
+}
+
+func clofun35255(m *VM1) {
+    // reg36124 := m.stack[0]
+    reg36128 := m.stack[1]
+    reg36132 := m.stack[2]
+    m.pc = closureFn(reg36128)
+    reg36293 := primNumberMultiply(reg36132, reg36132)
+    m.stack[0] = reg36128
+    m.stack[1] = reg36293
+    return
+}
+
+func clofun35155(m *VM1) {
+    // reg36326 := m.stack[0]
+    reg36330 := m.stack[1]
+    reg36404 := MakeInteger(1)
+    reg36405 := PrimNumberAdd(reg36330, reg36404)
+    m.stack[0] = reg36405
+    m.pc = nil
+    return
+}
+</code></pre><p>这里是可以运行完整的<a href="https://github.com/tiancaiamao/cora/blob/fe413b408656d4e88c6d259f77484d802c5addbf/kl/aaa_test.go">生成后的代码</a>。 例子的输入是用的 <code>(+ (square 5) 1)</code>， 执行最终结果会得到 26，嗯，验证想法没啥问题。</p><p>撸了一个周末，总算是一点阶段性的成果吧，<a href="https://github.com/tiancaiamao/cora/blob/532c18c8d43bc9fcf6fdf139c5df55c91951cc62/compiler.cora">上代码</a>。</p>
