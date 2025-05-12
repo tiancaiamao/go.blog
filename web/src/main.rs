@@ -2,8 +2,8 @@ use web::ThreadPool;
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::fs;
-use std::str;
 use std::io::{Read, Write};
+use percent_encoding::percent_decode_str;
 
 fn main() {
     println!("Hello, world!");
@@ -33,14 +33,12 @@ fn handle_connection(mut stream: TcpStream) {
     // let buf = b"GET /index.html HTTP/1.1\r\nHost: example.domain\r\n\r\n";
     // assert!(req.parse(buf)?.is_complete());
 
-    let sz;
     match req.parse(&buffer) {
 	Ok(status) => {
 	    if status.is_partial() {
 		println!("todo: handle http parse partial {:?}", status);
 		return
 	    }
-	    sz = status.unwrap();
 	},
 	Err(e) => {
 	    println!("parse http error {}", e);
@@ -48,18 +46,66 @@ fn handle_connection(mut stream: TcpStream) {
 	},
     }
 
-    let s = str::from_utf8(&buffer[0..sz]).unwrap();
-    // first line GET / HTTP/1.1
-    let header = s.lines().next().unwrap();
-    let mut tmp = header.split_whitespace();
-    let _method = tmp.next().unwrap();
-    let uri = tmp.next().unwrap();
-    let _version = tmp.next().unwrap();
-    
-    println!("read head == {:?}", s);
-    println!("read head == {}, {}, {}", _method, uri, _version);
+    println!("parse request success: path{}",
+	     req.path.unwrap());
+	     // req.method.unwrap(),
+	     // req.version.unwrap(),
+	     // req.headers);
 
-    let filename = "../generate".to_string() + &uri.replace(".md", ".html");
+    let uris: Vec<&str> = req.path.unwrap().split('?').collect();
+    let path = uris[0];
+
+    // let s = str::from_utf8(&buffer[0..sz]).unwrap();
+    // first line GET / HTTP/1.1
+    // let header = s.lines().next().unwrap();
+    // let mut tmp = header.split_whitespace();
+    // let _method = tmp.next().unwrap();
+    // let uri = tmp.next().unwrap();
+    // let _version = tmp.next().unwrap();
+    
+    // println!("read head == {:?}", s);
+    // println!("read head == {}, {}, {}", _method, uri, _version);
+
+    let value = if uris.len() == 2 {
+	let namevalue: Vec<&str> = uris[1].split("=").collect();
+	if namevalue.len() == 2 && namevalue[0] == "name" {
+	    Some(namevalue[1])
+	} else {
+	    None
+	}
+    } else {
+	None
+    };
+
+    let filename = 
+    if path.ends_with(".md") {
+	"../generate/post".to_string() + &path.replace(".md", ".html")
+    } else if path == "/category" && value.is_some() {
+	if let Ok(val) = percent_decode_str(value.unwrap()).decode_utf8() {
+	    "../generate/category/".to_string() + val.as_ref()
+	} else {
+	    "not_found".to_string()
+	}
+    } else if path == "/tags" && value.is_some() {
+	if let Ok(val) = percent_decode_str(value.unwrap()).decode_utf8() {
+	    "../generate/tags/".to_string() + val.as_ref()
+	} else {
+	    "not_found".to_string()
+	}
+    } else if path == "/" {
+	 "../generate/home.html".to_string()
+    } else if path == "/index" {
+	 "../generate/index.html".to_string()
+    } else if path == "/project" {
+	"../generate/project.html".to_string()
+    } else if path == "/about" {
+	"../generate/about.html".to_string()
+    } else if path == "/feed.atom" {
+	"not_found".to_string() // TODO
+    } else {
+	"not_found".to_string()
+    };
+
     // if let Err(e) = fs.exists(&filename) {
     // 	    println!("request path not exist {}", filename);
     // 	    return

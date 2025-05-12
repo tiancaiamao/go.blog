@@ -1,3 +1,5 @@
+cargo-features = ["edition2021"]
+
 [package]
 name = "web"
 version = "0.1.0"
@@ -7,3 +9,4 @@ edition = "2018"
 
 [dependencies]
 httparse = "1.10.1"
+percent-encoding = "2.3.1"
