@@ -1,8 +1,8 @@
 [
     {"Title":"思考 cora 的多核支持", "Date":"2025-04-12T13:32:42Z", "Category":"高性能服务器", "Tags":["concurrency","multicore"], "File":"cora-multicore-support.md"},
-    {"Title":"调试分代 GC 的几个 bugs", "Date":"2025-04-08T22:40:42Z", "Tags":["垃圾回收","GC"],, "File":"generation-gc-bugs.md"},
-    {"Title":"continuously tracing 再调研", "Date":"2025-04-02T10:04:42Z", "Tags":["tracing"],, "File":"continuously-tracing.md"},
-    {"Title":"新玩具到了：smart am40", "Date":"2025-03-16T02:02:42Z", "Tags":["nas","旁路由","am40"],, "File":"smart-am40.md"},
+    {"Title":"调试分代 GC 的几个 bugs", "Date":"2025-04-08T22:40:42Z", "Tags":["垃圾回收","GC"], "File":"generation-gc-bugs.md"},
+    {"Title":"continuously tracing 再调研", "Date":"2025-04-02T10:04:42Z", "Tags":["tracing"], "File":"continuously-tracing.md"},
+    {"Title":"新玩具到了：smart am40", "Date":"2025-03-16T02:02:42Z", "Tags":["nas","旁路由","am40"], "File":"smart-am40.md"},
     {"Title":"思考tidb精简版", "Date":"2025-03-09T21:12:42Z", "Tags":["tidb"], "Category":"分布式", "File":"tidb-lite-edition.md"},
     {"Title":"cora 实现分代垃圾回收", "Date":"2025-02-18T11:26:42Z", "Tags":["cora", "gc"], "Category":"编译器", "File":"cora-generational-gc.md"},
     {"Title":"为什么 mallogc 在 25% 以内 Go 的程序才是健康的", "Date":"2025-01-23T10:50:42Z", "Tags":["golang", "gc"], "File":"go-health-program.md"},
