@@ -26,13 +26,6 @@ fn handle_connection(mut stream: TcpStream) {
     let mut headers = [httparse::EMPTY_HEADER; 64];
     let mut req = httparse::Request::new(&mut headers);
 
-    // let buf = b"GET /index.html HTTP/1.1\r\nHost";
-    // assert!(req.parse(buf)?.is_partial());
-
-    // // a partial request, so we try again once we have more data
-    // let buf = b"GET /index.html HTTP/1.1\r\nHost: example.domain\r\n\r\n";
-    // assert!(req.parse(buf)?.is_complete());
-
     match req.parse(&buffer) {
 	Ok(status) => {
 	    if status.is_partial() {
@@ -46,25 +39,8 @@ fn handle_connection(mut stream: TcpStream) {
 	},
     }
 
-    println!("parse request success: path{}",
-	     req.path.unwrap());
-	     // req.method.unwrap(),
-	     // req.version.unwrap(),
-	     // req.headers);
-
     let uris: Vec<&str> = req.path.unwrap().split('?').collect();
     let path = uris[0];
-
-    // let s = str::from_utf8(&buffer[0..sz]).unwrap();
-    // first line GET / HTTP/1.1
-    // let header = s.lines().next().unwrap();
-    // let mut tmp = header.split_whitespace();
-    // let _method = tmp.next().unwrap();
-    // let uri = tmp.next().unwrap();
-    // let _version = tmp.next().unwrap();
-    
-    // println!("read head == {:?}", s);
-    // println!("read head == {}, {}, {}", _method, uri, _version);
 
     let value = if uris.len() == 2 {
 	let namevalue: Vec<&str> = uris[1].split("=").collect();
@@ -105,16 +81,6 @@ fn handle_connection(mut stream: TcpStream) {
     } else {
 	"not_found".to_string()
     };
-
-    // if let Err(e) = fs.exists(&filename) {
-    // 	    println!("request path not exist {}", filename);
-    // 	    return
-    // }
-
-    // let (status_line, filename) = ("HTTP/1.1 404 NOT FOUND", "404.html");
-    // if fs::exists(&filename).is_ok() {
-    // 	(status_line, filename) = ("HTTP/1.1 200 OK", filename);
-    // }
 
     let (status_line, contents) = match fs::read_to_string(filename) {
 	Ok(content) => {
