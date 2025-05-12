@@ -1,0 +1,159 @@
+(package "go.blog/src/core"
+	 (export md-handler generate)
+
+	 (import "cora/lib/sys")
+	 (import "cora/lib/toc")
+	 (import "cora/lib/os")
+	 (import "cora/lib/io")
+	 (import "cora/lib/string")
+	 (import "cora/lib/md4c/include")
+	 (import "cora/lib/sxml")
+	 (import "cora/lib/json")
+	 (import "go.blog/src/template")
+
+	 (display "!!!!!!!!!!!!")
+	 (display "\n")
+
+	 (defun for-range (from to fn init)
+	   (if (= from to)
+	       init
+	       (for-range (+ from 1) to fn (fn init from))))
+
+	 (defun parse-index-file (idx-file)
+	   (let data (json-load-file idx-file)
+		(let n (json-array-size data)
+		     (for-range 0 n
+				(lambda (init i)
+				  (let item (json-array-get data i)
+				       (cons item init)))
+				()))))
+
+	 (func assoc
+	       k v [] => [[k v]]
+	       k v [[k1 . vs] . more] => [[k . (cons v vs)] . more] where (= k k1)
+	       k v [first . more] => [first . (assoc k v more)])
+
+	 (defun build-category (index)
+	   (foldl (lambda (acc item)
+		    (let category (json-object-get item "Category")
+			 ;; file (json-object-get item "File")
+			 (if (and (json-is-string? category)
+				  ;; (json-is-string? file)
+				  (not (= "" (json-string-value category))))
+			     ;; (assoc (json-string-value category) (json-string-value file) acc)
+			     (assoc (json-string-value category) item acc)
+			     acc)))
+		  () index))
+
+	 (defun build-tags (index)
+	   (foldl (lambda (acc item)
+		    (let tags (get-tags-from-item item)
+			 (foldl (lambda (init tag)
+				  ;; (assoc tag (json-string-value file) init))
+				  (assoc tag item init))
+				acc
+				tags)))
+		  () index))
+
+	 (defun get-tags-from-item (item)
+	   (let tags (json-object-get item "Tags")
+		(if (and (json-is-array? tags)
+			 (> (json-array-size tags) 0))
+		    (for-range 0 (json-array-size tags)
+			       (lambda (init i)
+				 (let tag (json-array-get tags i)
+				      (if (json-is-string? tag)
+					  (cons (json-string-value tag) init)
+					  init)))
+			       ())
+		    ())))
+
+	 (defun get-string-from-item (item field)
+	   (json-string-value (json-object-get item field)))
+
+	 (def INDEX (parse-index-file "./content/index.json"))
+	 (def TAGS (build-tags INDEX))
+	 (def CATEGORY (build-category INDEX))
+
+	 ;; note, content is a list of sxml, rather than an atom of sxml
+	 (defun container0 (content)
+	   (container content (map car CATEGORY) (map car TAGS)))
+
+	 (defun static-template-handler (name file)
+	   (page name (container0
+		       (list (append `(div (@ (id "content")))
+				     (process-file (string-append "./template/" file))
+				     )))))
+
+	 (defun about-handler ()
+	   (static-template-handler "About" "about.md"))
+
+	 (defun project-handler ()
+	   (static-template-handler "Project" "project.md"))
+
+	 (defun home-handler ()
+	   (static-template-handler "Home" "home.md"))
+
+	 (defun md-sxml (item)
+	   (let title (get-string-from-item item "Title")
+		date (string-slice (get-string-from-item item "Date") 0 10)
+		tags (get-tags-from-item item)
+		filename (get-string-from-item item "File")
+		path (string-append "./content/" filename)
+		(let content (process-file path)
+		     ;; date (subs (get data "Date") 0 10)
+		     ;; prev (if (> idx 0) (nth INDEX (- idx 1)) false)
+		     ;; next (if (< idx (- (count INDEX) 1)) (nth INDEX (+ idx 1)) false)
+		     (page title
+			   (container0
+			    (article title date content tags false false filename))))))
+
+	 (defun blog-item (acc item)
+	   (cons `(h2 (a (@ (href ,(get-string-from-item item "File"))) ,(get-string-from-item item "Title")))
+		 (cons `(div (@ (class "meta")) ,(string-slice (get-string-from-item item "Date") 0 10))
+		       acc)))
+
+	 (defun blog-handler (title indices)
+	   (page title (container0 (foldl blog-item () indices))))
+
+	 (defun write-file (filename data)
+	   (let outfile (open-output-file filename)
+		(begin
+		 (write-bytes outfile data)
+		 (close-output-file outfile))))
+
+	 (defun md-handler (item)
+	   (let file (get-string-from-item item "File")
+		path (string-append "./generate/post/" (string-replace file ".md" ".html"))
+		data (sxml->xml (md-sxml item))
+		(write-file path data)))
+
+	 (defun summery-handler (title data)
+	   (let filepath (fold-apply string-append "./generate/" title "/" (car data))
+		(begin
+		 ;; (display "handling summery ")
+		 ;; (display title)
+		 ;; (display "to ")
+		 ;; (display filepath)
+		 ;; (display "\n")
+		 (write-file filepath (sxml->xml (blog-handler title (cdr data)))))))
+
+	 (defun category-handler (data)
+	   (summery-handler "category" data))
+
+	 (defun tags-handler (data)
+	   (summery-handler "tags" data))
+
+	 (defun generate ()
+	   (begin
+	    (for-each md-handler INDEX)
+	    (write-file "./generate/about.html" (sxml->xml (about-handler)))
+	    (write-file "./generate/project.html" (sxml->xml (project-handler)))
+	    (write-file "./generate/home.html" (sxml->xml (home-handler)))
+	    (write-file "./generate/index.html" (sxml->xml (blog-handler "blog" INDEX)))
+	    (for-each category-handler CATEGORY)
+	    (for-each tags-handler TAGS)
+
+	    ;; TODO feed.atom
+	    ))
+	 )
