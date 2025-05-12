@@ -7,7 +7,7 @@ use percent_encoding::percent_decode_str;
 
 fn main() {
     println!("Hello, world!");
-    let listener = TcpListener::bind("0.0.0.0:7878").unwrap();
+    let listener = TcpListener::bind("0.0.0.0:80").unwrap();
     let pool = ThreadPool::new(4);
 
     for stream in listener.incoming() {
@@ -20,7 +20,7 @@ fn main() {
 }
 
 fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 4096];
     stream.read(&mut buffer).unwrap();
 
     let mut headers = [httparse::EMPTY_HEADER; 64];
