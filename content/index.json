@@ -1,4 +1,5 @@
 [
+    {"Title":"cranelift 尝试体验", "Date":"2025-06-09T18:49:42Z", "Category":"编译器", "Tags":["cranelift"], "File":"cranelift.md"},
     {"Title":"学习 rust 语言", "Date":"2025-06-01T20:28:42Z", "Category":"编程语言", "Tags":["rust"], "File":"learn-rust.md"},
     {"Title":"cora 0.4 release", "Date":"2025-05-13T11:47:42Z", "Category":"编译器", "Tags":["cora","blog"], "File":"cora-0.4.md"},
     {"Title":"思考 cora 的多核支持", "Date":"2025-04-12T13:32:42Z", "Category":"高性能服务器", "Tags":["concurrency","multicore"], "File":"cora-multicore-support.md"},

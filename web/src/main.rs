@@ -98,6 +98,11 @@ fn handle_connection(mut stream: TcpStream) {
         contents
     );
 
-    stream.write_all(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
+    if let Err(e) = stream.write_all(response.as_bytes()) {
+	println!("write result get error {}", e);
+	return;
+    }
+    if let Err(e) = stream.flush() {
+	println!("flush stream error {}", e);
+    }
 }
