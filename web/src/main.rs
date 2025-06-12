@@ -21,7 +21,10 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0; 4096];
-    stream.read(&mut buffer).unwrap();
+    if let Err(e) = stream.read(&mut buffer) {
+	println!("read stream error {e}");
+	return
+    }
 
     let mut headers = [httparse::EMPTY_HEADER; 64];
     let mut req = httparse::Request::new(&mut headers);

@@ -1,4 +1,5 @@
 [
+    {"Title":"state monad 推导", "Date":"2025-06-12T11:57:42Z", "Category":"编程语言", "Tags":["monad"], "File":"state-monad.md"},
     {"Title":"cranelift 尝试体验", "Date":"2025-06-09T18:49:42Z", "Category":"编译器", "Tags":["cranelift"], "File":"cranelift.md"},
     {"Title":"学习 rust 语言", "Date":"2025-06-01T20:28:42Z", "Category":"编程语言", "Tags":["rust"], "File":"learn-rust.md"},
     {"Title":"cora 0.4 release", "Date":"2025-05-13T11:47:42Z", "Category":"编译器", "Tags":["cora","blog"], "File":"cora-0.4.md"},
