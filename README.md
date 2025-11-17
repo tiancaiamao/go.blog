@@ -1,3 +1,13 @@
+cora
+
+(import "go.blog/src/core)
+(generate)
+
+
+
+
+Deprecated below...
+
 ## Test
 
 lein run 8088
