@@ -1,7 +1,7 @@
 在写 scheme/shen/cora 等等这一类 lisp 代码的时候，一般我是通过 repl 来调试的。无状态的表达式，在 repl 环境里面直接 debug 足够简单。
 我没有用 lisp 写过什么大型的程序，在其它语言中，比如 C 和 Go，有些场景我会视情况上单步调试，使用 gdb 和 delve 这类调试器。
 
-在上次发现了 [tailification](tailfication-delimited-continuation.md) 之后，又准备把 cora 改成编译到 C 的方式了，代码怎样调试便成了一个问题：编译到 C 的实现方式是不再具备那么方便的 repl 的。
+在上次发现了 [tailification](/tailfication-delimited-continuation.md) 之后，又准备把 cora 改成编译到 C 的方式了，代码怎样调试便成了一个问题：编译到 C 的实现方式是不再具备那么方便的 repl 的。
 
 想了一想，觉得我可以用 cora 实现一个解释器，这个解释器里面不用太考虑性能的事情，主要就是有一个 repl 环境。顺便，只需要简单 hack 一下这个解释器，还可以将它变成一个调试器，具备基本的"断点调试"功能。
 
@@ -99,7 +99,7 @@ debug>
 
 ## delimited continuation 实现
 
-在 cora 中一个很重要的东西是 [resumable exception](resumable-exception.md)，或者说 delimited continuation。在解释器里面怎么实现呢?
+在 cora 中一个很重要的东西是 [resumable exception](/resumable-exception.md)，或者说 delimited continuation。在解释器里面怎么实现呢?
 
 相应的语法是 `(try (lambda () exp)  (lambda (res resume) ...))`。在 exp 里面可以 `(throw xxx)`，throw 之后会跳转到 catch 的逻辑里面，而 throw 时刻的 continuation 则作为参数传到 resume。
 

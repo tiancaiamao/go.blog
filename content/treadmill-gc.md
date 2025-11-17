@@ -77,5 +77,5 @@ void (*recycleFn)(void* allocator, void *ptr);
 - 链表对硬件的 cache 友好性不咋滴
 
 但并不是什么致命的问题。考虑到这个算法的简单性，其价值还是非常高的。我写了一个 demo 代码放在[这儿](https://github.com/tiancaiamao/cora/blob/639e062ec509f53132774fadc5087c788b394657/runtime/gc.c#L250-L287)。
-暂时还没用到 cora 里面去，不过说不准哪天，就用它替换掉上次 [200行实现 copying 垃圾回收](200-lines-gc.md) 那个丑陋的 stop the world 实现了。
+暂时还没用到 cora 里面去，不过说不准哪天，就用它替换掉上次 [200行实现 copying 垃圾回收](/200-lines-gc.md) 那个丑陋的 stop the world 实现了。
 

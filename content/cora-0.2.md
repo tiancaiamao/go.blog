@@ -3,11 +3,11 @@
 0.1 版本是 cora 正式打的第一个 tag。为什么开始打 tag 了呢? 是因为经过这么久的探索，终于真正的确定实现的方式了。
 之前有用 ast 解释器方式实现过，有 bytecode VM 方式实现过，并且还实验过好几个不同版本，也有尝试过编译到 C，也有做过一些 jit 方面的调研虽然没有这块的实现过。在重写过许多版本之后，我越来越能够知道各种实现的取舍，以及自己个人项目能够维护的代码规模的能力边界。
 
-0.1 版本中，实现的内容包括：[模块](cora-module.md)和[编译到 C](tailfication-delimited-continuation.md)。
+0.1 版本中，实现的内容包括：[模块](/cora-module.md)和[编译到 C](/tailfication-delimited-continuation.md)。
 这些就足够提供一个能跑的基础版本了。解释器去掉了，REPL 还是保留着，实现方式直接做成 cora 编译到 C，再从 C 编译到 so，然后加载 so 文件的方式。
 这样子可以进一步压缩代码量，不用同时维护解释器和编译成 C 两套实现。
 
-0.2 版本中，最重要的 feature 是提供了 [GC 实现](cora-gc.md)。然后也恢复了 [resumble exception](resumable-exception.md) 的功能支持 try-catch 语句。并且也恢复了[coroutine 的原型 demo](use-algebraic-effect.md)。不过也只是在 demo 级别，离正儿八经的库其实还挺远，恢复它的主要目的是检验一下 try-catch 那边的实现有没啥 bug。本来在实现完 GC 的时候，其实就应该可以发 0.2 版本了，为什么没有当时立刻打 tag 呢? 是因为刚实现完我还不确定质量怎么样，有没有各种 bug。所以等过一段时间，基本没遇到内存异常 panic，才算确认这块是 ok 了。
+0.2 版本中，最重要的 feature 是提供了 [GC 实现](/cora-gc.md)。然后也恢复了 [resumble exception](/resumable-exception.md) 的功能支持 try-catch 语句。并且也恢复了[coroutine 的原型 demo](/use-algebraic-effect.md)。不过也只是在 demo 级别，离正儿八经的库其实还挺远，恢复它的主要目的是检验一下 try-catch 那边的实现有没啥 bug。本来在实现完 GC 的时候，其实就应该可以发 0.2 版本了，为什么没有当时立刻打 tag 呢? 是因为刚实现完我还不确定质量怎么样，有没有各种 bug。所以等过一段时间，基本没遇到内存异常 panic，才算确认这块是 ok 了。
 
 我之前列过一个 TODO，相当于 roadmap 性质，现在重新省视一下：
 
@@ -22,13 +22,13 @@
 
 已经是完成了不少了。并发模型这块打算 [去 guile scheme 抄作业](https://wingolog.org/archives/2017/06/27/growing-fibers)，所以方向性上面是比较明确的，下个版本就干。至于 type system 则不那么着急，当前看到的比较接近的是[这篇](https://ruudvanasseldonk.com/2024/a-type-system-for-rcl-part-2-the-type-system)，但还是充满不确定性。
 
-然后还有性能优化相关的，比如实现[这里提到的优化](tail-call-in-c.md)，以及不少尽量将 primitive call 消除掉等。优化是长期的工作，不急于一时。
+然后还有性能优化相关的，比如实现[这里提到的优化](/tail-call-in-c.md)，以及不少尽量将 primitive call 消除掉等。优化是长期的工作，不急于一时。
 
 另外就是基础库的构建，是大坑了。在发 1.0 前，至少需要能做到让我的博客用 cora 重写的程度。其中涉及的的基础库还是需要一些的。就比如 markdown 相关的，xml 相关的，html 相关的，net，http 等等等。不像其它的语言框架啥的，在 cora 这边全部得自己撸一遍。
 
 为什么? 为什么要自己撸一门语言呢? 因为能够创造一门语言,用这门语言去写自己的代码，是程序员最浪漫的事情。世界上已经有这么多门语言了，但是他们都不是自己创造的。有一些语言可能很接近自己想要的东西，但是"接近"始终是不是完完全全一致的。而自己去设计一门语言时，可以按照自己的想法去实现。
 
-Go 语言的并发模型非常不错，goroutine + channel 完全解释了线程+锁那种并发方式的心智负担。语言本身也不错，所以作为日常吃饭的家伙使用。我还是更想要一门函数式的语言，更 high level 并且抽象程度更高的。我记得有人说过 "Go 的 goroutine + channel 不过是把其它语言里面用库实现的东西，挪到了语言中"。这话糙理不糙。那么如果要做到在库层面去实现 goroutine + channel，则语言层面需要什么基础设施呢？只需要语言层面提供 delimited continuation,或者叫 algebraic effect 又或者是我在 cora 里面取的名字，[resumble exception](resumable-exception.md)。这是非常强大的基础设施，也难怪 scheme，这门号称 "设计计算机语言不应该进行功能的堆砌，而应该尽可能减少弱点和限制，使剩下的功能显得必要" 的语言，会提供 call/cc 这种奇怪的特性。
+Go 语言的并发模型非常不错，goroutine + channel 完全解释了线程+锁那种并发方式的心智负担。语言本身也不错，所以作为日常吃饭的家伙使用。我还是更想要一门函数式的语言，更 high level 并且抽象程度更高的。我记得有人说过 "Go 的 goroutine + channel 不过是把其它语言里面用库实现的东西，挪到了语言中"。这话糙理不糙。那么如果要做到在库层面去实现 goroutine + channel，则语言层面需要什么基础设施呢？只需要语言层面提供 delimited continuation,或者叫 algebraic effect 又或者是我在 cora 里面取的名字，[resumble exception](/resumable-exception.md)。这是非常强大的基础设施，也难怪 scheme，这门号称 "设计计算机语言不应该进行功能的堆砌，而应该尽可能减少弱点和限制，使剩下的功能显得必要" 的语言，会提供 call/cc 这种奇怪的特性。
 
 
 既然提到了 scheme，就再多说一些。scheme 应该是给了 cora 最多的 inspiration 的。scheme 有很多的实现，有一些性能很不错的实现，像性能秒王秒地的 chez scheme，我甚至[看到过一个 x86 虚拟机的实现](https://weinholt.se/articles/zabavno-pc-emulator/)，它的实现路径是把 x86 指令，动态翻译成 scheme 的函数，然后再利用 chez scheme 的高性能来 eval 这些函数。从前都只有高级语言往低级语言编译的，还是 chez scheme 的性能太变态了才能够这么玩。gambit scheme 也是非常高性能的实现，之前排名第二，现在被 loko 挤下去一位屈居第三了 (对，loko 的作者就是玩 x86 编译到 scheme 的变态)。compile to C 这样的实现路径，我也是抄作业抄的 gambit scheme。每次去看 Marc Feeley (gambit schema 作者)的论文，总是有一些不错的收获，我也说过，他的作品真的是每篇都值得一看。还有像 guile 和 chicken，都有很不错的生态。guile 的作者 wingo 的博客里面有经常分享一些不错的东西，也是我[经常去学习的地方](https://wingolog.org/)。chicken 虽然性能相对拉挎一点，但是生态和周边的库都还是非常丰富的。不过要说生态和库的丰富，还得是 racket。

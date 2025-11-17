@@ -2,7 +2,7 @@
 
 EOPL里面的讲得好理解，但内容有点浅。它是一个最基础的版本，并没有写如何实现structural polychromy，也就是没有多态的record和variant类型。我觉得variant是一个比较重要的类型，但是似乎有点复杂，一直都没想明白。
 
-[之前的想法](type-system.md)是简化问题。其实是想绕开，所以当时的一个设想是，如果不能为类型命名，就不会产生类型递归；record干掉field名字，就可以简化成tuple；只用record带个数字的tag，就可以模拟variant的效果。其实直觉的方向还是对的，只是对structural polychromy的理解还不够。
+[之前的想法](/type-system.md)是简化问题。其实是想绕开，所以当时的一个设想是，如果不能为类型命名，就不会产生类型递归；record干掉field名字，就可以简化成tuple；只用record带个数字的tag，就可以模拟variant的效果。其实直觉的方向还是对的，只是对structural polychromy的理解还不够。
 
 对于一个东西，如果想不明白它是怎么实现的，我就不能说我懂了。最近突然有点感触：variant的类型应该是它本身。
 

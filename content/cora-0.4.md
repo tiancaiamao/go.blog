@@ -1,6 +1,6 @@
 [时隔半年](cora-0.3.md)，I'm thrilled to announce 终于是时候发布 cora 的 [0.4 版本](https://github.com/tiancaiamao/cora/releases/tag/v0.4.0)了。这是一个里程碑式的版本，这门语言的成熟度进一步提升。
 
-其实目前的发版没有什么特别的规划，就是想到啥做啥，当积累了足够的变化之后，就发一个版本，并非按时间来发版本。为什么算一个里程碑式的版本？因为我之前说，等我能够用自己的语言实现自己的博客的时候，说明语言的成熟度已经差不多了，到时候就发布 1.0 版本。如今已经做到了一半，我的博客[又](go-org-mode-blog.md)[双](chicken-scheme-practice2.md)[叕](clojure-blog.md)重写了，这次有一半是用 cora 实现的。
+其实目前的发版没有什么特别的规划，就是想到啥做啥，当积累了足够的变化之后，就发一个版本，并非按时间来发版本。为什么算一个里程碑式的版本？因为我之前说，等我能够用自己的语言实现自己的博客的时候，说明语言的成熟度已经差不多了，到时候就发布 1.0 版本。如今已经做到了一半，我的博客[又](/go-org-mode-blog.md)[双](/chicken-scheme-practice2.md)[叕](/clojure-blog.md)重写了，这次有一半是用 cora 实现的。
 
 ## 博客重写
 
@@ -17,7 +17,7 @@
 
 ## 版本的主要变化
 
-0.4 版本最大的变化主要是两处：[分代垃圾回收](cora-generational-gc.md)，以及[模块系统重新实现](define-library.md)，都已经分别写过博客了，细节就不展开了。这两处改动都是工作量比较大的，前者是因为正确性太难搞了，修修补补了好久才[把 bug 都消灭掉](generation-gc-bugs.md)。后者一方面模块重实现本身的工作量，另一方面是需要修改之前所有已有模块到新的实现。
+0.4 版本最大的变化主要是两处：[分代垃圾回收](/cora-generational-gc.md)，以及[模块系统重新实现](/define-library.md)，都已经分别写过博客了，细节就不展开了。这两处改动都是工作量比较大的，前者是因为正确性太难搞了，修修补补了好久才[把 bug 都消灭掉](/generation-gc-bugs.md)。后者一方面模块重实现本身的工作量，另一方面是需要修改之前所有已有模块到新的实现。
 
 模块当前使用了关键字 package，而不是像 scheme 那样用 define-library。可能我更喜欢 Go 吧，用 package 关键字可以少打几个字。
 
@@ -31,7 +31,7 @@
 	)
 ```
 
-值得一提的是，相对于前面的[模块系统重新实现](define-library.md)那篇博客描述，我最终还是把模块系统完全做到了宏那一层，只不过是宏展开完毕之后，再追加一个 stage 去处理。这样的好处是在 kernel lambda 部分仍然保持极简。if do lambda let 几个 special forms，set 都不用是 special forms 而是函数，let 则是为了性能而加入到 special form 的。
+值得一提的是，相对于前面的[模块系统重新实现](/define-library.md)那篇博客描述，我最终还是把模块系统完全做到了宏那一层，只不过是宏展开完毕之后，再追加一个 stage 去处理。这样的好处是在 kernel lambda 部分仍然保持极简。if do lambda let 几个 special forms，set 都不用是 special forms 而是函数，let 则是为了性能而加入到 special form 的。
 
 对应的设计哲学是：cora 的上层语言是一门宏语言，提供便利的语法，是对接用户的；而底层是极简的 kernel lambda，对接编译器的。上层语言通过"宏"这样的机制来对接到底层语言。本质上就是 scheme 那套做法。即使 kernel lambda 重新实现，从用户语言到 kernel lambda 这一层还是完全可以重用。就像 shen 语言那样，它是可以对接到许多语言的。不过 cora 对于 kernel lambda 有一些要求：必须支持尾递归，必须支持 curry/partial apply。上层语言到下层语言的过程，虽说是通过宏来支持，但是更像是某种编译过程。cora 的宏不是"卫生"的，这一层的作用是 sexp 改写，更类似于 staged 编译。
 
@@ -83,7 +83,7 @@ cora 跟 Go 一样也是有栈协程，不过是分段栈而不是连续栈。�
 
 实现分段栈之后也就修掉了。还是 ack 函数测试，之前跑不过，也是因为爆栈的。
 
-这一波测试加强，让我对 GC 实现更有信心了。测试是需要重视起来的，不然等代码规模更大以后就维护不动了。当前是加了一些测试，不过还比较混乱，后续得把 CI 搞起来，提交代码要自动跑 CI，而不是自己手动去跑测试。题外话，我在 linux / mac 不同的系统上都有跑过 cora 的测试，并且也涉及不同的 cpu 架构，有 x86，有我的[玩具 arm 机器](smart-am40.md)，也有 mac 的 m3，还有在 vps 那种虚拟环境，得益于 C 语言的良好跨平台性，cora 编译到 C 基本上在所有平台和系统上都跑得很欢快。
+这一波测试加强，让我对 GC 实现更有信心了。测试是需要重视起来的，不然等代码规模更大以后就维护不动了。当前是加了一些测试，不过还比较混乱，后续得把 CI 搞起来，提交代码要自动跑 CI，而不是自己手动去跑测试。题外话，我在 linux / mac 不同的系统上都有跑过 cora 的测试，并且也涉及不同的 cpu 架构，有 x86，有我的[玩具 arm 机器](/smart-am40.md)，也有 mac 的 m3，还有在 vps 那种虚拟环境，得益于 C 语言的良好跨平台性，cora 编译到 C 基本上在所有平台和系统上都跑得很欢快。
 
 ## 后续畅想
 
@@ -99,7 +99,7 @@ cora 0.4 版本已经得到了极大的增强，实际的证明就是至少博�
 
 partial evaluation 是一个很有意思的性能优化话题，[guile 那边的博客](https://wingolog.org/archives/2011/10/11/partial-evaluation-in-guile)可以参考，包括里面推荐的 [Partial Evaluation Tutorial](https://www.cs.utexas.edu/~wcook/tutorial/)，还有 Kent Dybvig 的 [Macro-Writer's Bill of Rights](https://www.youtube.com/watch?v=LIEX3tUliHw) 视频也是学习材料。我还找到了一个 Marc Feely 的 [peval 的代码](https://www.cs.cmu.edu/Groups/AI/util/lang/scheme/code/eval/peval/peval.scm)。
 
-[多核支持](cora-multicore-support.md)之前也写过想法了，总体来说还是没想清楚，所以不急于实现。
+[多核支持](/cora-multicore-support.md)之前也写过想法了，总体来说还是没想清楚，所以不急于实现。
 
 GC 的tuning这块还是有空间的，我发现什么时候触发GC，要回收多少，minor 还是 major，等等等策略相关的东西，其重要性甚至不低于实现 GC 算法本身。另外，现在还有两个问题，一个是GC的回收只是回收到了 runtime，怎么样去归还给操作系统还没处理。另外就是关于并发，支持并发让我很抗拒，因为实现复杂度高了之后 hold 不住，但是重要性又很强，如果能想到好的方案，也不排除这块继续优化。
 

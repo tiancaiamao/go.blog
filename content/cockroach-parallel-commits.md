@@ -48,7 +48,7 @@ cockroachdb 的优化点是在这里，它可以让 commit 不等所有 write1 w
 
 ## calvin 和 spanner
 
-在年初的时候写过一篇 [calvin 的 paper reading](calvin.md)。calvin 和 spanner 是两个不同的流派。前者来自于学术业，而后者来自工业界， google 搞的。后来 calvin 发展成了 FaunaDB，学术成果工程化的产物（不知道是褒义还是贬义）。
+在年初的时候写过一篇 [calvin 的 paper reading](/calvin.md)。calvin 和 spanner 是两个不同的流派。前者来自于学术业，而后者来自工业界， google 搞的。后来 calvin 发展成了 FaunaDB，学术成果工程化的产物（不知道是褒义还是贬义）。
 
 calvin 的核心观点是，2PC 里面的锁是一个很糟糕的东西，应该避免掉 2PC。它的方式是弄了一个事务协调层，**把事务之间不确定的时序关系转化成确定的**，后面就可以直接走 log replication 了。所以它是 事务排序 + log 的流派。
 

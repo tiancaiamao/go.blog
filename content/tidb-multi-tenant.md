@@ -1,9 +1,9 @@
 这一篇探讨一下 tidb 上云的事情。本篇有可能就是<云原生数据库架构系列>的最后一篇了。
 
-- [session manager](session-manager.md)
-- [cockroachdb severless 解读](cockroach-severless.md)
-- [<下一代云原生数据库设计>点评](cloud-native-architecture.md)
-- [多租户实现路径的探索](tidb-multi-tenant.md)
+- [session manager](/session-manager.md)
+- [cockroachdb severless 解读](/cockroach-severless.md)
+- [<下一代云原生数据库设计>点评](/cloud-native-architecture.md)
+- [多租户实现路径的探索](/tidb-multi-tenant.md)
 
 
 当一个项目很小，或者从头开始时，面向云原生设计是一个比较容易的事情。当一个项目太大了之后，改造就很困难，系统太复杂了，走不动。

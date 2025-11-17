@@ -1,4 +1,4 @@
-接[上篇](queueing-delay.md)。
+接[上篇](/queueing-delay.md)。
 
 服务速率 $$\mu$$
 

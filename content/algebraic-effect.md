@@ -1,4 +1,4 @@
-[上一篇](koka-papers.md)里面提到了，algebraic effect 一定是有某种可以直接转换成基本的 lambda calcalus 的方式的，只是我还不知道如何转。
+[上一篇](/koka-papers.md)里面提到了，algebraic effect 一定是有某种可以直接转换成基本的 lambda calcalus 的方式的，只是我还不知道如何转。
 读论文找答案一方面不确定我应该找哪一篇，另一方面好多论文有些太复杂了，读起来很头大。
 今天静下来的时候，独自好好想了想这个转换过程，有点灵感，记录下来。
 
@@ -235,7 +235,7 @@ g = (lambda (...  k)
 ```
 
 函数 f 必须是 cps 形式，函数 g 必须是 cps 形式，直到 throw 的位置。也就是从 try 开始的点，到中间的多层调用，都需要变成 cps 形式。这就跟 delimited continuation 一个样子了。
-如果把前面一篇 [continuation monad](continuation-monad.md) 跟这一篇结合起来，也不是不能做。
+如果把前面一篇 [continuation monad](/continuation-monad.md) 跟这一篇结合起来，也不是不能做。
 
 ...就是仍然有点麻烦。需要自动地决定是否需要改写成 cps 形式，改写取决于某个函数有没有被 try throw 的调用栈路径上面使用过，如果是，就需要转换。
 

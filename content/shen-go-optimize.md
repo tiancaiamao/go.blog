@@ -1,4 +1,4 @@
-想不到居然已经时隔一个多月了，[接上篇](klambda.md)，编译到字节码的工作算是基本完成。[shen-go](https://github.com/tiancaiamao/shen-go)是shen语言在Go的实现。前几天给shen-go打上了v0.1的tag。不知道多少天熬夜，连续好多周末宅着调试代码，看到所有的测试都跑通那一刻，真是感觉所有的努力都没有白费。
+想不到居然已经时隔一个多月了，[接上篇](/klambda.md)，编译到字节码的工作算是基本完成。[shen-go](https://github.com/tiancaiamao/shen-go)是shen语言在Go的实现。前几天给shen-go打上了v0.1的tag。不知道多少天熬夜，连续好多周末宅着调试代码，看到所有的测试都跑通那一刻，真是感觉所有的努力都没有白费。
 
 好的代码是艺术品，功能确定好，反复打磨，当一行代码也不能再增加，并且一行代码也不能减少的时候，就比较接近于完美了。其中[有50行我是比较满意的](https://github.com/tiancaiamao/shen-go/blob/16ae75533739e9138c8eaa914beb3cc0ae3d3753/compiler/compile.shen)，称得上可以拿出手的作品。
 

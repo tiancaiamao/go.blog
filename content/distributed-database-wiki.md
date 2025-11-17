@@ -14,7 +14,7 @@
 
 ### calvin 篇
 
-[calvin paper reading](calvin.md)
+[calvin paper reading](/calvin.md)
 
 ### aurora 篇
 
@@ -28,7 +28,7 @@
 
 [TiDB 源码阅读系列文章(官方)](https://github.com/pingcap/blog-cn/blob/master/tidb-source-code-reading-1.md)
 
-[在 PingCAP 的一些技术挑战](challenge-at-pingcap.md) (面向 senior 的广告招骋软文)
+[在 PingCAP 的一些技术挑战](/challenge-at-pingcap.md) (面向 senior 的广告招骋软文)
 
 what database does (面向 newbie 的广告招骋软文) :todo
 
@@ -44,12 +44,12 @@ what database does (面向 newbie 的广告招骋软文) :todo
 
 ### raft
 
-[raft实现如何做测试](raft-implementation-test.md)
+[raft实现如何做测试](/raft-implementation-test.md)
 
-[从raft看failure的处理](raft-fault-tolerance.md)
+[从raft看failure的处理](/raft-fault-tolerance.md)
 
 ## 优化器
 
-[SQL优化器庖丁解牛篇](sql-optimizer1.md)
+[SQL优化器庖丁解牛篇](/sql-optimizer1.md)
 
 ## 存储

@@ -1,4 +1,4 @@
-[接上篇](scheme-hygiene-macro.md)，前面对 scheme 卫生宏的实现方式有个整体的介绍，这一次具体讲其中 explicit renaming 这种方式的实现原理。
+[接上篇](/scheme-hygiene-macro.md)，前面对 scheme 卫生宏的实现方式有个整体的介绍，这一次具体讲其中 explicit renaming 这种方式的实现原理。
 
 首先讲 [alpha 变换](https://en.wikipedia.org/wiki/Lambda_calculus#%CE%B1-conversion)。alpha 变换这东西，说的就是函数的参数名字其实是无所谓的。
 

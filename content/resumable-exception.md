@@ -25,7 +25,7 @@ try 在执行前一段代码块时，如果遇到了 throw，则跳转到后一�
 
 resumable exception 和普通异常的区别就是在于普通异常之后，原始的栈就丢失了，异常处理里面只能做少量清理工作。而 resumable exception 则强大得多，它实际上就是一个 delimited continuation，边界是从 try 到 throw 区间的栈。由于是有界的，比 `call/cc` 的性能会好一些。
 
-我之前用纯库的形式实现了 [algebraic effect](algebraic-effect2.md)，但是那样子实现有一些局限性。举个例子，这段代码用以前那个库就跑不过:
+我之前用纯库的形式实现了 [algebraic effect](/algebraic-effect2.md)，但是那样子实现有一些局限性。举个例子，这段代码用以前那个库就跑不过:
 
 ```
 (defun f (n)
@@ -52,7 +52,7 @@ resumable exception 和普通异常的区别就是在于普通异常之后，原
 所有非 tail 位置的调用都会有问题。`(+ (f (- n 1)) 1)` 实际变成了 `(+ [tuple result continuation] 1)` 这类型显然是匹配不上了的。
 
 
-另一方面，可能这个问题的本质还是在 monad 的不可组合性。之前有一篇[文章](continuation-monad.md)里面，我是写了非尾递归的时候，要用 monad-do 的写法，所以猜想这里有可能要写成这种形式:
+另一方面，可能这个问题的本质还是在 monad 的不可组合性。之前有一篇[文章](/continuation-monad.md)里面，我是写了非尾递归的时候，要用 monad-do 的写法，所以猜想这里有可能要写成这种形式:
 
 ```
 (monad-do
@@ -78,7 +78,7 @@ delimited continuation 本身确实是可以用[纯库实现](https://github.com
      (lambda (v cc) (cc v)))
 ```
 
-其实就是按 [gambit 的做法](gambit-callcc.md) 实现的。关键词：segment stack。
+其实就是按 [gambit 的做法](/gambit-callcc.md) 实现的。关键词：segment stack。
 
 ![image](https://user-images.githubusercontent.com/1420062/208905899-c26c73ee-5c3a-43e4-ad67-caec44c8e327.png)
 

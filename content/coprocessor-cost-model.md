@@ -40,6 +40,6 @@ coprocessor 请求内部，会有一个 encoded plan，告诉 tikv 要执行啥�
 
 比如说通过估算负载自动扩缩容。我们计算出系统的能承受的负载是多重，然后看当前 coprocessor 的实际负载多重，然后决定是否需要扩容。识别出这样的场景后，可以将扩容做成自动化的，而不是靠人工观察监控去决策。
 
-比如说租户的资源隔离。假设系统，做 [severless](cockroach-severless.md) 支持多租户，下层 kv 存储层共享，那么对多租户的计费，以及对多租户间的资源隔离也是需要量化 coprocessor 的代价的。
+比如说租户的资源隔离。假设系统，做 [severless](/cockroach-severless.md) 支持多租户，下层 kv 存储层共享，那么对多租户的计费，以及对多租户间的资源隔离也是需要量化 coprocessor 的代价的。
 
 

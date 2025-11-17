@@ -76,7 +76,7 @@ s 其实是一个状态，调用 parse 函数其实是需要修改这个状态�
 	   ...body)
 ```
 
-这是一个多值返回，在[多值返回那篇博客](multiple-returns-in-scheme.md)中，我们记得*返回多个值 s1 x1 等价于接受一个 k 然后调用 (k s1 x1)*。
+这是一个多值返回，在[多值返回那篇博客](/multiple-returns-in-scheme.md)中，我们记得*返回多个值 s1 x1 等价于接受一个 k 然后调用 (k s1 x1)*。
 
 
 ```

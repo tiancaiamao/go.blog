@@ -49,4 +49,4 @@ select min(id) from (select id from t order by id limit 1 where id is not null) 
 
 说白了就是，一个 Projection 结点是否可消除，一方面由它父结点告诉它，它是否是一个冗余的 Projection 操作，另一方面是由它自己和孩子结点的输入列做比较，看是否是可消除的。
 
-[下一篇](sql-optimizer4.md)
+[下一篇](/sql-optimizer4.md)

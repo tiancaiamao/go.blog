@@ -1,4 +1,4 @@
-按照之前的计划，原本应该是用生成到 C 的方式实现，用 [top of stack caching](top-of-stack-caching.md) 优化编译。中途做到一半，通过这篇[博客](https://robot9.me/webassembly-threaded-code/)了解到 [wasm3](https://github.com/wasm3/wasm3/blob/main/docs/Interpreter.md#m3-massey-meta-machine) 的实现方式，觉得思路不错，结果把 cora 又双叕重写了。
+按照之前的计划，原本应该是用生成到 C 的方式实现，用 [top of stack caching](/top-of-stack-caching.md) 优化编译。中途做到一半，通过这篇[博客](https://robot9.me/webassembly-threaded-code/)了解到 [wasm3](https://github.com/wasm3/wasm3/blob/main/docs/Interpreter.md#m3-massey-meta-machine) 的实现方式，觉得思路不错，结果把 cora 又双叕重写了。
 
 即使是生成到 C，通过 top of stack caching 优化变量分配，从栈上到寄存器上，也不是一个轻松的过程。尤其是在 spill 之后跟 gc 的交互，又得注意将寄存器重新 save 回栈。虽然可以挑函数调用前，通过调用协议约定让寄存器全部回栈上，然后 gc 挑这种时间点做。但是在每次调用协议上寄存器回栈这一步又是绕不过的开销了。总之，**在优化性能和实现复杂性方面取得一个很好的平衡，是很难的事情**。所以当我读到 `tail_call_reg` 的 threaded-code 方式之后，觉得这是一个更简单实现的性能与复杂度的平衡，因此便重写了，回到解释器方式实现了。理论上，generate to C 的性能的上限会比这种方式高，但是是通过更高的实现复杂度获取的，如果 interpreter 就能得到足够满意的性能，是值得去做的。
  

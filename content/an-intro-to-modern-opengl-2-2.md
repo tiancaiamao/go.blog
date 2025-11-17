@@ -196,4 +196,4 @@ GLSL链接器将一个GLint位置赋值到每个uniform变量和顶点的attribu
 
 我知道我在吊你胃口，最后部分还没完成，还没有一个完整的可以运行的程序。我将在在下次，也就是本章最后一部分，修复它，到时我会写代码让绘图管线运作起来渲染我们的场景。
 
-[<< 上一节](an-intro-to-modern-opengl-2-1.md) | [目录](an-intro-to-modern-opengl-0.md) | [下一节 >>](an-intro-to-modern-opengl-2-3.md)
+[<< 上一节](/an-intro-to-modern-opengl-2-1.md) | [目录](/an-intro-to-modern-opengl-0.md) | [下一节 >>](/an-intro-to-modern-opengl-2-3.md)

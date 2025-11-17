@@ -92,7 +92,7 @@ first class macro 并不是一个特意设计的语言特性，只是由于目�
 
 ## 严格尾递归
 
-cora 是要求严格尾递归的，这点跟 scheme 强调的一样。这个 feature 成为必须的理由，是来自于我在[实现宏的过程中的观察](two-lisp-macro-design-thoughts.md)。如果不支持尾递归，在做 pattern match 宏的时候很容易展开后的代码变成非尾递归的，然后爆栈。
+cora 是要求严格尾递归的，这点跟 scheme 强调的一样。这个 feature 成为必须的理由，是来自于我在[实现宏的过程中的观察](/two-lisp-macro-design-thoughts.md)。如果不支持尾递归，在做 pattern match 宏的时候很容易展开后的代码变成非尾递归的，然后爆栈。
 
 比如这么写代码，总不能爆栈吧：
 
@@ -136,7 +136,7 @@ pattern match 是一个非常有用的 feature。本来可以做成库的，但�
   x x)
 ```
 
-其实我[之前已经提过了](lisp-better-syntax.md)，应该 **让 pattern 匹配的对象，跟构造这个对象使用的同一种语法**。
+其实我[之前已经提过了](/lisp-better-syntax.md)，应该 **让 pattern 匹配的对象，跟构造这个对象使用的同一种语法**。
 
 值得一提的是 list-rest。list-rest 是将前面的 pattern 匹配到单个变量，而最后一个变量匹配剩下的链表部分。比如：
 

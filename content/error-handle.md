@@ -95,7 +95,7 @@
     }
 ```
 
-close一个channel时，所有读这个channel的goroutine都可以收到通知，[我以前说过这个技巧](go-leak.md)。
+close一个channel时，所有读这个channel的goroutine都可以收到通知，[我以前说过这个技巧](/go-leak.md)。
 
 -------------------------------------------------------------
 

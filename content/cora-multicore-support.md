@@ -2,7 +2,7 @@
 
 ## CML
 
-[CML](cml-vs-go.md)之前已经实现了，不过只实现了单线程级别，有 coroutine 来并行。并行不是并发，当我思考多核支持的时候，第一个想到的就是如何继续把 CML 扩展到多核去。
+[CML](/cml-vs-go.md)之前已经实现了，不过只实现了单线程级别，有 coroutine 来并行。并行不是并发，当我思考多核支持的时候，第一个想到的就是如何继续把 CML 扩展到多核去。
 
 理论上 CML 是非常灵活的，它可以让 coroutine 并发，让 thread 并发，甚至让 coroutine 和 thread 之间混用的并发。在这个模型下面，只要实现 try 和 block，就可以成为一个 operation，然后 perform operation 就可以了。perform 就是先 try 一下，如果不 block 则继续往下执行，而**如果会 block，则当前的执行单元挂起，放到阻塞队列中**，特定情况下唤醒后从阻塞队列放到就绪队列。对于 coroutine，由语言的机制来提供上下文的保存和切换，而对于 thread 这类，可以用 futex。对于 thread 级别的计算单元，挂起后并不是将当前执行的东西切换出去，然后切换另一个函数来执行，而是 thread 卡在那里等待恢复，因此 futex 就够用了。
 

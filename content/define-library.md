@@ -1,4 +1,4 @@
-[cora](https://github.com/tiancaiamao/cora) 最初的模块实现是按照[这种](cora-module.md)方式，后来了解到了 [gambit 里面的做法](r7rs-library-implement.md) 之后，又忍不住诱惑想要改掉。最初的那种实现方式，它的优点是简单，实现层面的简单。但是使用层面上，其实更繁琐一点:
+[cora](https://github.com/tiancaiamao/cora) 最初的模块实现是按照[这种](/cora-module.md)方式，后来了解到了 [gambit 里面的做法](/r7rs-library-implement.md) 之后，又忍不住诱惑想要改掉。最初的那种实现方式，它的优点是简单，实现层面的简单。但是使用层面上，其实更繁琐一点:
 
 ```
 (@import "cora/lib/foo" foo)
@@ -23,7 +23,7 @@
 
 这可能是除了 GC 之后，改动起来最大的部分。主要是 cora 编译到 c 的代码，已经是用旧的模式方式来组织的，而切换到新的实现，这个依赖得非常小步小步地进行，一不小心就会 bootstrap 起不来。启动主要是依赖两个文件，init.cora 和 cora/lib/toc.cora，在 init.cora 里面实现了最基础的一些函数和宏，而在 toc.cora 里面则是编译到 c。这两个文件都是必须先编译出来 c 的，必须用上一个版本的 cora 编译当前版本的 c 文件。
 
-其实写这篇博客主要是记录一下踩到的坑。[前面那篇](r7rs-library-implement.md) 其实已经写了怎么实现了，而这篇是在实现之后，才明白为什么要这样实现。
+其实写这篇博客主要是记录一下踩到的坑。[前面那篇](/r7rs-library-implement.md) 其实已经写了怎么实现了，而这篇是在实现之后，才明白为什么要这样实现。
 
 第一个弯路是，我本想把 define-library 完全实现在 macro 那一层，也就是即不侵入 parser 层，也不侵入编译层，把脏活累活全放在 macro 这一层，反正这一层也丑。**完全实现在 macro 这一层不行，define-library 是需要理解语义的**。
 

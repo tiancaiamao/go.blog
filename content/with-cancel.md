@@ -24,7 +24,7 @@ WithCancel 接受一个 Context 并返回一个 Context，返回的 ctx 里面�
 
 关键点是在于，怎么样实现父亲的 Done() 关闭时，孩子的 Done() 也被关闭。
 
-一种方式是，父亲和孩子使用同一个 channel。这样子关闭父亲跟关闭孩子就是同一个 channel。那这个做法有什么问题呢？父母和孩子都关闭同一个 channel，它会不会调用多次？同一个 channel 关闭多次就 panic 了，当然这个可以绕过去。另外一个问题，假设父亲和孩子都是在同一个 channel，那么许多 goroutine 都将作用在这同一个 channel 上面，实现里面就是一个很粗粒度的锁了。前面我也提到过[使用 context 时的问题](go-context.md)。Go 是不是这么实现的呢？ 不是。WithCancel 的说明里面写得很清楚了： WithCancel returns a copy of parent with a new Done channel.
+一种方式是，父亲和孩子使用同一个 channel。这样子关闭父亲跟关闭孩子就是同一个 channel。那这个做法有什么问题呢？父母和孩子都关闭同一个 channel，它会不会调用多次？同一个 channel 关闭多次就 panic 了，当然这个可以绕过去。另外一个问题，假设父亲和孩子都是在同一个 channel，那么许多 goroutine 都将作用在这同一个 channel 上面，实现里面就是一个很粗粒度的锁了。前面我也提到过[使用 context 时的问题](/go-context.md)。Go 是不是这么实现的呢？ 不是。WithCancel 的说明里面写得很清楚了： WithCancel returns a copy of parent with a new Done channel.
 
 另一种方式，一个很挫的方式，专门起一个 goroutine 来监听，如果发现父亲关掉了，那么就关掉孩子：
 

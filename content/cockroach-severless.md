@@ -25,7 +25,7 @@ cockroachdb 是用 k8s 来操作集群，k8s 集群里面有(多租户共享的)
 
 <img src="https://crl2020.imgix.net/img/serverless-white-paper-illustrations-05-1.png?auto=format,compress&max-w=700" width="700" height="700" \>
 
-其中有个角色是 proxy 节点。其实 proxy 节点的角色就是上一篇里面讲的 [session manager](session-manager.md)，它可以把租户的请求路由到正确的 SQL 节点上面；它可以处理 SQL 节点的负载均衡；一个很关键的一点，它还可以处理 SQL 节点重启/升级之类的对应用层无感知。
+其中有个角色是 proxy 节点。其实 proxy 节点的角色就是上一篇里面讲的 [session manager](/session-manager.md)，它可以把租户的请求路由到正确的 SQL 节点上面；它可以处理 SQL 节点的负载均衡；一个很关键的一点，它还可以处理 SQL 节点重启/升级之类的对应用层无感知。
 
 SQL pod 是由 tenant 独享的，这样可以做到安全性的隔离。proxy pod 是可以多 tenant 共用的，它做的只是 forward 请求到具体的 SQL pod 上去。
 

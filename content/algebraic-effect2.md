@@ -1,4 +1,4 @@
-接[上篇](algebraic-effect.md)，之前想的场景太简单。然后继续研究了好久，才终于实现了 algebraic effect。
+接[上篇](/algebraic-effect.md)，之前想的场景太简单。然后继续研究了好久，才终于实现了 algebraic effect。
 
 ## algebraic effect 的实现方式介绍
 

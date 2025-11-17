@@ -50,7 +50,7 @@ leaseholder 是实现在 raft 协议上面的。如果一个副本想成为 leas
 
 ### pipeline 和 parallel commit
 
-首先是两个优化，pipeline 和 parallel commit 我分别在[去年](cockroach-parallel-commits.md)和[前年](cockroach-transaction-pipeline.md)写过博客。尤其是 parallel commit 这个是去年看过的最最精彩的技术文章。
+首先是两个优化，pipeline 和 parallel commit 我分别在[去年](/cockroach-parallel-commits.md)和[前年](/cockroach-transaction-pipeline.md)写过博客。尤其是 parallel commit 这个是去年看过的最最精彩的技术文章。
 
 
 pipeline 跟 CRDB 模型写 write intent 有关。接受请求的节点叫 coordator，coordinator 在 TiDB 里面，对应的就是 tidb server 的角色。然后 coordator 转发到 leaseholer，leaseholder 再做 replication 走 raft，成功了之后返回。pipeline 这个优化是说，不用走 raft 了，走到 leaseholder，然后 leaseholer 计算完影响了多少 row，就直接给返回。
@@ -69,7 +69,7 @@ parallel commit 这个优化，对于 latency 的降低效果太高了，按论�
 
 ### 原子性
 
-**MVCC + 单个事务状态 key 保证原子性**。整个过程都是 MVCC 的，然后每个事务只有一个唯一的 key 来最终决定事务的状态。在 TiDB 里面其实也是一样的，之前我也写过相关的[话题](tidb-transaction-internals.md)。
+**MVCC + 单个事务状态 key 保证原子性**。整个过程都是 MVCC 的，然后每个事务只有一个唯一的 key 来最终决定事务的状态。在 TiDB 里面其实也是一样的，之前我也写过相关的[话题](/tidb-transaction-internals.md)。
 
 CRDB 里面，事务的状态为 pending staging committed 或者 aborted。这几个状态变迁都是在那个 key 上面的原子性变迁。
 
@@ -133,7 +133,7 @@ CRDB 的做法是用 HLC(混合逻辑时钟)，它的创新之处在于可以不
 
 ### 混合逻辑时钟 HLC
 
-混合逻辑时钟其实[以前我也写过](hlc.md)，现在再写一遍。混合逻辑时钟存储两部分信息，一部分取值来源于本地时钟(物理部分)，另一部分取值来自于计数器(逻辑部分)。
+混合逻辑时钟其实[以前我也写过](/hlc.md)，现在再写一遍。混合逻辑时钟存储两部分信息，一部分取值来源于本地时钟(物理部分)，另一部分取值来自于计数器(逻辑部分)。
 
 来源于物理的部分，里面保存的其实是当前所有参与节点的本地时钟的最大值，另一部分则是每次事件或者消息通信时加加，类似逻辑时钟里每次事件都加加。
 

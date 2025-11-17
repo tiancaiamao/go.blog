@@ -6,9 +6,9 @@ scheme 编译到不管是 wasm 或者是 C，里面都有一个不太好解决�
 
 实现 delimited continuation 有好多条路子，大抵可以分为两派：机器派和语言派，其它的都可以算作两派的混合或者折中实现。
 
-- 纯的机器派实现方式，典型的就比如用 C 实现然后通过 setjump/longjump 拷贝和恢复栈，像云风的 coroutine 库那种。包括 [koka 语言](koka-papers.md)早期用的 libhandle 方式也是。
+- 纯的机器派实现方式，典型的就比如用 C 实现然后通过 setjump/longjump 拷贝和恢复栈，像云风的 coroutine 库那种。包括 [koka 语言](/koka-papers.md)早期用的 libhandle 方式也是。
 - 纯的语言派实现方式，就是做 CPS 变换，像 chicken scheme 那种就是的。
-- 机器派和语言派的中间方案就是虚拟机，像 SECD 虚拟机里面就是 env / continuation 都在虚拟机里面的。还有我之间介绍过 [gambit scheme](gambit-callcc.md) 中的实现方式也是用的虚拟机。
+- 机器派和语言派的中间方案就是虚拟机，像 SECD 虚拟机里面就是 env / continuation 都在虚拟机里面的。还有我之间介绍过 [gambit scheme](/gambit-callcc.md) 中的实现方式也是用的虚拟机。
 
 机器派的问题是太多低层了，C语言限制比较多，有些甚至得用汇编搞。而如果语言派用的 CPS 搞法，要么得做非常大量的激进优化，要么性能就不行。所以 gambit scheme 引入的虚拟机方式其实是在一个比较好的平衡上面。在此之前我并没有注意 guile 的实现方式...然后发现它们用的 tailification 的做法之后，觉得也是条不错的路子。
 

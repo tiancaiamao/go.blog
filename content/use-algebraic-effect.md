@@ -45,7 +45,7 @@ yield 的实现是，yield 一个叫 Yield 的 effect:
 
 这样子就实现了协程的概念了，简单的 [demo](https://github.com/tiancaiamao/cora/blob/cb0d871339a60cfb2376cfddd88f5d4fc480162a/lib/coroutine.cora) 代码。
 
-cora 的 yield 是[用宏实现的](algebraic-effect2.md)，是一个语法糖。它只能放在函数的"尾调用"的位置，比如说，这样子是不行的：
+cora 的 yield 是[用宏实现的](/algebraic-effect2.md)，是一个语法糖。它只能放在函数的"尾调用"的位置，比如说，这样子是不行的：
 
 ```
 (begin 1 (yield _ 42 ...) 2 3)

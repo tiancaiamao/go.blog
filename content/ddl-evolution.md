@@ -12,7 +12,7 @@ DDL 是 Data definition language。数据库里面的建表，删库，加索引
 
 索引变成 KV 以后是对应一块逻辑的范围，有可能很离散。要注意哪些 worker 该负责哪块区间。如果按区间范围写死了分配给 worker，可能有的闲有的忙，有的区间没数据，而有的区间要处理的数据很多。所以这里不要按逻辑区间分配范围，可以用 scan 做。这也是我们发现的问题并优化掉的一个点。
 
-DDL 的作业队列，是利用 KV 抽象出一个类似 redis 的 List 的 API。包括早期的 leader 和 worker 的一些信息，都是直接利用 TiKV 来做的。[后来的优化](online-schema-change-optimize.md)把 leader 和 worker 这一部分信息记到 etcd 里面去了。那个优化解决的是 schema lease 等待的问题，优化之后像删掉一列这种不需要补数据的 DDL 操作就能瞬间完成。
+DDL 的作业队列，是利用 KV 抽象出一个类似 redis 的 List 的 API。包括早期的 leader 和 worker 的一些信息，都是直接利用 TiKV 来做的。[后来的优化](/online-schema-change-optimize.md)把 leader 和 worker 这一部分信息记到 etcd 里面去了。那个优化解决的是 schema lease 等待的问题，优化之后像删掉一列这种不需要补数据的 DDL 操作就能瞬间完成。
 
 这里面也有几个工程上值得关注的地方。leader 和租约机制，在 etcd 里面记录信息，leader 不断更新自己的租约。如果 TiDB 的 leader 节点被 kill -9 之类的异常退出，就没机会去清掉自己写在 etcd 里面的信息，于是其它节点必须等待租约过期后才能去再竞选 leader。DDL 操作会被卡往，lease 设置的越长，这种情况下卡住的时间越久。
 

@@ -81,7 +81,7 @@ R0 = opPrimAdd R0 R1
 
 - top-of-stack-caching
 
-栈虚拟机通过让栈顶的若干元素，缓存在寄存器，从而优化性能。见[栈顶缓存](top-of-stack-caching.md)
+栈虚拟机通过让栈顶的若干元素，缓存在寄存器，从而优化性能。见[栈顶缓存](/top-of-stack-caching.md)
 
 不过只有 1-TOS 比较好做，缓存大于 1 之后状态太多了，就不好处理了。
 

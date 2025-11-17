@@ -4,7 +4,7 @@
 
 ## 优化了尾递归的实现
 
-其实这个在之前已经[写过博客](tail-call-in-c.md)了，只不过那时还没有去实现。具体说来就是将以及纯的 trampoline 的实现方式，变成将 trampoline 和函数内 tag 跳转混合的方式。
+其实这个在之前已经[写过博客](/tail-call-in-c.md)了，只不过那时还没有去实现。具体说来就是将以及纯的 trampoline 的实现方式，变成将 trampoline 和函数内 tag 跳转混合的方式。
 
 在函数内部使用 tag 跳转，性能会优于跨函数的 trampoline，因为在函数内部跳转一个是可以省掉进出函数的开销，另一个是对寄存器的更合理使用。
 看一下函数内跳转是如何可以寄存器传参的。
@@ -32,13 +32,13 @@ label1:
 ```
 
 
-通过 [tailification](tailfication-delimited-continuation.md) 处理成 CPS 形式之后，代码生成的时候不再有函数调用的概念，实际都是带参数的跳转。生成上面这种形式，则 C 语言局部变量会分配成寄存器。
+通过 [tailification](/tailfication-delimited-continuation.md) 处理成 CPS 形式之后，代码生成的时候不再有函数调用的概念，实际都是带参数的跳转。生成上面这种形式，则 C 语言局部变量会分配成寄存器。
 于是比如这里的 label0 跳到 label2，通过 arg0/arg1/arg2 这些变量进行传参的过程实际上都是走寄存器的。省掉了C语言的函数调用协议里面涉及的传参的开销。
 
 ## 支持 CML 的并发模型
 
 
-这个在之前也已经[写过博客](cml-vs-go.md)了。在 0.2 版本里面,还没有真正的去支持并发，只是做了一个 demo 来验证 resumble exception 的概念。实际上这个语言级别的 feature 等同于 delimited continuation，于是在它之上可以构建出相关的并发编程的库。采用的并发模型就是 CML 那套。就是一个抄作业的事情，抄的[这里](https://wingolog.org/archives/2018/05/16/lightweight-concurrency-in-lua)的。
+这个在之前也已经[写过博客](/cml-vs-go.md)了。在 0.2 版本里面,还没有真正的去支持并发，只是做了一个 demo 来验证 resumble exception 的概念。实际上这个语言级别的 feature 等同于 delimited continuation，于是在它之上可以构建出相关的并发编程的库。采用的并发模型就是 CML 那套。就是一个抄作业的事情，抄的[这里](https://wingolog.org/archives/2018/05/16/lightweight-concurrency-in-lua)的。
 
 
 当前的实现还只包括了 CML 的框架，以及少量的 event。处理了网络，但是像 sleep 和定时器之类的都还没有加进来。
@@ -75,7 +75,7 @@ bug 的触发概率倒不高，只是触发后我观察到这样的 warning 就�
 
 ## 类型检查
 
-cora 0.3 版本中最激动人心的应该是引入了类型，之前其实也已经[写过博客了](type-checker.md)。
+cora 0.3 版本中最激动人心的应该是引入了类型，之前其实也已经[写过博客了](/type-checker.md)。
 
 我非常满意当前这种类型检查的实现方式，因为灵活性非常好，类型检查规则就是自己写 type check 的函数来决定，跟 shen 语言的强大有得一拼。不过 shen 是"宏 + 逻辑引擎"，而 cora 没有内置逻辑引擎，没有学习负担，只需要了解算法W 或者是 unification。
 

@@ -1,4 +1,4 @@
-[接上篇](chicken-scheme-practice.md)，这次练习，我把自己的技术博客（本网站）用scheme重写了！
+[接上篇](/chicken-scheme-practice.md)，这次练习，我把自己的技术博客（本网站）用scheme重写了！
 
 ## web框架
 

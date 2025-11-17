@@ -7,11 +7,11 @@
 	  (h2 (@ (id "nav-pills")) "Category")
 	  (ul (@ (class "nav nav-pills nav-stacked"))
 	      ,(map (lambda (name)
-		      `(li (a (@ (href ,(string-append "/category?name=" name))) ,name)))
+		      `(li (a (@ (href ,(string-append "/category/" name))) ,name)))
 		    category))
 	  (h2 (@ (id "nav-pills")) "Tags")
 	  ,(map (lambda (name)
-		  `(a (@ (href ,(string-append "/tags?name=" name))
+		  `(a (@ (href ,(string-append "/tags/" name))
 			 (class "btn btn-info btn-xs")) ,name))
 		tags)))
 
@@ -80,7 +80,7 @@
 	   ,content)
      `(div
        ,(map (lambda (x)
-	       `(a (@ (href ,(string-append "/tags?name=" x))
+	       `(a (@ (href ,(string-append "/tags/" x))
 		      (class "btn btn-info btn-xs")) ,x))
 	     tags)
        (ul (@ (class "pager"))
@@ -93,5 +93,5 @@
 		   ))
      ))
      ;; (disqus title permlink)))
-  
+
   )

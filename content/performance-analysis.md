@@ -23,7 +23,7 @@
 parse 正常情况下落在 100 us，optimize 也是 几百 us，execute 对简单点查就等于走一次网络时间，tso 也是一次网络时间，我们在同数据中心内，一次网络也就 500 us，小于 1ms。
 取 tso 跟 parse + optimize 是并行的，parse + optimize 正常小于 tso，制约因素会落在 tso，那么经过分析，点查的理论处理时间应该在两次网络请求，2ms。
 
-如果跟理论算的不一样，就应该看监控定位问题。是不是应该想到 [tso 的问题](go-scheduler-pitfall.md)。也要修正自己的理论，比如 SQL 特别复杂，那 parse 时间会不会升高严重，或者 parse + optimize 超过了 tso 时间成为制约因素？这些都是需要数据敏感性的。怕就怕，没有数据敏感性，多快叫快？多慢叫慢？没有分析方法，拿到监控也是大脑一片空白。
+如果跟理论算的不一样，就应该看监控定位问题。是不是应该想到 [tso 的问题](/go-scheduler-pitfall.md)。也要修正自己的理论，比如 SQL 特别复杂，那 parse 时间会不会升高严重，或者 parse + optimize 超过了 tso 时间成为制约因素？这些都是需要数据敏感性的。怕就怕，没有数据敏感性，多快叫快？多慢叫慢？没有分析方法，拿到监控也是大脑一片空白。
 
 数据敏感性一定要建立起来。有一个 jeff dean 的 what are the numbers that every computer engineer should know，网上可以搜到，推荐每个程序员都应该了解一下：
 

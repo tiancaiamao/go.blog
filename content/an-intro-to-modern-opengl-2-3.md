@@ -1,4 +1,4 @@
-现在在我们的["hello world"程序](an-intro-to-modern-opengl-2.md)中，我们已经[加载了我们的缓冲和纹理](an-intro-to-modern-opengl-2-1.md)，并且[编译和链接了我们的着色器程序](an-intro-to-modern-opengl-2-2.md)。终于到最后一步了--让我们来渲染我们的图片。
+现在在我们的["hello world"程序](/an-intro-to-modern-opengl-2.md)中，我们已经[加载了我们的缓冲和纹理](/an-intro-to-modern-opengl-2-1.md)，并且[编译和链接了我们的着色器程序](/an-intro-to-modern-opengl-2-2.md)。终于到最后一步了--让我们来渲染我们的图片。
 
 ## 渲染作业综述
 
@@ -107,4 +107,4 @@ OpenGL提供了一组glUniform*函数用于给uniform变量赋值，其中每一
 
 [OpenGL ES](http://www.khronos.org/registry/gles/) 2也是值得一看的。它大部分由我这里提到的OpenGL 2之后的一个子集；所有的我前面提到的OpenGL API也都是在OpenGL ES 2中的。OpenGL ES还对移动平台添加了一些额外的特性，比如浮点数支持以及离线着色器编译，这是桌面版标准中所有提供的。如果你想试一下OpenGL ES开发，它是Android NDK和iPhone SDK的部分。在Windows下，Google的[ANGLE项目](http://code.google.com/p/angleproject/)还提供一个OpenGL ES2在DirectX上的实现。
 
-[< 上一节](an-intro-to-modern-opengl-2-2.md) | [目录](an-intro-to-modern-opengl-0.md) | 第三章>
+[< 上一节](/an-intro-to-modern-opengl-2-2.md) | [目录](/an-intro-to-modern-opengl-0.md) | 第三章>

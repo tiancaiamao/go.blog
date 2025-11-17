@@ -1,6 +1,6 @@
 ## 第二章：Hello World幻灯片
 
-在[前一章](an-intro-to-modern-opengl-1.md)中，我给出了图像管线的整体概述。现在是时候将它付诸行动了。在我尝试渲染任何有趣的3D场景之前，我将像标准的教程那样使用一个简单的，二维的"hello world"程序来展示基本的OpenGl API。我们将使用下面这张图：
+在[前一章](/an-intro-to-modern-opengl-1.md)中，我给出了图像管线的整体概述。现在是时候将它付诸行动了。在我尝试渲染任何有趣的3D场景之前，我将像标准的教程那样使用一个简单的，二维的"hello world"程序来展示基本的OpenGl API。我们将使用下面这张图：
 
 ![](http://duriansoftware.com/joe/media/gl2-hello-1.png)
 
@@ -125,4 +125,4 @@ glClearColor设置一个RGBA消除颜色(这里是白色)，然后glClear使用�
 
 我们已经准备好了将我们的顶点和图像放到OpenGL。在下一篇文章中，我们会介绍OpenGL的缓冲以及纹理对象。
 
-[<< 第一章](an-intro-to-modern-opengl-1.md) | [目录](an-intro-to-modern-opengl-0.md) | [下一节 >>](an-intro-to-modern-opengl-2-1.md)
+[<< 第一章](/an-intro-to-modern-opengl-1.md) | [目录](/an-intro-to-modern-opengl-0.md) | [下一节 >>](/an-intro-to-modern-opengl-2-1.md)

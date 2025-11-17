@@ -109,7 +109,7 @@
 			    (article title date content tags false false filename))))))
 
 	 (defun blog-item (acc item)
-	   (cons `(h2 (a (@ (href ,(get-string-from-item item "File"))) ,(get-string-from-item item "Title")))
+	   (cons `(h2 (a (@ (href ,(string-append "/" (get-string-from-item item "File")))) ,(get-string-from-item item "Title")))
 		 (cons `(div (@ (class "meta")) ,(string-slice (get-string-from-item item "Date") 0 10))
 		       acc)))
 
@@ -124,12 +124,12 @@
 
 	 (defun md-handler (item)
 	   (let file (get-string-from-item item "File")
-		path (string-append "./generate/post/" (string-replace file ".md" ".html"))
+        path (fold-apply string-append "./generate/" file "/index.html")
 		data (sxml->xml (md-sxml item))
 		(write-file path data)))
 
 	 (defun summery-handler (title data)
-	   (let filepath (fold-apply string-append "./generate/" title "/" (car data))
+	   (let filepath (fold-apply string-append "./generate/" title "/" (car data) "/index.html")
 		(begin
 		 ;; (display "handling summery ")
 		 ;; (display title)

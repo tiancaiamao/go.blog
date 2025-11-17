@@ -4,7 +4,7 @@
 
 市面上其它所有的 IR 几乎都是按 SSA 形式设计的。其原因是在传统的编译器领域 SSA 已被证明是事实标准了，基于像 Go 这种不是基于 LLVM 的而是自己实现编译的语言，到后期它都重构成 SSA 形式的 IR 了。 CPS 和 SSA 有很强的联系，一般是函数式语言那边会采用 CPS 形式的 IR。由于整体函数式语言的小众，这些基于 CPS 形式的编译优化都是实现在某一门语言内部的，没有什么通用 JIT 是为函数式语言做这种设计，所以一般看到的都是 SSA 形式 IR。
 
-[cora 为了实现 delimited continuation 就使用了 tailify 的技巧](tailfication-delimited-continuation.md)，实际上就是比较轻量的 CPS 变换，通过变换之后，最终的 IR 就是标签之间带参数的跳转。比如 fib 函数:
+[cora 为了实现 delimited continuation 就使用了 tailify 的技巧](/tailfication-delimited-continuation.md)，实际上就是比较轻量的 CPS 变换，通过变换之后，最终的 IR 就是标签之间带参数的跳转。比如 fib 函数:
 
 ```
 (defun fib (n)

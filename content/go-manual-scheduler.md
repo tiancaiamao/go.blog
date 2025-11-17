@@ -1,4 +1,4 @@
-Go 没有支持优先级调度，在有些场景下面，调度导致的长尾延迟是一个比较大的问题，比如说许多年以前，遇到过的[这个例子](go-scheduler-pitfall.md)。曾经觉得这种问题基本无解，作为 Go runtime 的"固有缺陷"，只能想办法绕过去。
+Go 没有支持优先级调度，在有些场景下面，调度导致的长尾延迟是一个比较大的问题，比如说许多年以前，遇到过的[这个例子](/go-scheduler-pitfall.md)。曾经觉得这种问题基本无解，作为 Go runtime 的"固有缺陷"，只能想办法绕过去。
 
 后来同事弄的 [cpuworker](https://github.com/hnes/cpuworker) 让我看到一丝丝希望，但是深入去看又发现存在一些弊端很难克服，最好还是能够在 Go runtime 内核去解。这块工作最终停留在了 demo 阶段，哪怕 demo 非常的 promising。
 

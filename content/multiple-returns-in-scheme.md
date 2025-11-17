@@ -32,7 +32,7 @@ scheme中地道的多值返回是通过collector实现的。
 
 2023.11.5更新
 
-如果用 monad 写法，推导过程类似于 [continuation monad 推导](continuation-monad.md)，做 curry 把 cps 写法中的 return 隐藏起来。
+如果用 monad 写法，推导过程类似于 [continuation monad 推导](/continuation-monad.md)，做 curry 把 cps 写法中的 return 隐藏起来。
 用 cora 表示如下，最初的 cps 写法:
 
 ```
