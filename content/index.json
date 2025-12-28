@@ -1,5 +1,18 @@
 [
   {
+    "Title": "2025 年终总结",
+    "Date": "2025-12-28T23:45:42Z",
+    "Tags": ["年终总结"],
+    "File": "2025.md"
+  },
+  {
+    "Title": "思考 cora 的多核支持(后续)",
+    "Date": "2025-12-28T23:44:42Z",
+    "Tags": ["cora"],
+    "Category": "高性能服务器",
+    "File": "cora-multicore-support-2.md"
+  },
+  {
     "Title": "AI 带来的思考",
     "Date": "2025-12-19T13:58:42Z",
     "Tags": ["AI"],
