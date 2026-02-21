@@ -1,18 +1,14 @@
 (package "go.blog/src/core"
-	 (export md-handler generate)
+	 (export md-handler generate generate-file find-item-by-file get-string-from-item)
 
 	 (import "cora/lib/sys")
 	 (import "cora/lib/toc")
-	 (import "cora/lib/os")
 	 (import "cora/lib/io")
 	 (import "cora/lib/string")
 	 (import "cora/lib/md4c/include")
 	 (import "cora/lib/sxml")
 	 (import "cora/lib/json")
 	 (import "go.blog/src/template")
-
-	 (display "!!!!!!!!!!!!")
-	 (display "\n")
 
 	 (defun for-range (from to fn init)
 	   (if (= from to)
@@ -127,6 +123,27 @@
         path (fold-apply string-append "./generate/" file "/index.html")
 		data (sxml->xml (md-sxml item))
 		(write-file path data)))
+
+	 (defun find-item-by-file (filename items)
+	   (if (null? items)
+	       ['none]
+	       (let item (car items)
+	         (if (= (get-string-from-item item "File") filename)
+	             ['ok item]
+	             (find-item-by-file filename (cdr items))))))
+
+	 (defun generate-file (filename)
+	   (let res (find-item-by-file filename INDEX)
+            (match res
+                ['ok item] (begin
+    			 (display "Generating: ")
+	    		 (display filename)
+		    	 (display "\n")
+			     (md-handler item))
+                ['none] (begin
+    			 (display "File not found in index: ")
+	    		 (display filename)
+		    	 (display "\n")))))
 
 	 (defun summery-handler (title data)
 	   (let filepath (fold-apply string-append "./generate/" title "/" (car data) "/index.html")

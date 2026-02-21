@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Blog generator wrapper script
+# Usage: blog-gen [command] [options]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CORA_BIN="${CORA_BIN:-/Users/genius/project/cora/cora}"
+
+show_help() {
+    cat << 'EOF'
+Blog Generator - Generate blog content
+
+Usage:
+    blog-gen generate              Generate all blog content (full rebuild)
+    blog-gen file <filename>       Generate a single blog post
+    blog-gen help                  Show this help message
+
+Examples:
+    blog-gen generate                                    # Rebuild everything
+    blog-gen file 2024-01-15-my-new-post.md             # Generate specific post
+    blog-gen file content/2024-01-15-my-new-post.md     # Also works with path
+
+Commands:
+    generate    Full regeneration of all blog posts and index pages
+    file        Generate only the specified blog post file
+    help        Show this help message
+
+Environment Variables:
+    CORA_BIN    Path to cora binary (default: /Users/genius/project/cora/cora)
+
+EOF
+}
+
+run_cora() {
+    local code="$1"
+    local tmpfile=$(mktemp /tmp/blog-gen.XXXXXX.cora 2>/dev/null || echo "/tmp/blog-gen-$$.cora")
+    echo "$code" > "$tmpfile"
+    cd "$SCRIPT_DIR"
+    "$CORA_BIN" "$tmpfile" 2>&1
+    rm -f "$tmpfile"
+}
+
+generate_file() {
+    local input="$1"
+    # Extract just the filename if a path is provided
+    local filename=$(basename "$input")
+    
+    run_cora "(import \"go.blog/src/core\")
+(generate-file \"$filename\")"
+}
+
+generate_all() {
+    run_cora "(import \"go.blog/src/core\")
+(generate)"
+}
+
+# Main
+case "${1:-help}" in
+    generate|all)
+        generate_all
+        ;;
+    file)
+        if [ -z "$2" ]; then
+            echo "Error: filename required"
+            echo "Usage: blog-gen file <filename>"
+            exit 1
+        fi
+        generate_file "$2"
+        ;;
+    help|-h|--help)
+        show_help
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Run 'blog-gen help' for usage information"
+        exit 1
+        ;;
+esac
