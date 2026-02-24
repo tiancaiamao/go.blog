@@ -1,5 +1,12 @@
 [
     {
+    "Title": "cora 0.5 release",
+    "Date": "2026-02-24T13:46:42Z",
+    "Category": "编译器",
+    "Tags": ["cora"],
+    "File": "cora-0.5.md"
+    },
+    {
     "Title": "自己实现一个 coding agent 学到的",
     "Date": "2026-02-21T21:43:42Z",
     "Tags": ["agent", "AI"],

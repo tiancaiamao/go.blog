@@ -120,7 +120,7 @@
 
 	 (defun md-handler (item)
 	   (let file (get-string-from-item item "File")
-        path (fold-apply string-append "./generate/" file "/index.html")
+		path (fold-apply string-append "./generate/" file "/index.html")
 		data (sxml->xml (md-sxml item))
 		(write-file path data)))
 
@@ -134,16 +134,20 @@
 
 	 (defun generate-file (filename)
 	   (let res (find-item-by-file filename INDEX)
-            (match res
-                ['ok item] (begin
-    			 (display "Generating: ")
-	    		 (display filename)
-		    	 (display "\n")
-			     (md-handler item))
-                ['none] (begin
-    			 (display "File not found in index: ")
-	    		 (display filename)
-		    	 (display "\n")))))
+		(match res
+		  ['ok item] (begin
+			       (display "Generating: ")
+			       (display filename)
+			       (display "\n")
+			       (md-handler item)
+			       ;; 更新索引页面
+			       (write-file "./generate/index.html" (sxml->xml (blog-handler "blog" INDEX)))
+			       (for-each category-handler CATEGORY)
+			       (for-each tags-handler TAGS))
+		  ['none] (begin
+			   (display "File not found in index: ")
+			   (display filename)
+			   (display "\n")))))
 
 	 (defun summery-handler (title data)
 	   (let filepath (fold-apply string-append "./generate/" title "/" (car data) "/index.html")
