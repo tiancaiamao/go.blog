@@ -1,5 +1,12 @@
 [
     {
+    "Title": "一次有趣的 AI debug 经历",
+    "Date": "2026-03-28T23:37:42Z",
+    "Category": "AI",
+    "Tags": ["minimax","glm","gpt","AI"],
+    "File": "an-ai-debug-story.md"
+    },
+    {
     "Title": "cora 0.5 release",
     "Date": "2026-02-24T13:46:42Z",
     "Category": "编译器",
