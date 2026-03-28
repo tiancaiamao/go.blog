@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Golden Gate Voxel Simulation</title>
+  <style>
+    :root {
+      --panel-bg: rgba(8, 16, 22, 0.66);
+      --panel-border: rgba(255, 255, 255, 0.16);
+      --text: #e9f4ff;
+      --muted: #a8bfd3;
+      --accent: #ff5f3d;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      background: #02060a;
+      color: var(--text);
+    }
+
+    #app { width: 100%; height: 100%; }
+
+    .hud {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      width: min(360px, calc(100vw - 32px));
+      padding: 14px 14px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--panel-border);
+      background: linear-gradient(145deg, rgba(15, 27, 36, 0.84), var(--panel-bg));
+      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.32);
+    }
+
+    .title {
+      margin: 0 0 10px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      font-size: 15px;
+      color: #f6fbff;
+    }
+
+    .desc {
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .row {
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      color: #d5e6f7;
+    }
+
+    input[type="range"] {
+      grid-column: 1 / span 2;
+      width: 100%;
+      appearance: none;
+      height: 5px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #3f6178, #7ca7bd);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff, #ff9d78);
+      border: 1px solid rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+    }
+
+    .footer {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #88a5bc;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="hud">
+    <p class="title">Golden Gate Voxel Simulation</p>
+    <p class="desc">Time-of-day drives lighting, sky tint, fog color, vehicle lights, city glow, and bloom.</p>
+
+    <div class="row">
+      <span>Time (0–24h)</span>
+      <span id="timeValue">17.0</span>
+      <input id="timeSlider" type="range" min="0" max="24" step="0.1" value="17" />
+    </div>
+
+    <div class="row">
+      <span>Fog Density (0–100)</span>
+      <span id="fogValue">28</span>
+      <input id="fogSlider" type="range" min="0" max="100" step="1" value="28" />
+    </div>
+
+    <div class="row">
+      <span>Traffic Density (0–100)</span>
+      <span id="trafficValue">75</span>
+      <input id="trafficSlider" type="range" min="0" max="100" step="1" value="75" />
+    </div>
+
+    <div class="row">
+      <span>Camera Zoom</span>
+      <span id="zoomValue">55</span>
+      <input id="zoomSlider" type="range" min="20" max="100" step="1" value="55" />
+    </div>
+
+    <div class="footer">Orbit: drag | Pan: right drag | Wheel: dolly</div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    function showFatalScreen(message) {
+      const app = document.getElementById('app');
+      if (!app) return;
+      app.innerHTML = '';
+      app.style.display = 'grid';
+      app.style.placeItems = 'center';
+      app.style.background = 'radial-gradient(circle at 30% 20%, #183042, #05090f 62%)';
+      app.style.color = '#dbeeff';
+      app.style.padding = '24px';
+      app.innerHTML = `
+        <div style="max-width:760px;border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:18px 20px;background:rgba(7,16,24,.68);line-height:1.5;">
+          <div style="font-size:18px;font-weight:700;margin-bottom:8px;">WebGL initialization failed</div>
+          <div style="font-size:13px;color:#b7d2e9;">
+            This machine/browser cannot create a WebGL context, so the 3D scene cannot render.<br/>
+            Please enable hardware acceleration in Chrome and update GPU drivers, then reload.
+          </div>
+          <pre style="margin:10px 0 0;font-size:12px;white-space:pre-wrap;color:#ffc8b7;">${message}</pre>
+        </div>
+      `;
+    }
+
+    function createRenderer() {
+      const canvas = document.createElement('canvas');
+      let gl = canvas.getContext('webgl2', { antialias: true, powerPreference: 'high-performance' });
+      if (!gl) {
+        gl = canvas.getContext('webgl', { antialias: true, powerPreference: 'high-performance' })
+          || canvas.getContext('experimental-webgl', { antialias: true });
+      }
+      if (!gl) {
+        throw new Error('Unable to create WebGL context (both WebGL2 and WebGL1 failed).');
+      }
+      return new THREE.WebGLRenderer({ canvas, context: gl, antialias: true, powerPreference: 'high-performance' });
+    }
+
+    try {
+    const app = document.getElementById('app');
+    const timeSlider = document.getElementById('timeSlider');
+    const fogSlider = document.getElementById('fogSlider');
+    const trafficSlider = document.getElementById('trafficSlider');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const timeValue = document.getElementById('timeValue');
+    const fogValue = document.getElementById('fogValue');
+    const trafficValue = document.getElementById('trafficValue');
+    const zoomValue = document.getElementById('zoomValue');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#6a97bc');
+    scene.fog = new THREE.FogExp2(new THREE.Color('#8fb0c2'), 0.00085);
+
+    const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 5000);
+    camera.position.set(380, 180, 420);
+
+    const renderer = createRenderer();
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    app.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 45, 0);
+    controls.enableDamping = true;
+    controls.minDistance = 160;
+    controls.maxDistance = 900;
+    controls.maxPolarAngle = Math.PI * 0.49;
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.35, 0.55, 0.88);
+    composer.addPass(bloomPass);
+
+    const hemi = new THREE.HemisphereLight(0xbdd9ef, 0x2f2a28, 0.8);
+    scene.add(hemi);
+
+    const sun = new THREE.DirectionalLight(0xfff2cf, 1.8);
+    sun.position.set(300, 360, 180);
+    sun.castShadow = false;
+    scene.add(sun);
+
+    const ambient = new THREE.AmbientLight(0x5f6d83, 0.32);
+    scene.add(ambient);
+
+    const skyGeo = new THREE.SphereGeometry(2200, 48, 24);
+    const skyMat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      uniforms: {
+        topColor: { value: new THREE.Color('#7fb3db') },
+        bottomColor: { value: new THREE.Color('#f6c48a') },
+        horizonBias: { value: 0.68 }
+      },
+      vertexShader: `
+        varying vec3 vWorld;
+        void main() {
+          vec4 world = modelMatrix * vec4(position, 1.0);
+          vWorld = world.xyz;
+          gl_Position = projectionMatrix * viewMatrix * world;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vWorld;
+        uniform vec3 topColor;
+        uniform vec3 bottomColor;
+        uniform float horizonBias;
+        void main() {
+          float h = normalize(vWorld).y * 0.5 + 0.5;
+          h = pow(clamp(h, 0.0, 1.0), horizonBias);
+          vec3 col = mix(bottomColor, topColor, h);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+    const sky = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(sky);
+
+    const bridgeColor = new THREE.Color('#d65035');
+    const steelDark = new THREE.Color('#7b2d20');
+
+    const commonVoxelMat = new THREE.MeshStandardMaterial({
+      color: bridgeColor,
+      roughness: 0.76,
+      metalness: 0.2
+    });
+
+    function addVoxel(size, x, y, z, mat = commonVoxelMat) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+      mesh.position.set(x, y, z);
+      scene.add(mesh);
+      return mesh;
+    }
+
+    const deck = new THREE.Mesh(
+      new THREE.BoxGeometry(620, 8, 34),
+      new THREE.MeshStandardMaterial({ color: bridgeColor, roughness: 0.82, metalness: 0.12 })
+    );
+    deck.position.set(0, 42, 0);
+    scene.add(deck);
+
+    const laneLine = new THREE.Mesh(
+      new THREE.BoxGeometry(620, 0.25, 0.7),
+      new THREE.MeshBasicMaterial({ color: 0xf6d487 })
+    );
+    laneLine.position.set(0, 46.15, 0);
+    scene.add(laneLine);
+
+    const towerSpans = [-170, 170];
+    const towerLights = [];
+
+    function buildTower(cx) {
+      const towerMat = new THREE.MeshStandardMaterial({ color: bridgeColor, roughness: 0.72, metalness: 0.2 });
+      const trims = new THREE.MeshStandardMaterial({ color: steelDark, roughness: 0.63, metalness: 0.4 });
+
+      const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(16, 140, 16), towerMat);
+      leftLeg.position.set(cx - 13, 112, 0);
+      scene.add(leftLeg);
+
+      const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(16, 140, 16), towerMat);
+      rightLeg.position.set(cx + 13, 112, 0);
+      scene.add(rightLeg);
+
+      const portal1 = new THREE.Mesh(new THREE.BoxGeometry(42, 11, 17), trims);
+      portal1.position.set(cx, 74, 0);
+      scene.add(portal1);
+
+      const portal2 = new THREE.Mesh(new THREE.BoxGeometry(42, 11, 17), trims);
+      portal2.position.set(cx, 111, 0);
+      scene.add(portal2);
+
+      const portal3 = new THREE.Mesh(new THREE.BoxGeometry(42, 11, 17), trims);
+      portal3.position.set(cx, 148, 0);
+      scene.add(portal3);
+
+      const cornice = new THREE.Mesh(new THREE.BoxGeometry(50, 10, 20), towerMat);
+      cornice.position.set(cx, 183, 0);
+      scene.add(cornice);
+
+      for (let y = 83; y <= 168; y += 15) {
+        addVoxel(4, cx - 26, y, 10, trims);
+        addVoxel(4, cx + 26, y, 10, trims);
+        addVoxel(4, cx - 26, y, -10, trims);
+        addVoxel(4, cx + 26, y, -10, trims);
+      }
+
+      const beacon = new THREE.Mesh(
+        new THREE.SphereGeometry(1.8, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0xff6240, emissive: 0xff2600, emissiveIntensity: 0.0 })
+      );
+      beacon.position.set(cx, 194, 0);
+      towerLights.push(beacon);
+      scene.add(beacon);
+    }
+
+    buildTower(towerSpans[0]);
+    buildTower(towerSpans[1]);
+
+    const cableMat = new THREE.MeshStandardMaterial({ color: 0x4e4340, roughness: 0.4, metalness: 0.7 });
+
+    function makeCable(zOffset) {
+      const points = [];
+      const xStart = -300;
+      const xEnd = 300;
+      for (let i = 0; i <= 120; i++) {
+        const t = i / 120;
+        const x = THREE.MathUtils.lerp(xStart, xEnd, t);
+        const peak = 176;
+        const sag = 145;
+        const y = peak - sag * Math.pow((x / 300), 2);
+        points.push(new THREE.Vector3(x, y, zOffset));
+      }
+      const curve = new THREE.CatmullRomCurve3(points);
+      const tube = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, 300, 1.45, 7, false),
+        cableMat
+      );
+      scene.add(tube);
+      return points;
+    }
+
+    const cablePointsFront = makeCable(15);
+    const cablePointsBack = makeCable(-15);
+
+    const suspenderCount = 116;
+    const suspenderGeo = new THREE.BoxGeometry(0.85, 1, 0.85);
+    const suspFront = new THREE.InstancedMesh(suspenderGeo, cableMat, suspenderCount);
+    const suspBack = new THREE.InstancedMesh(suspenderGeo, cableMat, suspenderCount);
+    const m4 = new THREE.Matrix4();
+
+    for (let i = 0; i < suspenderCount; i++) {
+      const t = i / (suspenderCount - 1);
+      const idx = Math.floor(t * (cablePointsFront.length - 1));
+      const pf = cablePointsFront[idx];
+      const pb = cablePointsBack[idx];
+      const topY = pf.y;
+      const h = Math.max(8, topY - 46);
+
+      m4.makeScale(1, h, 1);
+      m4.setPosition(pf.x, 46 + h * 0.5, pf.z);
+      suspFront.setMatrixAt(i, m4);
+
+      m4.makeScale(1, h, 1);
+      m4.setPosition(pb.x, 46 + h * 0.5, pb.z);
+      suspBack.setMatrixAt(i, m4);
+    }
+
+    scene.add(suspFront, suspBack);
+
+    const anchorMat = new THREE.MeshStandardMaterial({ color: 0x6b5b4e, roughness: 0.92, metalness: 0.05 });
+    const anchorA = new THREE.Mesh(new THREE.BoxGeometry(64, 32, 52), anchorMat);
+    anchorA.position.set(-332, 30, 0);
+    const anchorB = anchorA.clone();
+    anchorB.position.set(332, 30, 0);
+    scene.add(anchorA, anchorB);
+
+    for (const x of towerSpans) {
+      const pier = new THREE.Mesh(new THREE.BoxGeometry(34, 56, 30), anchorMat);
+      pier.position.set(x, 15, 0);
+      scene.add(pier);
+    }
+
+    function terrainChunk(width, depth, x, z, hBase, seed) {
+      const geo = new THREE.PlaneGeometry(width, depth, 40, 24);
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i) / width;
+        const py = pos.getY(i) / depth;
+        const n = Math.sin((px + seed) * 5.7) * Math.cos((py - seed) * 4.9);
+        const ridge = Math.exp(-Math.pow(px * 1.4, 2));
+        pos.setZ(i, hBase + n * 12 + ridge * 26);
+      }
+      geo.computeVertexNormals();
+      const mat = new THREE.MeshStandardMaterial({ color: 0x2d4037, roughness: 1.0, metalness: 0.02 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.x = -Math.PI * 0.5;
+      mesh.position.set(x, 0, z);
+      scene.add(mesh);
+      return mesh;
+    }
+
+    terrainChunk(470, 300, -355, -40, 8, 0.4);
+    terrainChunk(430, 240, 370, 20, 7, 1.8);
+
+    const cityCount = 760;
+    const cityGeo = new THREE.BoxGeometry(1, 1, 1);
+    const cityMat = new THREE.MeshStandardMaterial({ color: 0x56728a, roughness: 0.85, metalness: 0.1 });
+    const city = new THREE.InstancedMesh(cityGeo, cityMat, cityCount);
+    const cityLightsMat = new THREE.MeshBasicMaterial({ color: 0xffcf8a });
+    const cityLights = new THREE.InstancedMesh(new THREE.BoxGeometry(0.95, 0.25, 0.95), cityLightsMat, cityCount);
+
+    const cityState = [];
+    for (let i = 0; i < cityCount; i++) {
+      const x = THREE.MathUtils.randFloat(120, 820);
+      const z = THREE.MathUtils.randFloatSpread(520);
+      const h = 8 + Math.pow(Math.random(), 1.8) * 78;
+      const w = THREE.MathUtils.randFloat(5, 18);
+      const d = THREE.MathUtils.randFloat(5, 18);
+
+      m4.compose(
+        new THREE.Vector3(x, h * 0.5, z),
+        new THREE.Quaternion(),
+        new THREE.Vector3(w, h, d)
+      );
+      city.setMatrixAt(i, m4);
+
+      m4.compose(
+        new THREE.Vector3(x, h + 0.35, z),
+        new THREE.Quaternion(),
+        new THREE.Vector3(w * 0.75, 1, d * 0.75)
+      );
+      cityLights.setMatrixAt(i, m4);
+      cityState.push({ x, z, h });
+    }
+    city.instanceMatrix.needsUpdate = true;
+    cityLights.instanceMatrix.needsUpdate = true;
+    scene.add(city, cityLights);
+
+    const waterUniforms = {
+      time: { value: 0 },
+      sunDir: { value: new THREE.Vector3(0.4, 0.6, 0.1) },
+      fogColor: { value: scene.fog.color.clone() },
+      fogDensity: { value: scene.fog.density },
+      dayMix: { value: 0.7 }
+    };
+
+    const waterMat = new THREE.ShaderMaterial({
+      uniforms: waterUniforms,
+      vertexShader: `
+        uniform float time;
+        varying vec3 vWorld;
+        varying vec3 vNormal;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vec3 p = position;
+          p.y += sin(p.x * 0.018 + time * 0.8) * 1.4;
+          p.y += cos(p.z * 0.02 - time * 0.65) * 1.1;
+          p.y += sin((p.x + p.z) * 0.01 + time * 1.25) * 0.8;
+          vec4 world = modelMatrix * vec4(p, 1.0);
+          vWorld = world.xyz;
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * viewMatrix * world;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 sunDir;
+        uniform vec3 fogColor;
+        uniform float fogDensity;
+        uniform float dayMix;
+        varying vec3 vWorld;
+        varying vec3 vNormal;
+        varying vec2 vUv;
+
+        void main() {
+          vec3 n = normalize(vNormal + vec3(
+            sin(vUv.x * 45.0) * 0.06,
+            0.0,
+            cos(vUv.y * 45.0) * 0.06
+          ));
+          vec3 viewDir = normalize(cameraPosition - vWorld);
+          vec3 halfDir = normalize(viewDir + normalize(sunDir));
+          float spec = pow(max(dot(n, halfDir), 0.0), 120.0) * (0.25 + dayMix * 1.2);
+
+          float fresnel = pow(1.0 - max(dot(n, viewDir), 0.0), 3.0);
+          vec3 deep = mix(vec3(0.03, 0.08, 0.13), vec3(0.02, 0.05, 0.1), 1.0 - dayMix);
+          vec3 shallow = mix(vec3(0.11, 0.23, 0.31), vec3(0.07, 0.16, 0.25), 1.0 - dayMix);
+          vec3 col = mix(deep, shallow, fresnel * 0.8 + 0.2);
+          col += vec3(1.0, 0.94, 0.87) * spec;
+
+          float dist = length(cameraPosition - vWorld);
+          float fogFactor = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
+          col = mix(col, fogColor, clamp(fogFactor, 0.0, 1.0));
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(3000, 2200, 220, 160), waterMat);
+    water.rotation.x = -Math.PI * 0.5;
+    water.position.y = 0;
+    scene.add(water);
+
+    function makeFogSprite() {
+      const c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 64;
+      const g = c.getContext('2d');
+      const grad = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+      grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+      grad.addColorStop(0.45, 'rgba(220,235,245,0.26)');
+      grad.addColorStop(1, 'rgba(185,210,230,0.0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(c);
+    }
+
+    const fogParticleCount = 2600;
+    const fogGeo = new THREE.BufferGeometry();
+    const fogPos = new Float32Array(fogParticleCount * 3);
+    const fogScale = new Float32Array(fogParticleCount);
+    for (let i = 0; i < fogParticleCount; i++) {
+      fogPos[i * 3 + 0] = THREE.MathUtils.randFloatSpread(1900);
+      fogPos[i * 3 + 1] = THREE.MathUtils.randFloat(7, 72);
+      fogPos[i * 3 + 2] = THREE.MathUtils.randFloatSpread(1300);
+      fogScale[i] = THREE.MathUtils.randFloat(8, 26);
+    }
+    fogGeo.setAttribute('position', new THREE.BufferAttribute(fogPos, 3));
+    fogGeo.setAttribute('size', new THREE.BufferAttribute(fogScale, 1));
+
+    const fogMat = new THREE.PointsMaterial({
+      map: makeFogSprite(),
+      size: 18,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+      blending: THREE.NormalBlending,
+      color: 0xcadced,
+      sizeAttenuation: true
+    });
+
+    const fogCloud = new THREE.Points(fogGeo, fogMat);
+    scene.add(fogCloud);
+
+    const maxCars = 400;
+    const carGeo = new THREE.BoxGeometry(3.5, 1.6, 1.8);
+    const carMat = new THREE.MeshStandardMaterial({ color: 0xc9d2db, roughness: 0.45, metalness: 0.65 });
+    const cars = new THREE.InstancedMesh(carGeo, carMat, maxCars);
+    scene.add(cars);
+
+    const lightGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const headMat = new THREE.MeshBasicMaterial({ color: 0xffefc0 });
+    const tailMat = new THREE.MeshBasicMaterial({ color: 0xff3d2d });
+    const headLights = new THREE.InstancedMesh(lightGeo, headMat, maxCars * 2);
+    const tailLights = new THREE.InstancedMesh(lightGeo, tailMat, maxCars * 2);
+    scene.add(headLights, tailLights);
+
+    const carState = [];
+    const laneZ = [-7.2, -2.8, 2.8, 7.2];
+    const roadMinX = -300;
+    const roadMaxX = 300;
+
+    for (let i = 0; i < maxCars; i++) {
+      const dir = i % 2 === 0 ? 1 : -1;
+      const lane = laneZ[(i % laneZ.length)];
+      carState.push({
+        t: Math.random(),
+        speed: THREE.MathUtils.randFloat(0.08, 0.18),
+        dir,
+        lane,
+        color: new THREE.Color().setHSL(Math.random(), 0.56, 0.58)
+      });
+    }
+
+    const streetLampCount = 118;
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0x5f5f66, roughness: 0.8, metalness: 0.2 });
+    const lampPoles = new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 6, 0.5), lampMat, streetLampCount);
+    const lampHeads = new THREE.InstancedMesh(new THREE.SphereGeometry(0.45, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffcb88 }), streetLampCount);
+    for (let i = 0; i < streetLampCount; i++) {
+      const x = THREE.MathUtils.lerp(-290, 290, i / (streetLampCount - 1));
+      const z = i % 2 === 0 ? 13.5 : -13.5;
+      m4.compose(new THREE.Vector3(x, 49.4, z), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1));
+      lampPoles.setMatrixAt(i, m4);
+      m4.compose(new THREE.Vector3(x, 52.5, z), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1));
+      lampHeads.setMatrixAt(i, m4);
+    }
+    lampPoles.instanceMatrix.needsUpdate = true;
+    lampHeads.instanceMatrix.needsUpdate = true;
+    scene.add(lampPoles, lampHeads);
+
+    const ships = [];
+    for (let i = 0; i < 7; i++) {
+      const g = new THREE.Group();
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(24, 4, 8), new THREE.MeshStandardMaterial({ color: 0x3a3e46, roughness: 0.72, metalness: 0.2 }));
+      hull.position.y = 2.2;
+      g.add(hull);
+
+      const deckhouse = new THREE.Mesh(new THREE.BoxGeometry(8, 4.5, 6), new THREE.MeshStandardMaterial({ color: 0x8f969e, roughness: 0.64, metalness: 0.08 }));
+      deckhouse.position.set(2, 6, 0);
+      g.add(deckhouse);
+
+      const navR = new THREE.Mesh(new THREE.SphereGeometry(0.38, 6, 6), new THREE.MeshBasicMaterial({ color: 0xff2d2d }));
+      navR.position.set(11.5, 6, 2.8);
+      g.add(navR);
+      const navG = new THREE.Mesh(new THREE.SphereGeometry(0.38, 6, 6), new THREE.MeshBasicMaterial({ color: 0x4eff6f }));
+      navG.position.set(11.5, 6, -2.8);
+      g.add(navG);
+
+      const dir = Math.random() > 0.5 ? 1 : -1;
+      ships.push({
+        mesh: g,
+        x: THREE.MathUtils.randFloatSpread(800),
+        z: THREE.MathUtils.randFloatSpread(700),
+        speed: THREE.MathUtils.randFloat(7, 18) * dir,
+        phase: Math.random() * Math.PI * 2,
+        navR,
+        navG
+      });
+      scene.add(g);
+    }
+
+    const birdCount = 52;
+    const birdGeo = new THREE.ConeGeometry(0.45, 2.3, 3);
+    birdGeo.rotateX(Math.PI * 0.5);
+    const birdMat = new THREE.MeshStandardMaterial({ color: 0x121417, roughness: 0.9, metalness: 0.0 });
+    const birds = new THREE.InstancedMesh(birdGeo, birdMat, birdCount);
+    scene.add(birds);
+    const birdState = [];
+    for (let i = 0; i < birdCount; i++) {
+      birdState.push({
+        pos: new THREE.Vector3(THREE.MathUtils.randFloatSpread(600), THREE.MathUtils.randFloat(90, 210), THREE.MathUtils.randFloatSpread(360)),
+        vel: new THREE.Vector3(THREE.MathUtils.randFloatSpread(0.5), THREE.MathUtils.randFloatSpread(0.2), THREE.MathUtils.randFloatSpread(0.5))
+      });
+    }
+
+    function setCarColor(instance, color) {
+      cars.setColorAt(instance, color);
+    }
+    for (let i = 0; i < maxCars; i++) setCarColor(i, carState[i].color);
+    cars.instanceColor.needsUpdate = true;
+
+    const q = new THREE.Quaternion();
+    const scaleVec = new THREE.Vector3(1, 1, 1);
+
+    function smoothstep(edge0, edge1, x) {
+      const t = THREE.MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1);
+      return t * t * (3 - 2 * t);
+    }
+
+    function updateEnvironment() {
+      const timeH = parseFloat(timeSlider.value);
+      const fogPct = parseFloat(fogSlider.value) / 100;
+
+      timeValue.textContent = timeH.toFixed(1);
+      fogValue.textContent = Math.round(fogPct * 100).toString();
+      trafficValue.textContent = trafficSlider.value;
+      zoomValue.textContent = zoomSlider.value;
+
+      const dayAngle = (timeH / 24) * Math.PI * 2;
+      const sunHeight = Math.sin(dayAngle - Math.PI * 0.5);
+      const daylight = smoothstep(-0.12, 0.18, sunHeight);
+      const night = 1.0 - daylight;
+
+      const sunDir = new THREE.Vector3(Math.cos(dayAngle), sunHeight, Math.sin(dayAngle) * 0.35).normalize();
+      sun.position.copy(sunDir).multiplyScalar(620);
+
+      sun.intensity = 0.15 + daylight * 1.95;
+      hemi.intensity = 0.22 + daylight * 0.72;
+      ambient.intensity = 0.15 + daylight * 0.22;
+
+      const skyTop = new THREE.Color().setRGB(
+        THREE.MathUtils.lerp(0.05, 0.48, daylight),
+        THREE.MathUtils.lerp(0.08, 0.67, daylight),
+        THREE.MathUtils.lerp(0.14, 0.88, daylight)
+      );
+      const skyBottom = new THREE.Color().setRGB(
+        THREE.MathUtils.lerp(0.14, 0.98, daylight),
+        THREE.MathUtils.lerp(0.16, 0.78, daylight),
+        THREE.MathUtils.lerp(0.22, 0.62, daylight)
+      );
+      skyMat.uniforms.topColor.value.copy(skyTop);
+      skyMat.uniforms.bottomColor.value.copy(skyBottom);
+
+      const fogColor = new THREE.Color().setRGB(
+        THREE.MathUtils.lerp(0.06, 0.73, daylight),
+        THREE.MathUtils.lerp(0.09, 0.82, daylight),
+        THREE.MathUtils.lerp(0.14, 0.90, daylight)
+      );
+      scene.background.copy(fogColor);
+      scene.fog.color.copy(fogColor);
+
+      const baseFog = 0.00018 + fogPct * 0.0022;
+      scene.fog.density = baseFog;
+      fogMat.opacity = THREE.MathUtils.lerp(0.04, 0.34, fogPct);
+      fogMat.color.setRGB(
+        THREE.MathUtils.lerp(0.35, 0.90, daylight),
+        THREE.MathUtils.lerp(0.40, 0.95, daylight),
+        THREE.MathUtils.lerp(0.46, 1.0, daylight)
+      );
+
+      waterUniforms.sunDir.value.copy(sunDir);
+      waterUniforms.fogColor.value.copy(fogColor);
+      waterUniforms.fogDensity.value = scene.fog.density;
+      waterUniforms.dayMix.value = daylight;
+
+      const lightGlow = Math.pow(night, 1.8);
+      lampHeads.material.color.setRGB(
+        THREE.MathUtils.lerp(0.18, 1.0, lightGlow),
+        THREE.MathUtils.lerp(0.2, 0.82, lightGlow),
+        THREE.MathUtils.lerp(0.24, 0.52, lightGlow)
+      );
+      cityLights.material.color.setRGB(
+        THREE.MathUtils.lerp(0.05, 1.0, lightGlow),
+        THREE.MathUtils.lerp(0.08, 0.85, lightGlow),
+        THREE.MathUtils.lerp(0.14, 0.55, lightGlow)
+      );
+      for (const b of towerLights) b.material.emissiveIntensity = 0.1 + lightGlow * 4.0;
+
+      for (const ship of ships) {
+        ship.navR.material.color.setRGB(1.0, 0.15 + lightGlow * 0.3, 0.15 + lightGlow * 0.3);
+        ship.navG.material.color.setRGB(0.2 + lightGlow * 0.4, 0.9, 0.35 + lightGlow * 0.2);
+      }
+
+      bloomPass.strength = THREE.MathUtils.lerp(0.12, 0.72, lightGlow);
+      bloomPass.radius = THREE.MathUtils.lerp(0.28, 0.76, lightGlow);
+      renderer.toneMappingExposure = THREE.MathUtils.lerp(0.9, 0.62, night);
+    }
+
+    function updateTraffic(dt) {
+      const density = parseFloat(trafficSlider.value) / 100;
+      const activeCars = Math.max(6, Math.floor(maxCars * density));
+      const night = 1 - smoothstep(-0.12, 0.18, Math.sin((parseFloat(timeSlider.value) / 24) * Math.PI * 2 - Math.PI * 0.5));
+
+      let lightIndex = 0;
+      for (let i = 0; i < maxCars; i++) {
+        if (i >= activeCars) {
+          m4.makeTranslation(0, -999, 0);
+          cars.setMatrixAt(i, m4);
+          for (let j = 0; j < 2; j++) {
+            headLights.setMatrixAt(lightIndex, m4);
+            tailLights.setMatrixAt(lightIndex, m4);
+            lightIndex++;
+          }
+          continue;
+        }
+
+        const c = carState[i];
+        c.t = (c.t + dt * c.speed * 0.08) % 1;
+        const x = THREE.MathUtils.lerp(roadMinX, roadMaxX, c.t);
+        const lane = c.lane;
+        const dir = c.dir;
+
+        const px = dir > 0 ? x : (roadMaxX - (x - roadMinX));
+        const yaw = dir > 0 ? 0 : Math.PI;
+
+        q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+        m4.compose(new THREE.Vector3(px, 46.8, lane), q, scaleVec);
+        cars.setMatrixAt(i, m4);
+
+        const frontX = px + Math.cos(yaw) * 1.85;
+        const backX = px - Math.cos(yaw) * 1.85;
+        const side = Math.sin(yaw) * 0.5;
+        const glowY = 47.15;
+        const glowScale = new THREE.Vector3(1, 1, 1);
+
+        const headColor = 0.02 + night * 0.98;
+        const tailColor = 0.08 + night * 0.92;
+        headLights.material.color.setRGB(headColor, headColor * 0.95, headColor * 0.8);
+        tailLights.material.color.setRGB(tailColor, tailColor * 0.22, tailColor * 0.18);
+
+        m4.compose(new THREE.Vector3(frontX, glowY, lane + side + 0.42), q, glowScale);
+        headLights.setMatrixAt(lightIndex, m4);
+        m4.compose(new THREE.Vector3(backX, glowY, lane - side + 0.42), q, glowScale);
+        tailLights.setMatrixAt(lightIndex, m4);
+        lightIndex++;
+
+        m4.compose(new THREE.Vector3(frontX, glowY, lane + side - 0.42), q, glowScale);
+        headLights.setMatrixAt(lightIndex, m4);
+        m4.compose(new THREE.Vector3(backX, glowY, lane - side - 0.42), q, glowScale);
+        tailLights.setMatrixAt(lightIndex, m4);
+        lightIndex++;
+      }
+
+      cars.instanceMatrix.needsUpdate = true;
+      headLights.instanceMatrix.needsUpdate = true;
+      tailLights.instanceMatrix.needsUpdate = true;
+    }
+
+    function updateShips(dt, t) {
+      for (const s of ships) {
+        s.x += s.speed * dt;
+        if (s.x > 980) s.x = -980;
+        if (s.x < -980) s.x = 980;
+        const bob = Math.sin(t * 1.3 + s.phase) * 0.45;
+        s.mesh.position.set(s.x, 1.8 + bob, s.z + Math.sin(t * 0.11 + s.phase) * 35);
+        s.mesh.rotation.y = s.speed > 0 ? 0 : Math.PI;
+      }
+    }
+
+    function updateBirds(dt, t) {
+      const cohesion = 0.0018;
+      const alignment = 0.03;
+      const separation = 0.08;
+      const maxSpeed = 0.9;
+
+      let center = new THREE.Vector3();
+      let avgVel = new THREE.Vector3();
+      for (const b of birdState) {
+        center.add(b.pos);
+        avgVel.add(b.vel);
+      }
+      center.multiplyScalar(1 / birdState.length);
+      avgVel.multiplyScalar(1 / birdState.length);
+
+      for (let i = 0; i < birdCount; i++) {
+        const b = birdState[i];
+        const toCenter = new THREE.Vector3().subVectors(center, b.pos).multiplyScalar(cohesion);
+        const toAlign = new THREE.Vector3().subVectors(avgVel, b.vel).multiplyScalar(alignment);
+
+        let repel = new THREE.Vector3();
+        for (let j = 0; j < birdCount; j++) {
+          if (i === j) continue;
+          const d = b.pos.distanceTo(birdState[j].pos);
+          if (d < 12 && d > 0.001) {
+            repel.add(new THREE.Vector3().subVectors(b.pos, birdState[j].pos).multiplyScalar((12 - d) / 12));
+          }
+        }
+        repel.multiplyScalar(separation * 0.06);
+
+        b.vel.add(toCenter).add(toAlign).add(repel);
+        if (b.vel.length() > maxSpeed) b.vel.setLength(maxSpeed);
+
+        b.pos.addScaledVector(b.vel, dt * 30);
+        b.pos.y += Math.sin(t * 4.0 + i * 0.6) * 0.05;
+
+        if (b.pos.x < -360) b.pos.x = 360;
+        if (b.pos.x > 360) b.pos.x = -360;
+        if (b.pos.z < -260) b.pos.z = 260;
+        if (b.pos.z > 260) b.pos.z = -260;
+        if (b.pos.y < 82) b.pos.y = 86;
+        if (b.pos.y > 240) b.pos.y = 236;
+
+        const heading = Math.atan2(b.vel.z, b.vel.x);
+        const bank = THREE.MathUtils.clamp(b.vel.y * 2.8, -0.38, 0.38);
+        q.setFromEuler(new THREE.Euler(bank, -heading + Math.PI * 0.5, 0));
+        m4.compose(b.pos, q, new THREE.Vector3(1, 1 + Math.sin(t * 12 + i) * 0.1, 1));
+        birds.setMatrixAt(i, m4);
+      }
+      birds.instanceMatrix.needsUpdate = true;
+    }
+
+    timeSlider.addEventListener('input', updateEnvironment);
+    fogSlider.addEventListener('input', updateEnvironment);
+    trafficSlider.addEventListener('input', updateEnvironment);
+
+    zoomSlider.addEventListener('input', () => {
+      const z = parseFloat(zoomSlider.value) / 100;
+      const fov = THREE.MathUtils.lerp(70, 28, z);
+      camera.fov = fov;
+      camera.updateProjectionMatrix();
+      controls.minDistance = THREE.MathUtils.lerp(120, 260, z);
+      controls.maxDistance = THREE.MathUtils.lerp(520, 980, 1 - z * 0.6);
+      zoomValue.textContent = zoomSlider.value;
+    });
+
+    updateEnvironment();
+
+    const clock = new THREE.Clock();
+    function animate() {
+      const dt = Math.min(clock.getDelta(), 0.033);
+      const t = clock.elapsedTime;
+
+      controls.update();
+
+      waterUniforms.time.value = t;
+      fogCloud.rotation.y += dt * 0.01;
+      updateTraffic(dt);
+      updateShips(dt, t);
+      updateBirds(dt, t);
+
+      composer.render();
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+      bloomPass.setSize(window.innerWidth, window.innerHeight);
+    });
+    } catch (err) {
+      const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+      console.error(err);
+      showFatalScreen(msg);
+    }
+  </script>
+</body>
+</html>
