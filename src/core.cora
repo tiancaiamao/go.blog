@@ -143,7 +143,7 @@
 			       ;; 更新索引页面
 			       (write-file "./generate/index.html" (sxml->xml (blog-handler "blog" INDEX)))
 			       (for-each category-handler CATEGORY)
-			       (for-each tags-handler TAGS))
+			       			       			       (for-each tags-handler TAGS))
 		  ['none] (begin
 			   (display "File not found in index: ")
 			   (display filename)
@@ -162,8 +162,51 @@
 	 (defun category-handler (data)
 	   (summery-handler "category" data))
 
-	 (defun tags-handler (data)
+	 	 (defun tags-handler (data)
 	   (summery-handler "tags" data))
+
+	 (defun take-n (n lst)
+	   (if (= n 0)
+	       ()
+	       (if (null? lst)
+		   ()
+		   (cons (car lst) (take-n (- n 1) (cdr lst))))))
+
+	 	 (def site-url "https://tiancaiamao.github.io")
+
+	 	 	 	 	 (defun atom-entry (item)
+	   (let title (get-string-from-item item "Title")
+		date (get-string-from-item item "Date")
+		file (get-string-from-item item "File")
+				entry-url (string-append (string-append site-url "/") file)
+		path (string-append "./content/" file)
+		md-content (process-file path)
+		html-content (sxml->xml md-content)
+		`(entry (title ,title)
+			(link (@ (href ,entry-url) (type "text/html") (rel "alternate")))
+			(id ,entry-url)
+			(updated ,date)
+			(content (@ (type "html")) ,html-content))))
+
+	 	 (defun atom-handler ()
+	   (let recent (reverse INDEX)
+		first-item (car recent)
+		updated-date (get-string-from-item first-item "Date")
+		entries (map atom-entry (take-n 10 recent))
+		`(feed (@ (xmlns "http://www.w3.org/2005/Atom"))
+		       (title "Arthur 的博客")
+		       (subtitle "伟大的野心家，实践家")
+		       (updated ,updated-date)
+		       (link (@ (rel "alternate") (type "text/html")
+				(href ,(string-append site-url "/"))))
+		       (link (@ (rel "self") (type "application/atom+xml")
+				(href ,(string-append site-url "/feed.atom"))))
+		       (rights "Copyright (c) 2025, Arthur Mao")
+		       (id ,(string-append site-url "/"))
+		       (author
+			(name "Arthur")
+			(email "tiancaiamao@gmail.com"))
+		       ,entries)))
 
 	 (defun generate ()
 	   (begin
@@ -173,8 +216,12 @@
 	    (write-file "./generate/home.html" (sxml->xml (home-handler)))
 	    (write-file "./generate/index.html" (sxml->xml (blog-handler "blog" INDEX)))
 	    (for-each category-handler CATEGORY)
-	    (for-each tags-handler TAGS)
+	    	    (for-each tags-handler TAGS)
 
-	    ;; TODO feed.atom
+	    ;; feed.atom
+	    (display "Generating: feed.atom\n")
+	    (write-file "./generate/feed.atom"
+			(string-append "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+				       (sxml->xml (atom-handler))))
 	    ))
 	 )
