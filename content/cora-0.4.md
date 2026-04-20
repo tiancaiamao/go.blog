@@ -1,4 +1,4 @@
-[时隔半年](cora-0.3.md)，I'm thrilled to announce 终于是时候发布 cora 的 [0.4 版本](https://github.com/tiancaiamao/cora/releases/tag/v0.4.0)了。这是一个里程碑式的版本，这门语言的成熟度进一步提升。
+[时隔半年](/cora-0.3.md)，I'm thrilled to announce 终于是时候发布 cora 的 [0.4 版本](https://github.com/tiancaiamao/cora/releases/tag/v0.4.0)了。这是一个里程碑式的版本，这门语言的成熟度进一步提升。
 
 其实目前的发版没有什么特别的规划，就是想到啥做啥，当积累了足够的变化之后，就发一个版本，并非按时间来发版本。为什么算一个里程碑式的版本？因为我之前说，等我能够用自己的语言实现自己的博客的时候，说明语言的成熟度已经差不多了，到时候就发布 1.0 版本。如今已经做到了一半，我的博客[又](/go-org-mode-blog.md)[双](/chicken-scheme-practice2.md)[叕](/clojure-blog.md)重写了，这次有一半是用 cora 实现的。
 

@@ -1,5 +1,12 @@
 [
     {
+    "Title": "我的 harness engineering 工程实践",
+    "Date": "2026-04-20T11:12:42Z",
+    "Category": "AI",
+    "Tags": ["harness engineering","AI"],
+    "File": "my-harness-engineering.md"
+    },
+     {
     "Title": "一次有趣的 AI debug 经历",
     "Date": "2026-03-28T23:37:42Z",
     "Category": "AI",
