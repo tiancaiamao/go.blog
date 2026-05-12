@@ -7,7 +7,7 @@
 新套餐据说是严重缩水的，而老套餐已经不让再续费了。如果 deeepseek 性价比更高，套餐到期了就准备切换！
 
 (证明我不是键盘侠) 
-![](https://github.com/user-attachments/assets/52912634-119b-4a97-8c83-c82ccabab77d)
+![](/static/zai-token.png)
 
 还是用的我自己写的 agent，对接很顺序，改改配置就接上了，只遇到了一个报错是 "reasoning_content must be passed back to the API"。这是一个行为差异，zai 那边是没有强制要求这个的，也很简单修复掉了。
 
@@ -81,7 +81,7 @@
 再看价格这块，这是跑了 4-6 小时的 benchmark 测试集，总共只花了 4.11 块钱，amazing！如果是日常的工作，对 LLM 调用频率不会这么满。所以我们可以把这个当作真正日常工具的 token 消耗的基准参考。
 一天4块钱，一个月120，比 pro 的 coding plan 还省了！如果把周未排除那价格还要低，妥妥的价格屠夫。
 
-![](https://github.com/user-attachments/assets/47dd5eb9-9906-412a-b4ab-52a20857715a)
+![](/static/deepseek-token.png)
 
 token 数总共是 15,939,170。看看分布，cache hit 大概在 83% 的样子，我没有专门针对我的 agent 优化过缓存命中率，不确定这大概是一个什么样的水平，还有多少价格空间。
 主要是 coding plan 那边没有啥太多优化 cache hit 的动力。如果切套餐了，这个还是可以搞一搞。

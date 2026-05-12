@@ -40,6 +40,11 @@ run_cora() {
     rm -f "$tmpfile"
 }
 
+sync_static() {
+    echo "Syncing static assets..."
+    rsync -a --delete "$SCRIPT_DIR/resources/public/static/" "$SCRIPT_DIR/generate/static/"
+}
+
 generate_file() {
     local input="$1"
     # Extract just the filename if a path is provided
@@ -47,11 +52,13 @@ generate_file() {
     
     run_cora "(import \"go.blog/src/core\")
 (generate-file \"$filename\")"
+    sync_static
 }
 
 generate_all() {
     run_cora "(import \"go.blog/src/core\")
 (generate)"
+    sync_static
 }
 
 # Main
