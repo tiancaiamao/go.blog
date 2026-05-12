@@ -51,8 +51,10 @@
 	   (head
 	    (meta (@ (charset "utf-8")))
 	    (title ,title)
+	    	    	    (link (@ (rel "stylesheet")
+		     (href "//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css")))
 	    (link (@ (rel "stylesheet")
-		     (href "//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"))))
+		     (href "/static/style.css"))))
 	   (body
 	    (div (@ (class "navbar navbar-inverse"))
 		 (div (@ (class "container"))
