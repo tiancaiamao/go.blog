@@ -9,14 +9,14 @@
 (证明我不是键盘侠) 
 ![](/static/zai-token.png)
 
-还是用的我自己写的 agent，对接很顺序，改改配置就接上了，只遇到了一个报错是 "reasoning_content must be passed back to the API"。这是一个行为差异，zai 那边是没有强制要求这个的，也很简单修复掉了。
+还是用的我自己写的 agent，对接很顺利，改改配置就接上了，只遇到了一个报错是 "reasoning_content must be passed back to the API"。这是一个行为差异，zai 那边是没有强制要求这个的，也很简单修复掉了。
 
 先验证对接完的功能可用性，我跑了之前的那个[画金门大桥的测试](/an-ai-debug-story.md)，deepseek flash 一次成功，效果上比 glm5 弱了一点，但是比 minimax 体感好，至少是一次就出来了。
 
 测试 case 是使用的我的 agent repo 里面的 [benchmark](https://github.com/tiancaiamao/ai/tree/31a4d82fbe54850ce101a8e3e25e5688c1d87544/benchmark)。 case 基本上是 terminal benchmark 中挑选的，以及自己加的一些。
 关于 benchmark 这种，网上的官方结果都不太可信，只有自己验证出来的信息才更可靠。
 
-基于上我每天会在睡觉前，跑一轮的我的 agent 的 benchmark，第二天早来起来，确认下是否有 regression，让 agent 分析一下 session 找找我的 agent 实现有没有可优化的空间之类的。
+基本上我每天会在睡觉前，跑一轮的我的 agent 的 benchmark，第二天早来起来，确认下是否有 regression，让 agent 分析一下 session 找找我的 agent 实现有没有可优化的空间之类的。
 这个事情挺浪费 token 的，大概一轮要 4-6 小时才跑完，如果遇到服务不可用导致各种中断，case 的失败率还会上升，所以结果也没有官方那种稳定，有时候第二天早上起来还没跑完的。
 反正 coding plan 里面的 token 不用也是浪费，这是一个很好的“浪费” token 的场景。
 
