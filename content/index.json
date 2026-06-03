@@ -1,5 +1,12 @@
 [
     {
+    "Title": "TiDB code RAG",
+    "Date": "2026-06-03T19:49:42Z",
+    "Category": "AI",
+    "Tags": ["RAG", "AI", "TiDB"],
+    "File": "tidb-code-rag.md"
+    },
+    {
     "Title": "long run harness 探索",
     "Date": "2026-05-25T12:17:42Z",
     "Category": "AI",
