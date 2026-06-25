@@ -135,7 +135,7 @@
 	 (defun generate-file (filename)
 	   (let res (find-item-by-file filename INDEX)
 		(match res
-		  ['ok item] (begin
+		  		  ['ok item] (begin
 			       (display "Generating: ")
 			       (display filename)
 			       (display "\n")
@@ -143,7 +143,12 @@
 			       ;; 更新索引页面
 			       (write-file "./generate/index.html" (sxml->xml (blog-handler "blog" INDEX)))
 			       (for-each category-handler CATEGORY)
-			       			       			       (for-each tags-handler TAGS))
+			       			       			       (for-each tags-handler TAGS)
+			       ;; 更新 feed.atom
+			       (display "Generating: feed.atom\n")
+			       (write-file "./generate/feed.atom"
+					   (string-append "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+							  (sxml->xml (atom-handler)))))
 		  ['none] (begin
 			   (display "File not found in index: ")
 			   (display filename)

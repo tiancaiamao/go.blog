@@ -1,5 +1,12 @@
 [
     {
+    "Title": "两节点高可用强一致 -- raft 2F1A",
+    "Date": "2026-06-25T20:56:42Z",
+    "Category": "分布式",
+    "Tags": ["2F1A", "raft", "consensus"],
+    "File": "raft-2F1A.md"
+    },
+    {
     "Title": "让 AI vibe 了一个 actor 模型的语言",
     "Date": "2026-06-21T17:51:42Z",
     "Category": "AI",
