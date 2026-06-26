@@ -1,5 +1,12 @@
 [
     {
+    "Title": "使用 ai 编程大半年后的心态变化",
+    "Date": "2026-06-26T22:18:42Z",
+    "Category": "AI",
+    "Tags": ["AI"],
+    "File": "mindset-change-after-ai-for-half-year.md"
+    },
+    {
     "Title": "两节点高可用强一致 -- raft 2F1A",
     "Date": "2026-06-25T20:56:42Z",
     "Category": "分布式",

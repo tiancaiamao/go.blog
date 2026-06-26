@@ -228,6 +228,6 @@ leader 的 replication set 是可变的。正常态，replicationSet = {A, B}，
 引入 replication set 之后，就额外引入了一个 subterm 的概念。原本的集群变更，每一任 leader 会有 term。然后日志会有 index。
 现在每一轮 replication set 的调整，会让 subterm 加1 以区别。日志的标识变成了 (index term subterm)
 
-witness 里面是完全用存日志的，它只需要知识 leader 的复制集的状态。subterm 让 witness 能用最小的信息量判断 "日志新旧" 和 "谁是合法 leader"。
+witness 里面是完全不用存日志的，它只需要知道 leader 的复制集的状态。subterm 让 witness 能用最小的信息量判断 "日志新旧" 和 "谁是合法 leader"。
 
 算法描述可以去看原论文，这里不展开了。结论这个确实是一个不错的两节点高可用强一致的方案，可以让 raft 协议下实现 2F1A。
