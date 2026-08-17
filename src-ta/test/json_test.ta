@@ -1,0 +1,160 @@
+// src-ta/test/json_test.ta — json module acceptance tests.
+//
+// Asserts pass silently; a failed assertion prints a message and crashes
+// the process (1 / 0) so the runner exits non-zero. All passing → exit 0.
+//
+// Covered: real content/index.json (root array, first 3 items' fields:
+// Title/Date/Category/Tags/File) + edge cases (empty array, empty object,
+// nesting, escape sequences incl. \uXXXX, int/float numbers, booleans,
+// null, missing keys).
+
+import json
+
+fn fail(msg) {
+  print(str.concat("JSON TEST FAIL: ", msg))
+  1 / 0
+}
+
+fn assert_true(cond, msg) {
+  if cond {
+    nil
+  } else {
+    fail(msg)
+  }
+}
+
+fn assert_str_eq(actual, expected, msg) {
+  if str.eq(actual, expected) {
+    nil
+  } else {
+    print(str.concat("  actual:   ", actual))
+    print(str.concat("  expected: ", expected))
+    fail(msg)
+  }
+}
+
+fn assert_int_eq(actual, expected, msg) {
+  if actual == expected {
+    nil
+  } else {
+    print(str.concat("  actual:   ", str.from_int(actual)))
+    print(str.concat("  expected: ", str.from_int(expected)))
+    fail(msg)
+  }
+}
+
+fn main() {
+  // ---- real content/index.json ----
+  let data = json.load("content/index.json")
+  assert_true(json.is_array(data), "index.json root should be an array")
+  assert_int_eq(json.array_size(data), 358, "index.json should have 358 items")
+
+  // item 0
+  let it0 = json.array_get(data, 0)
+  assert_true(json.is_object(it0), "item 0 should be an object")
+  assert_str_eq(json.string_value(json.object_get(it0, "Title")),
+  "本地 AI 体验", "item0 Title")
+  assert_str_eq(json.string_value(json.object_get(it0, "Date")),
+  "2026-08-16T09:42:42Z", "item0 Date")
+  assert_str_eq(json.string_value(json.object_get(it0, "Category")),
+  "AI", "item0 Category")
+  assert_str_eq(json.string_value(json.object_get(it0, "File")),
+  "7900xtx-local-ai.md", "item0 File")
+  let tags0 = json.object_get(it0, "Tags")
+  assert_true(json.is_array(tags0), "item0 Tags is array")
+  assert_int_eq(json.array_size(tags0), 3, "item0 Tags size")
+  assert_str_eq(json.string_value(json.array_get(tags0, 0)), "AI", "item0 tag0")
+  assert_str_eq(json.string_value(json.array_get(tags0, 1)), "7900xtx", "item0 tag1")
+  assert_str_eq(json.string_value(json.array_get(tags0, 2)), "local AI", "item0 tag2")
+  assert_true(json.object_get(it0, "NoSuchField") == nil, "missing key returns nil")
+
+  // item 1
+  let it1 = json.array_get(data, 1)
+  assert_str_eq(json.string_value(json.object_get(it1, "Title")),
+  "最近两个 AI 没搞定的 case 分析", "item1 Title")
+  assert_str_eq(json.string_value(json.object_get(it1, "Date")),
+  "2026-07-21T18:16:42Z", "item1 Date")
+  assert_str_eq(json.string_value(json.object_get(it1, "File")),
+  "two-ai-failure-case-analysis.md", "item1 File")
+  assert_int_eq(json.array_size(json.object_get(it1, "Tags")), 1, "item1 Tags size")
+
+  // item 2
+  let it2 = json.array_get(data, 2)
+  assert_str_eq(json.string_value(json.object_get(it2, "Title")),
+  "使用 ai 编程大半年后的心态变化", "item2 Title")
+  assert_str_eq(json.string_value(json.object_get(it2, "Date")),
+  "2026-06-26T22:18:42Z", "item2 Date")
+  assert_str_eq(json.string_value(json.object_get(it2, "Category")),
+  "AI", "item2 Category")
+  assert_str_eq(json.string_value(json.object_get(it2, "File")),
+  "mindset-change-after-ai-for-half-year.md", "item2 File")
+
+  // item 12 has no Category key — object_get must return nil, and the
+  // other fields must still parse
+  let it12 = json.array_get(data, 12)
+  assert_true(json.object_get(it12, "Category") == nil, "item12 Category missing")
+  assert_str_eq(json.string_value(json.object_get(it12, "Title")),
+  "自己实现一个 coding agent 学到的", "item12 Title")
+  assert_str_eq(json.string_value(json.object_get(it12, "File")),
+  "what-i-learn-from-writing-coding-agent.md", "item12 File")
+  assert_true(json.is_array(json.object_get(it12, "Tags")), "item12 Tags array")
+
+  // item 193 has Tags: null — must come back as JNull, not an array
+  let it193 = json.array_get(data, 193)
+  assert_true(json.is_null(json.object_get(it193, "Tags")), "item193 Tags null")
+  assert_str_eq(json.string_value(json.object_get(it193, "Title")),
+  "又搞了一次事故", "item193 Title")
+  assert_str_eq(json.string_value(json.object_get(it193, "File")),
+  "another-accident.md", "item193 File")
+
+  // ---- edge cases ----
+  // empty array
+  let ea = json.parse("[]")
+  assert_true(json.is_array(ea), "empty array type")
+  assert_int_eq(json.array_size(ea), 0, "empty array size")
+  assert_true(json.array_get(ea, 0) == nil, "empty array get is nil")
+
+  // empty object
+  let eo = json.parse("{}")
+  assert_true(json.is_object(eo), "empty object type")
+  assert_true(json.object_get(eo, "x") == nil, "empty object get is nil")
+
+  // nesting: array of object, object of array, deep key access
+  let nested = json.parse("{\"a\": [1, {\"b\": \"x\"}], \"c\": true}")
+  let na = json.object_get(nested, "a")
+  assert_true(json.is_array(na), "nested a is array")
+  assert_int_eq(json.array_size(na), 2, "nested a size")
+  assert_true(json.array_get(na, 1), "nested a[1] exists")
+  let nb = json.object_get(json.array_get(na, 1), "b")
+  assert_str_eq(json.string_value(nb), "x", "nested a[1].b")
+  assert_true(json.bool_value(json.object_get(nested, "c")) == true, "nested c")
+
+  // escapes: quote, backslash, solidus, newline, tab
+  let esc = json.parse("\"a\\\"b\\\\c\\/d\\n\\t\"")
+  assert_str_eq(json.string_value(esc), "a\"b\\c/d\n\t", "escaped string")
+
+  // \uXXXX escapes → UTF-8
+  let uni = json.parse("\"\\u4E2D\\u6587\"")
+  assert_str_eq(json.string_value(uni), "中文", "unicode escape")
+
+  // numbers: ints, negatives, floats, exponents
+  let nums = json.parse("[0, -42, 3.5, 1e2, -2.5e-1]")
+  assert_true(json.is_number(json.array_get(nums, 0)), "0 is number")
+  assert_int_eq(json.int_value(json.array_get(nums, 0)), 0, "0 value")
+  assert_int_eq(json.int_value(json.array_get(nums, 1)), -42, "-42 value")
+  assert_true(json.is_number(json.array_get(nums, 2)), "3.5 is number")
+  assert_true(json.float_value(json.array_get(nums, 2)) == 3.5, "3.5 value")
+  assert_true(json.float_value(json.array_get(nums, 3)) == 100.0, "1e2 value")
+  assert_true(json.float_value(json.array_get(nums, 4)) == -0.25, "-2.5e-1 value")
+  assert_true(json.kind(json.array_get(nums, 1)) == 'number, "kind number")
+
+  // booleans and null
+  let bj = json.parse("{\"t\": true, \"f\": false, \"n\": null}")
+  assert_true(json.is_bool(json.object_get(bj, "t")), "t is bool")
+  assert_true(json.bool_value(json.object_get(bj, "t")) == true, "t value")
+  assert_true(json.bool_value(json.object_get(bj, "f")) == false, "f value")
+  assert_true(json.is_null(json.object_get(bj, "n")), "n is null")
+  assert_true(json.is_null(json.object_get(bj, "missing")) == false, "missing is not null")
+
+  print("PASS")
+}

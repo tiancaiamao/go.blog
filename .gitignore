@@ -11,3 +11,7 @@ pom.xml.asc
 .hgignore
 .hg/
 publish.sh
+.pge/
+tavm
+lib/bootstrap.tabc
+lib/json.ta
