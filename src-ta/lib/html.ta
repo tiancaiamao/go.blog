@@ -1,0 +1,243 @@
+// html module: HTML/XML tree (Node ADT) + serializer, pure ta.
+//
+// The tree is the Node ADT:
+//   Elem(tag, attrs, children)  element: tag string, List(Attr), List(Node)
+//   Text(s)                     text node, XML-escaped on output
+//   Raw(s)                      raw node, emitted verbatim (script/atom embeds)
+// Attr is Attr(name, value); both name and value are strings.
+//
+// Serialization is byte-identical to cora's sxml->xml
+// (cora/lib/sxml.cora, element->xml / attribute->xml / string->escaped-xml):
+//   - element with empty children:   <tag name="v" />
+//   - element with children:         <tag name="v">children</tag>
+//   - attributes, in list order:     " name="escaped-value""
+//   - escape set:  " -> &quot;   & -> &amp;   \ -> &apos;   < -> &lt;   > -> &gt;
+//     (single quote ' is NOT escaped; backslash -> &apos; is a quirk of the
+//     cora implementation, preserved verbatim for byte-identical output)
+//   - Text at any level is escaped; Raw at any level is emitted verbatim
+//   - a top-level list renders as the concatenation of its items (cora
+//     sxml->xml-h's [c . more] clause); an empty list renders ""
+//
+// Efficiency: rendering appends into a buf (built-in C buffer, amortized
+// O(1) appends) instead of O(n^2) str.concat chains. The buf module has no
+// buf->string primitive, so render/render_list flush through a scratch file
+// (write_to + file.read, both byte-exact); render_to_file /
+// render_list_to_file write straight to the target path and are what the
+// generator uses for real output.
+//
+// The module is self-contained: no `import` (buf/file/str are builtin C
+// modules; ADT variants are pairs, so car/cdr/cons are builtins too).
+
+pub type Node { Elem(tag, attrs, children); Text(s); Raw(s) }
+pub type Attr { Attr(name, value) }
+
+// ---- constructors ----
+
+// elem: element node; attrs is List(Attr) (nil for none), children is
+// List(Node) (nil for an empty body, which renders as the " />" form).
+pub fn elem(tag, attrs, children) {
+  Elem(tag, attrs, children)
+}
+
+// text: escaped text node.
+pub fn text(s) {
+  Text(s)
+}
+
+// raw: unescaped node (script bodies, atom payloads, pre-built HTML).
+pub fn raw(s) {
+  Raw(s)
+}
+
+// attr: a single name="value" attribute.
+pub fn attr(name, value) {
+  Attr(name, value)
+}
+
+// ---- accessors (for the md/template layers that fold/inspect trees) ----
+
+pub fn tag_of(node) {
+  car(cdr(node))
+}
+
+// attrs_of: List(Attr), or nil for an element with no attributes.
+pub fn attrs_of(node) {
+  car(cdr(cdr(node)))
+}
+
+// children_of: List(Node), or nil for an empty element body.
+pub fn children_of(node) {
+  car(cdr(cdr(cdr(node))))
+}
+
+pub fn text_of(node) {
+  car(cdr(node))
+}
+
+pub fn raw_of(node) {
+  car(cdr(node))
+}
+
+// ---- serializer internals (buf-based) ----
+
+// hd_escaped: append s with cora's string->escaped-xml escape set.
+fn hd_escaped(buf, s) {
+  hd_escaped_i(buf, s, 0, str.length(s))
+}
+
+fn hd_escaped_i(buf, s, i, len) {
+  if i >= len {
+    nil
+  } else {
+    let c = str.char_at(s, i)
+    if c == 34 {
+      buf.push_string(buf, "&quot;")
+    } else {
+      if c == 38 {
+        buf.push_string(buf, "&amp;")
+      } else {
+        if c == 92 {
+          buf.push_string(buf, "&apos;")
+        } else {
+          if c == 60 {
+            buf.push_string(buf, "&lt;")
+          } else {
+            if c == 62 {
+              buf.push_string(buf, "&gt;")
+            } else {
+              buf.push_byte(buf, c)
+            }
+          }
+        }
+      }
+    }
+    hd_escaped_i(buf, s, i + 1, len)
+  }
+}
+
+// hd_attrs: append " name="escaped-value"" for each Attr, in list order.
+// An Attr node is the tagged pair ('Attr . (name value)).
+fn hd_attrs(buf, attrs) {
+  if null?(attrs) {
+    nil
+  } else {
+    let a = car(attrs)
+    buf.push_string(buf, " ")
+    buf.push_string(buf, car(cdr(a)))
+    buf.push_string(buf, "=\"")
+    hd_escaped(buf, car(cdr(cdr(a))))
+    buf.push_string(buf, "\"")
+    hd_attrs(buf, cdr(attrs))
+  }
+}
+
+// hd_node: append the serialization of one Node (cora element->xml +
+// the string clauses of sxml->xml-h).
+fn hd_node(buf, node) {
+  match node {
+    Elem(tag, attrs, children) -> {
+      buf.push_string(buf, "<")
+      buf.push_string(buf, tag)
+      hd_attrs(buf, attrs)
+      if null?(children) {
+        buf.push_string(buf, " />")
+      } else {
+        buf.push_string(buf, ">")
+        hd_children(buf, children)
+        buf.push_string(buf, "</")
+        buf.push_string(buf, tag)
+        buf.push_string(buf, ">")
+      }
+    }
+    Text(s) -> hd_escaped(buf, s)
+    Raw(s) -> {
+      buf.push_string(buf, s)
+      nil
+    }
+  }
+}
+
+// hd_children: append the serialization of a List(Node) (cora sxml->xml-h
+// top-level dispatch: [c . more] => c ++ more).
+fn hd_children(buf, children) {
+  if null?(children) {
+    nil
+  } else {
+    hd_node(buf, car(children))
+    hd_children(buf, cdr(children))
+  }
+}
+
+// hd_scratch: scratch path used to round-trip a buf into a string
+// (the buf module has no buf->string; write_to/file.read are byte-exact).
+fn hd_scratch() {
+  ".ta-html-tmp"
+}
+
+// hd_die: print msg and crash the process (1 / 0), with a string-typed
+// expression so callers can annotate their return type (the VM aborts on
+// the division before any value flows).
+fn hd_die(msg) -> string {
+  print(msg)
+  str.from_int(1 / 0)
+}
+
+fn hd_flush(buf) -> string {
+  let ok = buf.write_to(buf, hd_scratch())
+  if ok == 1 {
+    let s = file.read(hd_scratch())
+    if null?(s) {
+      hd_die("html.render: scratch file read failed")
+    } else {
+      s
+    }
+  } else {
+    hd_die("html.render: scratch file write failed")
+  }
+}
+
+fn hd_write_fail(path) {
+  print(str.concat("html.render_to_file: cannot write ", path))
+  1 / 0
+}
+
+// ---- public API ----
+
+// render: serialize a single Node to a string (cora sxml->xml on one value).
+pub fn render(node : Node) -> string {
+  let b = buf.new()
+  hd_node(b, node)
+  hd_flush(b)
+}
+
+// render_list: serialize a top-level List(Node); the empty list renders "".
+pub fn render_list(nodes) {
+  let b = buf.new()
+  hd_children(b, nodes)
+  hd_flush(b)
+}
+
+// render_to_file: serialize a Node straight to a file, returning 1 on
+// success. The generator's fast path (no string round-trip).
+pub fn render_to_file(node : Node, path) {
+  let b = buf.new()
+  hd_node(b, node)
+  let ok = buf.write_to(b, path)
+  if ok == 1 {
+    1
+  } else {
+    hd_write_fail(path)
+  }
+}
+
+// render_list_to_file: serialize a top-level List(Node) straight to a file.
+pub fn render_list_to_file(nodes, path) {
+  let b = buf.new()
+  hd_children(b, nodes)
+  let ok = buf.write_to(b, path)
+  if ok == 1 {
+    1
+  } else {
+    hd_write_fail(path)
+  }
+}

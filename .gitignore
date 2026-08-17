@@ -15,3 +15,4 @@ publish.sh
 tavm
 lib/bootstrap.tabc
 lib/json.ta
+.ta-html-tmp
