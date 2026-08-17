@@ -11,8 +11,8 @@
 //   (e-quote . nil)  (l-quote)                  <blockquote>
 //   (e-ul . nil)     (l-ul)                     <ul>
 //   (e-ol . start)   (l-ol)                     <ol> — start attr only when
-//                                               start != 1 (cora: start 0
-//                                               means "no start", coerced to 1)
+//                                               start != 1; start 0 (markdown
+//                                               "0. item") renders start="0"
 //   (e-li . mark)    (l-li)                     <li> — mark 0 => plain li;
 //                                               'x'(120) / 'X'(88) => checked
 //   (e-h . level)    (l-h)                      <h1>..<h6>
@@ -98,7 +98,7 @@ fn md_li_node(mark, body) {
 }
 
 // md_ol_node: cora render_open_ol_block — start attribute only when
-// start != 1.
+// start != 1 (start 0 renders as start="0").
 fn md_ol_node(start, body) {
   if start == 1 {
     html.elem("ol", nil, body)
@@ -351,3 +351,4 @@ pub fn html(path) {
     fold(evs)
   }
 }
+

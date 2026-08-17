@@ -111,11 +111,12 @@ static int enter_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
     case MD_BLOCK_UL:
         md4c_event_nil(s, sym_e_ul);
         break;
-    case MD_BLOCK_OL: {
+        case MD_BLOCK_OL: {
         const MD_BLOCK_OL_DETAIL *det = (const MD_BLOCK_OL_DETAIL *)detail;
-        /* cora: no start attribute when start == 1. */
-        unsigned start = det->start;
-        md4c_event(s, sym_e_ol, val_int(start ? start : 1));
+        /* cora wrap.c render_open_ol_block: no start attribute when
+         * start == 1; every other value passes through — including
+         * start == 0 (markdown "0. item" renders as start="0"). */
+        md4c_event(s, sym_e_ol, val_int((int)det->start));
         break;
     }
     case MD_BLOCK_LI: {

@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Blog generator wrapper script (ta version — ta port of blog-gen)
+# Usage: blog-gen-ta [command] [options]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TINYACTOR="${TINYACTOR:-/Users/genius/project/tinyactor/tinyactor}"
+
+show_help() {
+    cat << 'EOF'
+Blog Generator (ta) - Generate blog content
+
+Usage:
+    blog-gen-ta generate              Generate all blog content (full rebuild)
+    blog-gen-ta file <filename>       Generate a single blog post
+    blog-gen-ta help                  Show this help message
+
+Examples:
+    blog-gen-ta generate                                    # Rebuild everything
+    blog-gen-ta file 2024-01-15-my-new-post.md             # Generate specific post
+    blog-gen-ta file content/2024-01-15-my-new-post.md     # Also works with path
+
+Commands:
+    generate    Full regeneration of all blog posts and index pages
+    file        Generate only the specified blog post file
+    help        Show this help message
+
+Environment Variables:
+    TINYACTOR   Path to the tinyactor CLI (default: /Users/genius/project/tinyactor/tinyactor)
+
+EOF
+}
+
+# ta has no file.mkdir yet, so every output directory must pre-exist.
+# The entry program's `dirs` command prints them all (posts,
+# category/<name>, tags/<name> — names may nest, e.g. tags/call/cc/);
+# mkdir -p each line before the generator runs.
+prepare_dirs() {
+    cd "$SCRIPT_DIR"
+    "$TINYACTOR" run src-ta/gen.ta dirs | while IFS= read -r d; do
+        [ -n "$d" ] && mkdir -p "$SCRIPT_DIR/$d"
+    done
+}
+
+run_ta() {
+    local cmd="$1"
+    local arg="$2"
+    cd "$SCRIPT_DIR"
+    prepare_dirs
+    if [ -n "$arg" ]; then
+        "$TINYACTOR" run src-ta/gen.ta "$cmd" "$arg"
+    else
+        "$TINYACTOR" run src-ta/gen.ta "$cmd"
+    fi
+}
+
+sync_static() {
+    echo "Syncing static assets..."
+    rsync -a --delete "$SCRIPT_DIR/resources/public/static/" "$SCRIPT_DIR/generate/static/"
+}
+
+# Main
+case "${1:-help}" in
+    generate|all)
+        run_ta generate
+        sync_static
+        ;;
+    file)
+        if [ -z "$2" ]; then
+            echo "Error: filename required"
+            echo "Usage: blog-gen-ta file <filename>"
+            exit 1
+        fi
+        run_ta file "$(basename "$2")"
+        sync_static
+        ;;
+    help|-h|--help)
+        show_help
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Run 'blog-gen-ta help' for usage information"
+        exit 1
+        ;;
+esac
