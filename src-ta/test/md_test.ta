@@ -12,7 +12,13 @@
 //   raft-2F1A     tables + a blockquote
 //   7900xtx-local-ai  images (img src attr, alt text children)
 //   klambda       nested blockquotes (indented quotes)
-//   2018          ordered list with start != 1 (ol start attr)
+//   2018          mixed content; ordered list starts at 1 (no start attr)
+//   ol-start2     ordered list starting "2." (ol start="2") — fixture
+//   ol-start0     ordered list starting "0." (ol start="0"; cora wrap.c
+//                 omits start only when == 1) — fixture
+//
+// The ol-start* fixtures are hand-written inputs living next to their
+// baselines (no real post has an ordered list with start != 1).
 //
 // Regenerate baselines: ./src-ta/test/baseline/gen_md_baseline.sh
 // (or re-run the per-post cora driver — see that script's header.)
@@ -60,5 +66,9 @@ fn main() {
                  "./src-ta/test/baseline/md/klambda.md.html")
   assert_html_eq("2018", "./content/2018.md",
                  "./src-ta/test/baseline/md/2018.md.html")
+  assert_html_eq("ol-start2", "./src-ta/test/baseline/md/ol-start2.md",
+                 "./src-ta/test/baseline/md/ol-start2.md.html")
+  assert_html_eq("ol-start0", "./src-ta/test/baseline/md/ol-start0.md",
+                 "./src-ta/test/baseline/md/ol-start0.md.html")
   print("MD TEST PASS")
 }

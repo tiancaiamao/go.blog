@@ -24,8 +24,8 @@
  * (see ta.h GC_ROOTS_SCOPE docs, rule 2).
  */
 
-#include "ta.h"
 #include "md4c.h"
+#include "ta.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,12 +33,12 @@
 
 /* ---- pre-interned event symbols (set in vm_load_self) ---- */
 
-static Val sym_e_p, sym_e_quote, sym_e_ul, sym_e_ol, sym_e_li, sym_e_h,
-    sym_e_code, sym_e_hr, sym_e_table, sym_e_thead, sym_e_tbody, sym_e_tr;
-static Val sym_l_p, sym_l_quote, sym_l_ul, sym_l_ol, sym_l_li, sym_l_h,
-    sym_l_code, sym_l_table, sym_l_thead, sym_l_tbody, sym_l_tr;
-static Val sym_s_em, sym_s_strong, sym_s_code, sym_s_del, sym_s_a, sym_s_img,
-    sym_sl_em, sym_sl_strong, sym_sl_code, sym_sl_del, sym_sl_a, sym_sl_img;
+static Val sym_e_p, sym_e_quote, sym_e_ul, sym_e_ol, sym_e_li, sym_e_h, sym_e_code, sym_e_hr,
+    sym_e_table, sym_e_thead, sym_e_tbody, sym_e_tr;
+static Val sym_l_p, sym_l_quote, sym_l_ul, sym_l_ol, sym_l_li, sym_l_h, sym_l_code, sym_l_table,
+    sym_l_thead, sym_l_tbody, sym_l_tr;
+static Val sym_s_em, sym_s_strong, sym_s_code, sym_s_del, sym_s_a, sym_s_img, sym_sl_em,
+    sym_sl_strong, sym_sl_code, sym_sl_del, sym_sl_a, sym_sl_img;
 static Val sym_text, sym_br;
 
 /* ---- SAX state ---- */
@@ -65,7 +65,7 @@ static void md4c_event(md4c_state *s, Val sym, Val payload) {
     Val ev = val_pair(p, sym, payload); /* ev fresh; alloc rooted its args */
     Val acc = p->gc_roots[s->acc_slot]; /* slot kept current by GC fixup */
     Val head = val_pair(p, ev, acc);
-    p->gc_roots[s->acc_slot] = head;    /* re-park the new head */
+    p->gc_roots[s->acc_slot] = head; /* re-park the new head */
 }
 
 static void md4c_event_nil(md4c_state *s, Val sym) { md4c_event(s, sym, val_nil()); }
@@ -111,7 +111,7 @@ static int enter_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
     case MD_BLOCK_UL:
         md4c_event_nil(s, sym_e_ul);
         break;
-        case MD_BLOCK_OL: {
+    case MD_BLOCK_OL: {
         const MD_BLOCK_OL_DETAIL *det = (const MD_BLOCK_OL_DETAIL *)detail;
         /* cora wrap.c render_open_ol_block: no start attribute when
          * start == 1; every other value passes through — including
@@ -289,14 +289,13 @@ static int leave_span(MD_SPANTYPE type, void *detail, void *userdata) {
 
 /* ---- text callback ---- */
 
-static int text_cb(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE size,
-    void *userdata) {
+static int text_cb(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE size, void *userdata) {
     md4c_state *s = (md4c_state *)userdata;
     switch (type) {
     case MD_TEXT_BR:
         md4c_event_nil(s, sym_br);
         break;
-        case MD_TEXT_HTML:
+    case MD_TEXT_HTML:
         /* cora wrap.c: dropped (it conflicts with sxml). */
         break;
     default:
@@ -352,18 +351,11 @@ static Val md4c_events(VM *vm, Val *args, int nargs) {
     s.p = p;
     s.acc_slot = -1;
 
-    static const unsigned parser_flags = MD_FLAG_STRIKETHROUGH |
-        MD_FLAG_TASKLISTS; /* cora wrap.c flags */
+    static const unsigned parser_flags =
+        MD_FLAG_STRIKETHROUGH | MD_FLAG_TASKLISTS; /* cora wrap.c flags */
 
-    MD_PARSER parser = {0,
-        parser_flags,
-        enter_block,
-        leave_block,
-        enter_span,
-        leave_span,
-        text_cb,
-        debug_log,
-        NULL};
+    MD_PARSER parser = {0,          parser_flags, enter_block, leave_block, enter_span,
+                        leave_span, text_cb,      debug_log,   NULL};
 
     /* Park the accumulator in a root slot for the whole parse. The slot
      * (not a C variable) is the single source of truth for the current

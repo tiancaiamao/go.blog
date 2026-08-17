@@ -1,10 +1,12 @@
 ;; md baseline: render ONE markdown post with cora's md4c (process-file)
-;; and write the sxml->xml output to src-ta/test/baseline/md/<post>.html.
-;; Byte-identical reference for the ta md module (spec A2).
+;; and write the sxml->xml output to the __OUT__ path.
+;; Byte-identical reference for the ta md module.
 ;;
-;; Driver: gen_md_baseline.sh (substitutes __POST__ via sed per post).
+;; Driver: gen_md_baseline.sh (substitutes __IN__ / __OUT__ via sed per
+;; post — inputs are either a content/<post> or a baseline fixture living
+;; next to its expected output).
 ;;
-;; NOTE: keep this template FLAT — the post path must be inlined by sed,
+;; NOTE: keep this template FLAT — the paths must be inlined by sed,
 ;; NOT built at runtime. A script that binds the post name in a let and
 ;; string-appends the in/out paths (a 4-deep nested-let chain) trips
 ;; cora's evaluator on some posts (observed on 2018.md: "runtime error:
@@ -16,8 +18,8 @@
 (import "cora/lib/md4c/include")
 (import "cora/lib/sxml")
 
-(let data (sxml->xml (process-file "./content/__POST__"))
-  (let f (open-output-file "src-ta/test/baseline/md/__POST__.html")
+(let data (sxml->xml (process-file "__IN__"))
+  (let f (open-output-file "__OUT__")
     (begin
       (write-bytes f data)
       (close-output-file f))))
