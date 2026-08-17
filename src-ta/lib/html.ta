@@ -54,6 +54,13 @@ pub fn attr(name, value) {
   Attr(name, value)
 }
 
+// attr_flag: a valueless attribute, rendered as just " name" (cora
+// sxml->xml's attribute->xml symbol clause — e.g. the `disabled` /
+// `checked` markers md4c task lists produce).
+pub fn attr_flag(name) {
+  Attr(name, nil)
+}
+
 // ---- accessors (for the md/template layers that fold/inspect trees) ----
 
 pub fn tag_of(node) {
@@ -115,8 +122,10 @@ fn hd_escaped_i(buf, s, i, len) {
   }
 }
 
-// hd_attrs: append " name="escaped-value"" for each Attr, in list order.
-// An Attr node is the tagged pair ('Attr . (name value)).
+// hd_attrs: append " name=\"escaped-value\"" for each Attr, in list
+// order; a valueless Attr (nil value, from attr_flag) appends just
+// " name" — cora sxml->xml's symbol-attribute clause. An Attr node is
+// the tagged pair ('Attr . (name . value)).
 fn hd_attrs(buf, attrs) {
   if null?(attrs) {
     nil
@@ -124,9 +133,14 @@ fn hd_attrs(buf, attrs) {
     let a = car(attrs)
     buf.push_string(buf, " ")
     buf.push_string(buf, car(cdr(a)))
-    buf.push_string(buf, "=\"")
-    hd_escaped(buf, car(cdr(cdr(a))))
-    buf.push_string(buf, "\"")
+    let v = car(cdr(cdr(a)))
+    if null?(v) {
+      nil
+    } else {
+      buf.push_string(buf, "=\"")
+      hd_escaped(buf, v)
+      buf.push_string(buf, "\"")
+    }
     hd_attrs(buf, cdr(attrs))
   }
 }
