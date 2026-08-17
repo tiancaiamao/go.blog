@@ -1,0 +1,239 @@
+// template module: port of src/template.cora (the blog page templates).
+//
+// ta has no quasiquote (spec: templates are plain constructor functions),
+// so each cora sxml template becomes a ta function that builds a html Node
+// tree with html.elem/text/attr. Serialization is html.render (cora
+// sxml->xml); the expected bytes are pinned by src-ta/test/template_test.ta
+// against cora-generated baselines (src-ta/test/baseline/template/) and
+// real cora output in generate/*.html.
+//
+// Function-by-function correspondence with template.cora:
+//   sidebar(category, tags)                        -> Node
+//   disqus(title, url)                             -> Node
+//   container(content, category, tags)             -> Node
+//   page(title, container)                         -> Node
+//   article(title, date, content, tags, prev, next, permlink) -> List(Node)
+//
+// Porting notes (semantics kept byte-identical):
+//   - cora's `(map f tags)` unquoted at the tail of a children list puts a
+//     LIST as one child; sxml->xml flattens a list child into the
+//     concatenation of its items (html.hd_children on a nested list is the
+//     same bytes). We splice with append instead — identical output, and it
+//     also renders "" for the empty list like cora does.
+//   - container: cora's `(append '(div (@ (class "col-sm-9"))) content)`
+//     appends at the sxml LIST level, i.e. content nodes become CHILDREN of
+//     the col-sm-9 div (not siblings). With empty content the div renders
+//     self-closed `<div class="col-sm-9" />` — elem(nil children) matches.
+//   - disqus: the script body is a cora STRING child of the script element,
+//     so it goes through sxml->xml's escaping (verified on the cora
+//     baseline: a title with " & < renders &quot; &amp; &lt;) — html.text,
+//     NOT html.raw.
+//   - article returns a LIST of two nodes (cora `(list div div)`); render
+//     it with html.render_list. prev/next/permlink are accepted for
+//     signature parity but unused, exactly like the current template.cora
+//     (the prev/next navigation is commented out there).
+//   - article's second div: `(div ,tag-links (ul (@ (class "pager"))))` —
+//     the pager ul is empty, so it renders `<ul class="pager" />`.
+
+import html
+
+// ---- small local list helpers (self-contained module, like html.ta) ----
+
+fn l1(x) {
+  cons(x, nil)
+}
+
+fn l2(x, y) {
+  cons(x, cons(y, nil))
+}
+
+fn l4(x, y, z, w) {
+  cons(x, cons(y, cons(z, cons(w, nil))))
+}
+
+fn l3(x, y, z) {
+  cons(x, cons(y, cons(z, nil)))
+}
+
+fn l5(x, y, z, w, v) {
+  cons(x, cons(y, cons(z, cons(w, cons(v, nil)))))
+}
+
+// tp_map: order-preserving map (tinyactor lib/list.map, kept local so the
+// module only imports html).
+fn tp_map(f, lst) {
+  if null?(lst) {
+    nil
+  } else {
+    cons(f(car(lst)), tp_map(f, cdr(lst)))
+  }
+}
+
+// tp_append: new list a ++ b.
+fn tp_append(a, b) {
+  if null?(a) {
+    b
+  } else {
+    cons(car(a), tp_append(cdr(a), b))
+  }
+}
+
+// tp_tag_link: the tag pill anchor shared by sidebar and article —
+// cora: `(a (@ (href ,(string-append "/tags/" x)) (class "btn btn-info btn-xs")) ,x)`
+fn tp_tag_link(name) {
+  html.elem("a", l2(html.attr("href", str.concat("/tags/", name)),
+  html.attr("class", "btn btn-info btn-xs")),
+  l1(html.text(name)))
+}
+
+// ---- template constructors ----
+
+// sidebar: the sidebar-nav well with the category pill list and the tag
+// pills. The tag pills are APPENDED after the Tags h2 (not passed as a
+// nested list child — hd_node drops non-Node children; cora's sxml->xml
+// flattens a list child, append produces the same bytes).
+pub fn sidebar(category, tags) {
+  html.elem("div", l1(html.attr("class", "well sidebar-nav")),
+  tp_append(l3(html.elem("h2", l1(html.attr("id", "nav-pills")),
+  l1(html.text("Category"))),
+  html.elem("ul", l1(html.attr("class", "nav nav-pills nav-stacked")),
+  tp_map(fn(name) {
+    html.elem("li", nil,
+    l1(html.elem("a", l1(html.attr("href", str.concat("/category/", name))),
+    l1(html.text(name)))))
+  }, category)),
+  html.elem("h2", l1(html.attr("id", "nav-pills")),
+  l1(html.text("Tags")))),
+  tp_map(fn(name) {
+    tp_tag_link(name)
+  }, tags)))
+}
+
+// disqus: the comments aside. The script body is a Text node — cora
+// escapes it (see module header).
+pub fn disqus(title, url) {
+  let script = tp_disqus_script(title, url)
+  html.elem("aside", l1(html.attr("id", "comments")),
+  l5(html.elem("div", nil,
+  l1(html.elem("h2", nil, l1(html.text("Comments"))))),
+  html.elem("div", l1(html.attr("id", "disqus_thread")), nil),
+  html.elem("script", l1(html.attr("type", "text/javascript")),
+  l1(html.text(script))),
+  html.elem("noscript", nil,
+  l2(html.text("Please enable JavaScript to view the "),
+  html.elem("a", l1(html.attr("href", "http://disqus.com/?ref_noscript")),
+  l1(html.text("comments powered by Disqus."))))),
+  html.elem("a", l2(html.attr("href", "http://disqus.com"),
+  html.attr("class", "dsq-brlink")),
+  l2(html.text("comments powered by"),
+  html.elem("span", l1(html.attr("class", "logo-disqus")),
+  l1(html.text("Disqus")))))))
+}
+
+// tp_disqus_script: cora's fold-apply string-append chain, verbatim
+// (including the leading "\n" and the zenlife.tk identifier prefix).
+fn tp_disqus_script(title, url) {
+  tp_concat8(str.concat("\nvar disqus_identifier = 'http://www.zenlife.tk", url),
+  str.concat("';\nvar disqus_title = '", title),
+  str.concat("';\nvar disqus_url = 'http://www.zenlife.tk", url),
+  "';\n\n(function() {\n",
+  "\tvar dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;\n",
+  "\tdsq.src = '//codingnow.disqus.com/embed.js';\n",
+  "\t(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);\n",
+  "})();\n")
+}
+
+// tp_concat8: left fold of str.concat over 8 parts (cora's fold-apply
+// string-append).
+fn tp_concat8(a, b, c, d, e, f, g, h) {
+  str.concat(a, str.concat(b, str.concat(c, str.concat(d,
+  str.concat(e, str.concat(f, str.concat(g, h)))))))
+}
+
+// ---- page-level constructors ----
+
+// container: the bootstrap row — col-sm-9 main column (content nodes are
+// its CHILDREN, see module header) + col-sm-3 sidebar column wrapping the
+// sidebar well.
+pub fn container(content, category, tags) {
+  html.elem("div", l1(html.attr("class", "container")),
+  l1(html.elem("div",
+  l1(html.attr("class", "row row-offcanvas row-offcanvas-right")),
+  tp_append(l1(html.elem("div", l1(html.attr("class", "col-sm-9")), content)),
+  l1(html.elem("div",
+  l3(html.attr("class", "col-sm-3"),
+  html.attr("id", "sidebar"),
+  html.attr("role", "navigation")),
+  l1(sidebar(category, tags))))))))
+}
+
+// page: the document skeleton — head (meta/title/links), navbar, the
+// container node, hr, and the "Powered by Clojure" footer.
+pub fn page(title, container) {
+  html.elem("html", l1(html.attr("lang", "zh_CN")),
+  l2(tp_head(title),
+  html.elem("body", nil,
+  l4(tp_navbar(), container, html.elem("hr", nil, nil), tp_footer()))))
+}
+
+// tp_head: <head> with charset meta, title, bootstrap and local stylesheets.
+fn tp_head(title) {
+  html.elem("head", nil,
+  l4(html.elem("meta", l1(html.attr("charset", "utf-8")), nil),
+  html.elem("title", nil, l1(html.text(title))),
+  html.elem("link", l2(html.attr("rel", "stylesheet"),
+  html.attr("href", "//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css")),
+  nil),
+  html.elem("link", l2(html.attr("rel", "stylesheet"),
+  html.attr("href", "/static/style.css")), nil)))
+}
+
+// tp_navbar: the inverse navbar with the five nav links.
+fn tp_navbar() {
+  html.elem("div", l1(html.attr("class", "navbar navbar-inverse")),
+  l1(html.elem("div", l1(html.attr("class", "container")),
+  l1(html.elem("div", l1(html.attr("class", "collapse navbar-collapse")),
+  l1(html.elem("ul", l1(html.attr("class", "nav navbar-nav")),
+  l5(tp_nav_item("/", "Home"),
+  tp_nav_item("/index", "Blog"),
+  tp_nav_item("/project", "Project"),
+  tp_nav_item("/about", "About"),
+    tp_nav_item("/feed.atom", "Rss")))))))))
+}
+
+// tp_nav_item: one <li><a> navbar entry.
+fn tp_nav_item(href, label) {
+  html.elem("li", nil,
+  l1(html.elem("a", l1(html.attr("href", href)),
+  l1(html.text(label)))))
+}
+
+// tp_footer: the "Powered by Clojure & Bootstrap" footer paragraph.
+fn tp_footer() {
+  html.elem("footer", nil,
+  l1(html.elem("p", l1(html.attr("class", "nav navbar-nav navbar-right")),
+  l4(html.text("Powered by "),
+  html.elem("a", l1(html.attr("href", "https://clojure.org/")),
+  l1(html.text("Clojure"))),
+  html.text(" & "),
+  html.elem("a", l1(html.attr("href", "//getbootstrap.com/")),
+  l1(html.text("Bootstrap")))))))
+}
+
+// article: the per-post body — List(Node) of [content div, nav div]:
+//   <div id="content"><h1 id="Title">title</h1><p>date</p>content...</div>
+//   <div>tag-pills...<ul class="pager" /></div>
+// content is a List(Node) (the md module's output) spliced as children of
+// the content div after the date paragraph.
+pub fn article(title, date, content, tags, prev, next, permlink) {
+  l2(html.elem("div", l1(html.attr("id", "content")),
+  tp_append(l2(html.elem("h1", l1(html.attr("id", "Title")),
+  l1(html.text(title))),
+  html.elem("p", nil, l1(html.text(date)))),
+  content)),
+  html.elem("div", nil,
+  tp_append(tp_map(fn(name) {
+    tp_tag_link(name)
+  }, tags),
+  l1(html.elem("ul", l1(html.attr("class", "pager")), nil)))))
+}

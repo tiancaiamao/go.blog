@@ -1,0 +1,223 @@
+// src-ta/test/template_test.ta — template module acceptance tests.
+//
+// Byte-identical target, two layers of evidence:
+//
+// 1. Cora baselines: src-ta/test/baseline/template/*.html, produced by
+//    baseline/gen_template_baseline.sh (cora's own sidebar/container/page/
+//    article with the fixed real-data args, plus a disqus variant — see
+//    that script's header for why disqus is inlined there: template.cora's
+//    disqus is dead code with a missing unquote comma that crashes cora).
+//    Each template constructor rendered through html must equal its
+//    baseline byte-for-byte.
+//
+// 2. Real cora products: generate/index.html and
+//    generate/chicken-scheme-practice2.md/index.html. Rendered fragments
+//    (sidebar prefix, full article wrap with real md content, container
+//    prefix, page head/tail) must appear byte-identical inside the real
+//    generated pages. The article check is end-to-end: its content comes
+//    from md.html on the real post file.
+//
+// Shared fixed args (same as the baseline generator):
+//   CATS  — the six real categories, in sidebar order
+//   TAGS  — the first five real tags, in sidebar order
+//   chicken-scheme-practice2.md — title/date/tags from content/index.json
+//   FIXED_CONTENT — small node list with escapable chars (& <)
+//
+// Asserts pass silently; a failed assertion prints a message and crashes
+// the process (1 / 0). Run from the go.blog repo root:
+//   tinyactor run src-ta/test/template_test.ta
+
+import html
+import md
+import template
+
+// fail: print msg and crash; string-typed expression so callers can
+// annotate their return type (html.ta hd_die pattern — the VM aborts on
+// the division before any value flows).
+fn fail(msg) -> string {
+  print(str.concat("TEMPLATE TEST FAIL: ", msg))
+  str.from_int(1 / 0)
+}
+
+fn assert_true(cond, msg) {
+  if cond {
+    nil
+  } else {
+    fail(msg)
+  }
+}
+
+fn assert_str_eq(actual, expected, msg) {
+  if str.eq(actual, expected) {
+    print(str.concat("ok ", msg))
+    nil
+  } else {
+    print(str.concat("  actual:   ", actual))
+    print(str.concat("  expected: ", expected))
+    fail(msg)
+  }
+}
+
+// assert_in: `frag` must occur byte-identical inside `hay`. pos >= 0
+// additionally requires that exact position (0 = at the very start,
+// length-len = at the very end); pos < 0 means anywhere.
+fn assert_in(frag, hay, pos, msg) {
+  let at = str.index_of(hay, frag)
+  let ok = if pos < 0 {
+    at >= 0
+  } else {
+    at == pos
+  }
+    if ok {
+    print(str.concat("ok ", msg))
+    nil
+  } else {
+    print(str.concat("  found at: ", str.from_int(at)))
+    print(str.concat("  fragment: ", frag))
+    fail(msg)
+  }
+}
+
+fn read_or_fail(path) {
+  let s = file.read(path)
+  if null?(s) {
+    print(str.concat("  missing: ", path))
+    fail("required file cannot be read (run from repo root?)")
+  } else {
+    s
+  }
+}
+
+// ---- shared fixed args (mirror of gen_template_baseline.cora) ----
+
+fn l3(x, y, z) {
+  cons(x, cons(y, cons(z, nil)))
+}
+
+fn l5s(x, y, z, w, v) {
+  cons(x, cons(y, cons(z, cons(w, cons(v, nil)))))
+}
+
+fn cats() {
+  cons("编译器", cons("编程语言", cons("高性能服务器",
+  cons("分布式", cons("Android游戏开发", cons("AI", nil))))))
+}
+
+fn tags5() {
+  l5s("lisp", "源代码分析", "chibi-scheme", "golang", "rbtree")
+}
+
+// FIXED_CONTENT: two nodes, the first with escapable text
+fn fixed_content() {
+  cons(html.elem("p", nil, cons(html.text("hello & <world>"), nil)),
+  cons(html.elem("h2", cons(html.attr("id", "x"), nil),
+  cons(html.text("标题"), nil)),
+  nil))
+}
+
+fn main() {
+  let baseline = "./src-ta/test/baseline/template/"
+
+  // ---- 1. sidebar: cora baseline + real generate/index.html fragment ----
+  let sidebar_frag = html.render(template.sidebar(cats(), tags5()))
+  assert_str_eq(sidebar_frag, read_or_fail(str.concat(baseline, "sidebar.html")),
+  "sidebar byte-identical to cora baseline")
+      let index_page = read_or_fail("./generate/index.html")
+  // cats(6) + first 5 tags is a contiguous prefix of the real sidebar; the
+  // well's closing </div> only appears after all 337 real tags, so compare
+  // the prefix with that closer dropped
+  let sidebar_prefix = str.substr(sidebar_frag, 0,
+  str.length(sidebar_frag) - str.length("</div>"))
+  assert_in(sidebar_prefix, index_page, -1,
+  "sidebar fragment found byte-identical in generate/index.html")
+
+  // ---- 2. disqus: cora baseline (real title/url) ----
+  let disqus_frag = html.render(template.disqus("chicken scheme实践之二",
+  "/chicken-scheme-practice2.md"))
+  assert_str_eq(disqus_frag, read_or_fail(str.concat(baseline, "disqus.html")),
+  "disqus byte-identical to cora baseline")
+
+  // ---- 2b. disqus escaping: the script body is a Text node, not Raw ----
+  let disqus_esc = html.render(template.disqus("a \"b\" & <c>", "/x"))
+  assert_str_eq(disqus_esc, read_or_fail(str.concat(baseline, "disqus_escape.html")),
+  "disqus escapes the script body (Text, not Raw)")
+
+  // ---- 3. article: cora baseline + real generated post page ----
+  let article_fixed = html.render_list(template.article(
+  "chicken scheme实践之二", "2015-08-12", fixed_content(),
+  l3("blog", "scheme", "chicken"), nil, nil, "chicken-scheme-practice2.md"))
+  assert_str_eq(article_fixed, read_or_fail(str.concat(baseline, "article.html")),
+  "article byte-identical to cora baseline")
+
+  // end-to-end with the real post: content from md.html must reproduce the
+  // article wrap inside the cora-generated page byte-for-byte
+  let chicken_page = read_or_fail("./generate/chicken-scheme-practice2.md/index.html")
+  let article_real = html.render_list(template.article(
+  "chicken scheme实践之二", "2015-08-12",
+  md.html("./content/chicken-scheme-practice2.md"),
+  l3("blog", "scheme", "chicken"), nil, nil, "chicken-scheme-practice2.md"))
+  assert_in(article_real, chicken_page, -1,
+  "article (with real md content) found byte-identical in generated post page")
+
+    // empty tags + empty content: nav div degenerates to <div><ul class="pager" /></div>
+  // (gitbbs.md has no tags); the content div degenerates to the head prefix
+  // (the real page's md body sits between the <p>date</p> and the </div>)
+  let notags = template.article("gitbbs创业idea", "2013-03-14", nil, nil, nil, nil,
+  "gitbbs.md")
+  let gitbbs_page = read_or_fail("./generate/gitbbs.md/index.html")
+  assert_in(str.substr(html.render(car(notags)), 0,
+  str.length(html.render(car(notags))) - str.length("</div>")),
+  gitbbs_page, -1,
+  "article empty-content head matches generated page")
+  assert_in(html.render(car(cdr(notags))), gitbbs_page, -1,
+  "article with empty tags renders self-closing pager (gitbbs page)")
+
+  // ---- 4. container: cora baseline + real post page prefix ----
+  let container_fixed = html.render(template.container(fixed_content(), cats(), tags5()))
+  assert_str_eq(container_fixed, read_or_fail(str.concat(baseline, "container.html")),
+  "container byte-identical to cora baseline")
+
+  // real check: container around the real article; TAGS5 truncates the
+  // sidebar, so compare the prefix up to (and including) the last tag pill,
+  // dropping the four closing </div>s that only close because the sidebar
+  // ends there
+  let container_real = html.render(template.container(
+  template.article("chicken scheme实践之二", "2015-08-12",
+  md.html("./content/chicken-scheme-practice2.md"),
+  l3("blog", "scheme", "chicken"), nil, nil, "chicken-scheme-practice2.md"),
+  cats(), tags5()))
+  let closers = "</div></div></div></div>"
+  let container_prefix = str.substr(container_real, 0,
+  str.length(container_real) - str.length(closers))
+  assert_in(container_prefix, chicken_page, -1,
+  "container prefix found byte-identical in generated post page")
+
+  // ---- 5. page: cora baseline + real page skeleton ----
+  let page_fixed = html.render(template.page("blog",
+  template.container(fixed_content(), cats(), tags5())))
+  assert_str_eq(page_fixed, read_or_fail(str.concat(baseline, "page.html")),
+  "page byte-identical to cora baseline")
+
+  // head skeleton (everything before the container) must open the real
+  // index page exactly
+  let head = str.substr(page_fixed, 0,
+  str.index_of(page_fixed, "<div class=\"container\">"))
+  assert_in(head, index_page, 0,
+  "page head is the exact prefix of generate/index.html")
+
+  // tail skeleton (hr + footer) must close the real index page exactly
+  let tail = str.substr(page_fixed, str.index_of(page_fixed, "<hr />"),
+  str.length(page_fixed) - str.index_of(page_fixed, "<hr />"))
+  assert_in(tail, index_page, str.length(index_page) - str.length(tail),
+  "page tail is the exact suffix of generate/index.html")
+
+  // same head check against the post page, with its own title
+  let page_post = html.render(template.page("chicken scheme实践之二",
+  template.container(fixed_content(), cats(), tags5())))
+  let head_post = str.substr(page_post, 0,
+  str.index_of(page_post, "<div class=\"container\">"))
+  assert_in(head_post, chicken_page, 0,
+  "page head (post title) is the exact prefix of the generated post page")
+
+  print("TEMPLATE TEST PASS")
+}
