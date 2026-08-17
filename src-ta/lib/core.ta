@@ -1,0 +1,445 @@
+// core module: port of src/core.cora (the blog generator core).
+//
+// Reads content/index.json (json module), turns each post's markdown into
+// a html Node tree (md module), wraps pages with template constructors
+// (template module) and serializes them byte-identically to cora's
+// sxml->xml (html module). The output ROOT DIRECTORY IS A PARAMETER —
+// every write_* function takes it as its first argument, so tests can
+// generate into a scratch tree and diff against cora's generate/ output.
+//
+// Function-by-function correspondence with core.cora:
+//   for-range/parse-index-file   -> parse_index_file (items collected in
+//                                   REVERSE array order, like cora's
+//                                   for-range cons fold)
+//   assoc                        -> co_assoc (entry = [name item...]; a new
+//                                   key is prepended, a repeated key conses
+//                                   the item onto the existing entry)
+//   build-category/build-tags    -> build_category / build_tags
+//   get-tags-from-item           -> get_tags_from_item (reversed tag order,
+//                                   exactly like cora)
+//   get-string-from-item         -> get_string_from_item
+//   container0                   -> container0 (sidebar gets the category
+//                                   names then the tag names, in build order)
+//   static-template-handler &co  -> static_page / about_page / project_page
+//                                   / home_page
+//   md-sxml                      -> post_page
+//   blog-item/blog-handler       -> blog_item / blog_page
+//   write-file                   -> write_file (crashes on failure)
+//   md-handler                   -> write_post
+//   find-item-by-file            -> find_item_by_file ('none | ['ok item])
+//   generate-file                -> generate_file (single-post update)
+//   summery-handler &
+//   category/tags-handler        -> write_summary / write_category /
+//                                   write_tags
+//   take-n/atom-entry/atom-handler -> co_take_n / atom_entry / atom_feed
+//   generate                     -> generate
+//
+// Ordering notes pinned by cora's semantics (verified against generate/):
+//   - index.json is newest-first; INDEX is its REVERSE (oldest-first);
+//     the index page's foldl-blog_item PREPENDS, so the page ends up
+//     newest-first (array order)
+//   - category/tag entries accumulate items with the newest at the entry
+//     head; the summary page's blog_item fold reverses that again, so
+//     summary pages list their items oldest-first
+//   - atom: recent = reverse(INDEX) = array order; updated = the Date of
+//     its first (newest) item; entries = the first 10 items of that list
+
+import html
+import json
+import md
+import template
+
+// ---- small local list helpers (self-contained, like template.ta) ----
+
+fn co_l1(x) {
+  cons(x, nil)
+}
+
+fn co_l2(x, y) {
+  cons(x, cons(y, nil))
+}
+
+fn co_l3(x, y, z) {
+  cons(x, cons(y, cons(z, nil)))
+}
+
+// co_foldl: left fold over a list, f(acc, item) — cora's foldl order.
+fn co_foldl(f, acc, lst) {
+  if null?(lst) {
+    acc
+  } else {
+    co_foldl(f, f(acc, car(lst)), cdr(lst))
+  }
+}
+
+// co_map: order-preserving map.
+fn co_map(f, lst) {
+  if null?(lst) {
+    nil
+  } else {
+    cons(f(car(lst)), co_map(f, cdr(lst)))
+  }
+}
+
+// co_append: new list a ++ b.
+fn co_append(a, b) {
+  if null?(a) {
+    b
+  } else {
+    cons(car(a), co_append(cdr(a), b))
+  }
+}
+
+// co_reverse: new list with elements reversed.
+fn co_reverse(lst) {
+  co_foldl(fn(acc, x) { cons(x, acc) }, nil, lst)
+}
+
+// co_take_n: the first n elements (cora take-n).
+fn co_take_n(n, lst) {
+  if n == 0 {
+    nil
+  } else {
+    if null?(lst) {
+      nil
+    } else {
+      cons(car(lst), co_take_n(n - 1, cdr(lst)))
+    }
+  }
+}
+
+// co_die: print msg and crash the process (1 / 0).
+fn co_die(msg) -> string {
+  print(msg)
+  str.from_int(1 / 0)
+}
+
+// ---- index / tags / category (cora assoc machinery) ----
+
+// co_assoc: cora's assoc — acc is a list of entries [k v...]; a new key is
+// prepended as a fresh entry, an existing key conses v onto its entry's
+// items (so the items end up newest-first).
+fn co_assoc(k, v, lst) {
+  if null?(lst) {
+    co_l1(cons(k, co_l1(v)))
+  } else {
+    let entry = car(lst)
+    if car(entry) == k {
+      cons(cons(k, cons(v, cdr(entry))), cdr(lst))
+    } else {
+      cons(entry, co_assoc(k, v, cdr(lst)))
+    }
+  }
+}
+
+// parse_index_file: index.json -> item list in REVERSE array order
+// (cora's for-range cons fold). Every element is a json JObj.
+pub fn parse_index_file(idx_file) {
+  let data = json.load(idx_file)
+  co_index_collect(data, 0, json.array_size(data), nil)
+}
+
+fn co_index_collect(data, i, n, acc) {
+  if i == n {
+    acc
+  } else {
+    co_index_collect(data, i + 1, n, cons(json.array_get(data, i), acc))
+  }
+}
+
+// build_category: assoc every item onto its (non-empty string) Category;
+// entry = [name item...]. Items with a missing/null Category are skipped.
+pub fn build_category(index) {
+  co_foldl(fn(acc, item) {
+    let category = json.object_get(item, "Category")
+    if json.is_string(category) {
+      let cv = json.string_value(category)
+      if str.eq(cv, "") {
+        acc
+      } else {
+        co_assoc(cv, item, acc)
+      }
+    } else {
+      acc
+    }
+  }, nil, index)
+}
+
+// build_tags: assoc every item onto each of its string tags.
+pub fn build_tags(index) {
+  co_foldl(fn(acc, item) {
+    co_foldl(fn(init, tag) {
+      co_assoc(tag, item, init)
+    }, acc, get_tags_from_item(item))
+  }, nil, index)
+}
+
+// get_tags_from_item: the item's Tags strings in REVERSE array order
+// (cora's cons fold) — template.article consumes them in exactly this
+// order (e.g. chicken-scheme-practice2.md renders blog, scheme, chicken).
+// Non-array Tags (missing or null) yield nil.
+pub fn get_tags_from_item(item) {
+  let tags = json.object_get(item, "Tags")
+  if json.is_array(tags) {
+    let n = json.array_size(tags)
+    if n > 0 {
+      co_tags_collect(tags, 0, n, nil)
+    } else {
+      nil
+    }
+  } else {
+    nil
+  }
+}
+
+fn co_tags_collect(tags, i, n, acc) {
+  if i == n {
+    acc
+  } else {
+    let tag = json.array_get(tags, i)
+    let acc2 = if json.is_string(tag) {
+      cons(json.string_value(tag), acc)
+    } else {
+      acc
+    }
+    co_tags_collect(tags, i + 1, n, acc2)
+  }
+}
+
+// get_string_from_item: a field's string value (nil when missing).
+pub fn get_string_from_item(item, field) {
+  json.string_value(json.object_get(item, field))
+}
+
+// co_item_date10: the item's Date truncated to its first 10 chars
+// (cora's (string-slice date 0 10)).
+fn co_item_date10(item) {
+  str.substr(get_string_from_item(item, "Date"), 0, 10)
+}
+
+// ---- page constructors ----
+
+// container0: container with the site-wide sidebar — category names then
+// tag names, in build order (cora's (map car CATEGORY)/(map car TAGS)).
+fn container0(category, tags, content) {
+  template.container(content, co_map(fn(e) { car(e) }, category),
+  co_map(fn(e) { car(e) }, tags))
+}
+
+// static_page: the About/Project/Home pages — one #content div whose
+// children are the rendered template/<file> markdown nodes.
+fn static_page(category, tags, name, file) {
+  let md_nodes = md.html(str.concat("./template/", file))
+  let div = html.elem("div", co_l1(html.attr("id", "content")), md_nodes)
+  template.page(name, container0(category, tags, co_l1(div)))
+}
+
+pub fn about_page(category, tags) {
+  static_page(category, tags, "About", "about.md")
+}
+
+pub fn project_page(category, tags) {
+  static_page(category, tags, "Project", "project.md")
+}
+
+pub fn home_page(category, tags) {
+  static_page(category, tags, "Home", "home.md")
+}
+
+// post_page: one post's full page (cora md-sxml). prev/next stay false,
+// matching the current template.cora (navigation commented out there).
+pub fn post_page(category, tags, item) {
+  let title = get_string_from_item(item, "Title")
+  let date = co_item_date10(item)
+  let tags_l = get_tags_from_item(item)
+  let filename = get_string_from_item(item, "File")
+  let content = md.html(str.concat("./content/", filename))
+  template.page(title, container0(category, tags,
+  template.article(title, date, content, tags_l, false, false, filename)))
+}
+
+// blog_item: prepend the post's h2 link + meta date to acc (cora blog-item).
+fn blog_item(acc, item) {
+  let href = str.concat("/", get_string_from_item(item, "File"))
+  let h2 = html.elem("h2", nil, co_l1(html.elem("a",
+  co_l1(html.attr("href", href)),
+  co_l1(html.text(get_string_from_item(item, "Title"))))))
+  let meta = html.elem("div", co_l1(html.attr("class", "meta")),
+  co_l1(html.text(co_item_date10(item))))
+  cons(h2, cons(meta, acc))
+}
+
+// blog_page: a listing page — the index page and every category/tags
+// summary page (cora blog-handler).
+pub fn blog_page(category, tags, title, indices) {
+  template.page(title, container0(category, tags,
+  co_foldl(fn(acc, item) { blog_item(acc, item) }, nil, indices)))
+}
+
+// ---- atom feed ----
+
+fn co_site_url() {
+  "https://tiancaiamao.github.io"
+}
+
+// atom_entry: one <entry>; the content is the post's rendered markdown,
+// ESCAPED as a text child (cora splices the sxml->xml string into the
+// entry and sxml->xml escapes string children).
+fn atom_entry(item) {
+  let title = get_string_from_item(item, "Title")
+  let date = get_string_from_item(item, "Date")
+  let file = get_string_from_item(item, "File")
+  let entry_url = str.concat(str.concat(co_site_url(), "/"), file)
+  let md_nodes = md.html(str.concat("./content/", file))
+  let html_content = html.render_list(md_nodes)
+  html.elem("entry", nil, co_l5(
+  html.elem("title", nil, co_l1(html.text(title))),
+  html.elem("link", co_l3(html.attr("href", entry_url),
+  html.attr("type", "text/html"), html.attr("rel", "alternate")), nil),
+  html.elem("id", nil, co_l1(html.text(entry_url))),
+  html.elem("updated", nil, co_l1(html.text(date))),
+  html.elem("content", co_l1(html.attr("type", "html")),
+  co_l1(html.text(html_content)))))
+}
+
+fn co_l5(x, y, z, w, v) {
+  cons(x, cons(y, cons(z, cons(w, cons(v, nil)))))
+}
+
+fn co_l8(x, y, z, w, v, u, t, s) {
+  cons(x, cons(y, cons(z, cons(w, cons(v, cons(u, cons(t, cons(s, nil))))))))
+}
+
+// atom_feed: the whole <feed> node — fixed head (through <author>), then
+// the 10 most recent entries spliced in (cora atom-handler).
+pub fn atom_feed(index) {
+  let recent = co_reverse(index)
+  let updated_date = get_string_from_item(car(recent), "Date")
+  let entries = co_map(fn(item) { atom_entry(item) }, co_take_n(10, recent))
+  let url = str.concat(co_site_url(), "/")
+  html.elem("feed", co_l1(html.attr("xmlns", "http://www.w3.org/2005/Atom")),
+  co_append(co_l8(
+  html.elem("title", nil, co_l1(html.text("Arthur 的博客"))),
+  html.elem("subtitle", nil, co_l1(html.text("伟大的野心家，实践家"))),
+  html.elem("updated", nil, co_l1(html.text(updated_date))),
+  html.elem("link", co_l3(html.attr("rel", "alternate"),
+  html.attr("type", "text/html"), html.attr("href", url)), nil),
+  html.elem("link", co_l3(html.attr("rel", "self"),
+  html.attr("type", "application/atom+xml"),
+  html.attr("href", str.concat(co_site_url(), "/feed.atom"))), nil),
+  html.elem("rights", nil, co_l1(html.text("Copyright (c) 2025, Arthur Mao"))),
+  html.elem("id", nil, co_l1(html.text(url))),
+  html.elem("author", nil, co_l2(
+  html.elem("name", nil, co_l1(html.text("Arthur"))),
+  html.elem("email", nil, co_l1(html.text("tiancaiamao@gmail.com")))))),
+  entries))
+}
+
+// ---- file output (root-parameterized) ----
+
+// write_file: write string data; crash on failure (a missing output
+// directory — ta has no file.mkdir yet — surfaces here).
+pub fn write_file(path, data) {
+  let ok = file.write(path, data)
+  if ok == 1 {
+    nil
+  } else {
+    co_die(str.concat("core.write_file: cannot write ", path))
+  }
+}
+
+// write_post: <root>/<file>/index.html (cora md-handler).
+pub fn write_post(root, category, tags, item) {
+  let file = get_string_from_item(item, "File")
+  let path = str.concat(str.concat(root, file), "/index.html")
+  write_file(path, html.render(post_page(category, tags, item)))
+}
+
+// write_summary: <root>/<kind>/<name>/index.html listing the entry's items
+// (cora summery-handler; kind is "category" or "tags", data is the assoc
+// entry [name item...]).
+pub fn write_summary(root, category, tags, kind, data) {
+  let path = str.concat(str.concat(str.concat(str.concat(root, kind), "/"),
+  car(data)), "/index.html")
+  write_file(path, html.render(blog_page(category, tags, kind, cdr(data))))
+}
+
+pub fn write_category(root, category, tags, data) {
+  write_summary(root, category, tags, "category", data)
+}
+
+pub fn write_tags(root, category, tags, data) {
+  write_summary(root, category, tags, "tags", data)
+}
+
+// write_index_page: <root>/index.html (the "blog" listing).
+pub fn write_index_page(root, category, tags, index) {
+  write_file(str.concat(root, "index.html"),
+  html.render(blog_page(category, tags, "blog", index)))
+}
+
+pub fn write_about(root, category, tags) {
+  write_file(str.concat(root, "about.html"), html.render(about_page(category, tags)))
+}
+
+pub fn write_project(root, category, tags) {
+  write_file(str.concat(root, "project.html"), html.render(project_page(category, tags)))
+}
+
+pub fn write_home(root, category, tags) {
+  write_file(str.concat(root, "home.html"), html.render(home_page(category, tags)))
+}
+
+pub fn write_atom(root, index) {
+  print("Generating: feed.atom")
+  write_file(str.concat(root, "feed.atom"),
+  str.concat("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n",
+  html.render(atom_feed(index))))
+}
+
+// ---- single-post / full generation ----
+
+// find_item_by_file: 'none, or ['ok item] for the item with File == name.
+pub fn find_item_by_file(filename, items) {
+  if null?(items) {
+    'none
+  } else {
+    let item = car(items)
+    if str.eq(get_string_from_item(item, "File"), filename) {
+      cons('ok, co_l1(item))
+    } else {
+      find_item_by_file(filename, cdr(items))
+    }
+  }
+}
+
+// generate_file: single-post update — regenerate that post, then refresh
+// the index/category/tags pages and the feed (cora generate-file).
+pub fn generate_file(root, index, category, tags, filename) {
+  let res = find_item_by_file(filename, index)
+  if pair?(res) && car(res) == 'ok {
+    print(str.concat("Generating: ", filename))
+    write_post(root, category, tags, car(cdr(res)))
+    write_index_page(root, category, tags, index)
+    co_map(fn(data) { write_category(root, category, tags, data) }, category)
+    co_map(fn(data) { write_tags(root, category, tags, data) }, tags)
+    write_atom(root, index)
+    nil
+  } else {
+    print(str.concat("File not found in index: ", filename))
+    nil
+  }
+}
+
+// generate: the full site into root (cora generate).
+pub fn generate(root, index, category, tags) {
+  co_map(fn(item) { write_post(root, category, tags, item) }, index)
+  write_about(root, category, tags)
+  write_project(root, category, tags)
+  write_home(root, category, tags)
+  write_index_page(root, category, tags, index)
+  co_map(fn(data) { write_category(root, category, tags, data) }, category)
+  co_map(fn(data) { write_tags(root, category, tags, data) }, tags)
+  write_atom(root, index)
+  nil
+}
