@@ -1,0 +1,430 @@
+// vendored from tinyactor lib/mpc.ta @ 32307f8
+// mpc module: monadic parser combinator library.
+// A parser is fn(s, i) -> result (source string + index).
+// Compose parsers sequentially with the `use x <- p; rest` block-level
+// bind desugaring (Gleam-style do-notation); bind/ret are the underlying
+// primitives and stay ordinary library functions.
+// NOTE: no left recursion (recursive descent, like PEG). Rewrite
+// left-recursive rules as `term ('op' term)*` with star()/plus().
+//
+// Result protocol:
+//   success: ('ok value . next_index)
+//   failure: ('err msg . pos)   msg = expectation description, pos = char
+//             offset into s (the tail stays an int so ok/err results have
+//             the same type at the tail, like ('ok v . i))
+// nil is still accepted as a failure (legacy hand-written parsers), but
+// carries no position info; use err_at() to raise proper errors from
+// hand-written fn(s, i) parsers.
+
+// ---------- error channel ----------
+
+// Build a failure result carrying the failure offset and an expectation
+// description (e.g. "expecting digit"). Public so hand-written parsers
+// can raise errors that merge correctly with combinator-raised ones.
+pub fn err_at(msg, pos) {
+  cons('err, cons(msg, pos))
+}
+
+// r succeeded? ('ok v . i) shape. nil and 'err results are failures.
+pub fn ok?(r) {
+  if pair?(r) {
+    car(r) == 'ok
+  } else {
+    false
+  }
+}
+
+// r failed? nil counts as a failure (legacy); ('err ...) is the rich form.
+pub fn fail?(r) {
+  if null?(r) {
+    true
+  } else {
+    if pair?(r) {
+      car(r) == 'err
+    } else {
+      false
+    }
+  }
+}
+
+// offset of the failure point, or nil if r is not a (rich) failure
+pub fn fail_pos(r) {
+  if fail?(r) {
+    if null?(r) {
+      nil
+    } else {
+      cdr(cdr(r))
+    }
+  } else {
+    nil
+  }
+}
+
+// expectation description of the failure, or nil if r is not a (rich) failure
+pub fn fail_msg(r) {
+  if fail?(r) {
+    if null?(r) {
+      nil
+    } else {
+      car(cdr(r))
+    }
+  } else {
+    nil
+  }
+}
+
+// keep the failure that got FURTHEST into the input (largest offset);
+// on a tie the first (leftmost alternative) wins
+fn err_max(e1, e2) {
+  if null?(e1) {
+    e2
+  } else {
+    if null?(e2) {
+      e1
+    } else {
+      if cdr(cdr(e2)) > cdr(cdr(e1)) {
+        e2
+      } else {
+        e1
+      }
+    }
+  }
+}
+
+// 1-based line number of char offset pos in s (counts '\n')
+pub fn line_of(s, pos) {
+  line_count(s, 0, pos, 1)
+}
+
+fn line_count(s, i, stop, n) {
+  if i >= stop {
+    n
+  } else {
+    if str.char_at(s, i) == '\n' {
+      line_count(s, i + 1, stop, n + 1)
+    } else {
+      line_count(s, i + 1, stop, n)
+    }
+  }
+}
+
+// 1-based column number of char offset pos in s
+// (chars since the last '\n' at or before pos)
+pub fn col_of(s, pos) {
+  let nl = last_nl(s, 0, pos, -1)
+  if nl < 0 {
+    pos + 1
+  } else {
+    pos - nl
+  }
+}
+
+fn last_nl(s, i, stop, acc) {
+  if i >= stop {
+    acc
+  } else {
+    if str.char_at(s, i) == '\n' {
+      last_nl(s, i + 1, stop, i)
+    } else {
+      last_nl(s, i + 1, stop, acc)
+    }
+  }
+}
+
+// human-readable one-liner: "line L, col C: <msg>"
+// Position-less results (legacy nil failures, or an 'ok result passed in
+// by mistake) short-circuit to "unknown position: <msg>" — without the
+// guard, line_count(s, 0, nil, 1) recurses forever.
+pub fn fmt_err(s, r) {
+  let pos = fail_pos(r)
+  if pos == nil {
+    let msg = fail_msg(r)
+    if msg == nil {
+      "unknown position"
+    } else {
+      str.concat("unknown position: ", msg)
+    }
+  } else {
+    let line = str.concat("line ", str.concat(str.from_int(line_of(s, pos)), str.concat(", col ", str.from_int(col_of(s, pos)))))
+    str.concat(line, str.concat(": ", fail_msg(r)))
+  }
+}
+
+// ---------- monad ----------
+
+pub fn ret(v) {
+  fn(s, i) { cons('ok, cons(v, i)) }
+}
+
+pub fn bind(p, f) {
+  fn(s, i) {
+    let r = p(s, i)
+    if fail?(r) {
+      r
+    } else {
+      let v = car(cdr(r))
+      let j = cdr(cdr(r))
+      let p2 = f(v)
+      p2(s, j)
+    }
+  }
+}
+
+pub fn choice(p1, p2) {
+  fn(s, i) {
+    let r1 = p1(s, i)
+    if ok?(r1) {
+      r1
+    } else {
+      let r2 = p2(s, i)
+      if ok?(r2) {
+        r2
+      } else {
+        err_max(r1, r2)
+      }
+    }
+  }
+}
+
+pub fn choice_list(ps) {
+  fn(s, i) { choice_list_loop(ps, s, i, nil) }
+}
+
+// try each parser in order; first success wins, otherwise report the
+// failure that got furthest into the input
+fn choice_list_loop(ps, s, i, best) {
+  if null?(ps) {
+    best
+  } else {
+    let p = car(ps)
+    let r = p(s, i)
+    if ok?(r) {
+      r
+    } else {
+      choice_list_loop(cdr(ps), s, i, err_max(best, r))
+    }
+  }
+}
+
+pub fn pmap(f, p) {
+  fn(s, i) {
+    let r = p(s, i)
+    if fail?(r) {
+      r
+    } else {
+      let v = car(cdr(r))
+      let j = cdr(cdr(r))
+      let w = f(v)
+      cons('ok, cons(w, j))
+    }
+  }
+}
+
+pub fn lazy(pf) {
+  fn(s, i) {
+    let p = pf()
+    p(s, i)
+  }
+}
+
+// ---------- char-level primitives ----------
+
+// one char satisfying predicate f; yields the char
+pub fn satisfy(f) {
+  satisfy_l(f, "expecting char satisfying predicate")
+}
+
+fn satisfy_l(f, msg) {
+  fn(s, i) {
+    if i < str.length(s) {
+      let c = str.char_at(s, i)
+      if f(c) {
+        cons('ok, cons(c, i + 1))
+      } else {
+        err_at(msg, i)
+      }
+    } else {
+      err_at(msg, i)
+    }
+  }
+}
+
+// any single char; yields the char
+pub fn any() {
+  satisfy_l(fn(c) { true }, "expecting any char")
+}
+
+// one char in [lo, hi] (inclusive, by codepoint); yields the char
+pub fn range(lo, hi) {
+  let msg = str.concat("expecting ", str.concat(str.chr(lo), str.concat("-", str.chr(hi))))
+  satisfy_l(fn(c) { and(c >= lo, c <= hi) }, msg)
+}
+
+// one ASCII digit; yields the char
+pub fn digit() {
+  satisfy_l(fn(c) { and(c >= '0', c <= '9') }, "expecting digit")
+}
+
+// exact literal string t; yields t
+pub fn lit(t) {
+  fn(s, i) {
+    let n = str.length(t)
+    let slen = str.length(s)
+    if and(i + n <= slen, str.eq(str.substr(s, i, n), t)) {
+      cons('ok, cons(t, i + n))
+    } else {
+      err_at(str.concat("expecting ", t), i)
+    }
+  }
+}
+
+// match zero+ chars satisfying f, yields the matched substring
+pub fn take_while(f) {
+  fn(s, i) {
+    let j = take_while_pos(s, i, str.length(s), f)
+    cons('ok, cons(str.substr(s, i, j - i), j))
+  }
+}
+
+// match one+ chars satisfying f (empty match is a failure)
+pub fn take_while1(f) {
+  fn(s, i) {
+    let j = take_while_pos(s, i, str.length(s), f)
+    if j > i {
+      cons('ok, cons(str.substr(s, i, j - i), j))
+    } else {
+      err_at("expecting at least one matching char", i)
+    }
+  }
+}
+
+fn take_while_pos(s, i, len, f) {
+  if i < len {
+    let c = str.char_at(s, i)
+    if f(c) {
+      take_while_pos(s, i + 1, len, f)
+    } else {
+      i
+    }
+  } else {
+    i
+  }
+}
+
+// ---------- lookahead / termination ----------
+
+// positive lookahead: p must match but nothing is consumed; yields p's value
+pub fn peek(p) {
+  fn(s, i) {
+    let r = p(s, i)
+    if fail?(r) {
+      r
+    } else {
+      cons('ok, cons(car(cdr(r)), i))
+    }
+  }
+}
+
+// negative lookahead: p must NOT match; consumes nothing, yields nil
+pub fn not(p) {
+  fn(s, i) {
+    let r = p(s, i)
+    if fail?(r) {
+      cons('ok, cons(nil, i))
+    } else {
+      err_at("expecting no match", i)
+    }
+  }
+}
+
+// end of input; consumes nothing, yields nil
+pub fn eof() {
+  fn(s, i) {
+    if i == str.length(s) {
+      cons('ok, cons(nil, i))
+    } else {
+      err_at("expecting end of input", i)
+    }
+  }
+}
+
+// ---------- repetition ----------
+
+// p or nothing; never fails — yields p's value or nil on absence
+pub fn opt(p) {
+  fn(s, i) {
+    let r = p(s, i)
+    if fail?(r) {
+      cons('ok, cons(nil, i))
+    } else {
+      r
+    }
+  }
+}
+
+// alias of opt (parsec naming)
+pub fn optional(p) {
+  opt(p)
+}
+
+// zero+ p; yields the list of values. Empty-match guarded: an iteration
+// that succeeds without consuming input stops the loop (its value is
+// NOT collected), so p may match empty without looping forever.
+pub fn star(p) {
+  fn(s, i) { star_loop(p, s, i, nil) }
+}
+
+fn star_loop(p, s, i, acc) {
+  let r = p(s, i)
+  if fail?(r) {
+    cons('ok, cons(rev(acc, nil), i))
+  } else {
+    let v = car(cdr(r))
+    let j = cdr(cdr(r))
+    if j == i {
+      // empty-match guard: p succeeded but consumed nothing — stop
+      cons('ok, cons(rev(acc, nil), i))
+    } else {
+      star_loop(p, s, j, cons(v, acc))
+    }
+  }
+}
+
+// one+ p; yields the list of values (fails iff the first p fails)
+pub fn plus(p) {
+  use v < - p
+  use rest < - star(p)
+  ret(cons(v, rest))
+}
+
+// alias of plus (parsec naming)
+pub fn many1(p) {
+  plus(p)
+}
+
+// zero+ p separated by sep; yields the list of values. Never fails;
+// a trailing sep is NOT consumed (the sep+item attempt simply fails).
+pub fn sep_by(p, sep) {
+  choice(sep_by1(p, sep), ret(nil))
+}
+
+// one+ p separated by sep; fails iff the first p fails
+pub fn sep_by1(p, sep) {
+  use v < - p
+  use rest < - star(sep_then(p, sep))
+  ret(cons(v, rest))
+}
+
+fn sep_then(p, sep) {
+  use _ < - sep
+  use v < - p
+  ret(v)
+}
+
+fn rev(l, acc) {
+  if null?(l) {
+    acc
+  } else {
+    rev(cdr(l), cons(car(l), acc))
+  }
+}

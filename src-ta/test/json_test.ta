@@ -5,8 +5,17 @@
 //
 // Covered: real content/index.json (root array, first 3 items' fields:
 // Title/Date/Category/Tags/File) + edge cases (empty array, empty object,
-// nesting, escape sequences incl. \uXXXX, int/float numbers, booleans,
-// null, missing keys).
+// nesting, escape sequences incl. \uXXXX and surrogate pairs, int/float
+// numbers, booleans, null, missing keys, duplicate keys, malformed input).
+//
+// Migrated to the mpc-based json lib (vendored from tinyactor):
+//   - consumer API unchanged (load/array_size/array_get/object_get/
+//     is_string/string_value/is_array/... all keep the go.blog contract)
+//   - json.parse now returns nil on error (try_parse carries the
+//     formatted error); malformed numbers are REJECTED, not silently
+//     accepted — asserted below via parse/try_parse on "1e"/"01"
+//   - duplicate object keys are last-wins (jansson-style)
+//   - \uD83D\uDE00 surrogate pairs merge into one codepoint
 
 import json
 
@@ -137,6 +146,11 @@ fn main() {
   let uni = json.parse("\"\\u4E2D\\u6587\"")
   assert_str_eq(json.string_value(uni), "中文", "unicode escape")
 
+  // \uXXXX surrogate pair (D800-DBFF + DC00-DFFF) merges into one
+  // codepoint: U+1F600 (😀)
+  let sur = json.parse("\"\\uD83D\\uDE00\"")
+  assert_str_eq(json.string_value(sur), "😀", "surrogate pair merged")
+
   // numbers: ints, negatives, floats, exponents
   let nums = json.parse("[0, -42, 3.5, 1e2, -2.5e-1]")
   assert_true(json.is_number(json.array_get(nums, 0)), "0 is number")
@@ -147,6 +161,23 @@ fn main() {
   assert_true(json.float_value(json.array_get(nums, 3)) == 100.0, "1e2 value")
   assert_true(json.float_value(json.array_get(nums, 4)) == -0.25, "-2.5e-1 value")
   assert_true(json.kind(json.array_get(nums, 1)) == 'number, "kind number")
+
+  // malformed numbers are rejected (the old parser silently accepted
+  // "1e"→1.0 and "01"→1). json.parse returns nil; try_parse carries the
+  // formatted error (fail-fast is parse_or_fail/load — exercised at the
+  // generate level by injecting a bad index.json).
+  assert_true(json.parse("[1e]") == nil, "1e rejected by parse")
+  assert_true(json.parse("[01]") == nil, "01 rejected by parse")
+  let r1e = json.try_parse("[1e]")
+  assert_true(car(r1e) == 'err, "1e try_parse is err")
+    assert_true(car(json.try_parse("[01]")) == 'err, "01 try_parse is err")
+
+  // duplicate object keys: LAST value wins (jansson-style), not the old
+  // first-wins
+  let dup = json.parse("{\"k\": 1, \"k\": 2}")
+  assert_int_eq(json.int_value(json.object_get(dup, "k")), 2, "dup key last-wins")
+  let dups = json.parse("{\"k\": \"a\", \"k\": \"b\", \"k\": \"c\"}")
+  assert_str_eq(json.string_value(json.object_get(dups, "k")), "c", "3x dup key last-wins")
 
   // booleans and null
   let bj = json.parse("{\"t\": true, \"f\": false, \"n\": null}")
