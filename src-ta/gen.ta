@@ -11,7 +11,7 @@
 //
 // The generator creates every output directory itself: before
 // core.generate / core.generate_file writes anything, ensure_dirs() runs
-// file.mkdir_p on the output root and on every ./generate/<post>,
+// fs.mkdir_p on the output root and on every ./generate/<post>,
 // ./generate/category/<name> and ./generate/tags/<name> — tag names may
 // contain '/', e.g. call/cc, and mkdir_p handles the nesting. A mkdir_p
 // failure is a hard error (core.co_die => crash, nonzero exit), matching
@@ -19,7 +19,7 @@
 // syncs static assets over a partially-created output tree.
 
 import core
-import file
+import fs
 
 fn each(lst, f) {
   if null?(lst) {
@@ -32,7 +32,7 @@ fn each(lst, f) {
 
 // ensure_dir: create one output directory; hard-fail on error.
 fn ensure_dir(d) {
-  if file.mkdir_p(d) == 1 {
+  if fs.mkdir_p(d) == 1 {
     nil
   } else {
     core.co_die(str.concat("gen: cannot create directory ", d))
