@@ -108,8 +108,9 @@ fn co_take_n(n, lst) {
   }
 }
 
-// co_die: print msg and crash the process (1 / 0).
-fn co_die(msg) -> string {
+// co_die: print msg and crash the process (1 / 0). The blog-gen-ta wrapper
+// relies on this hard-fail convention (nonzero exit, no static sync).
+pub fn co_die(msg) -> string {
   print(msg)
   str.from_int(1 / 0)
 }
@@ -421,13 +422,12 @@ pub fn generate_file(root, index, category, tags, filename) {
     print(str.concat("Generating: ", filename))
     write_post(root, category, tags, car(cdr(res)))
     write_index_page(root, category, tags, index)
-    co_map(fn(data) { write_category(root, category, tags, data) }, category)
+            co_map(fn(data) { write_category(root, category, tags, data) }, category)
     co_map(fn(data) { write_tags(root, category, tags, data) }, tags)
     write_atom(root, index)
     nil
   } else {
-    print(str.concat("File not found in index: ", filename))
-    nil
+    co_die(str.concat("File not found in index: ", filename))
   }
 }
 

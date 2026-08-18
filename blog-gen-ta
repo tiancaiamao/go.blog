@@ -2,6 +2,13 @@
 
 # Blog generator wrapper script (ta version — ta port of blog-gen)
 # Usage: blog-gen-ta [command] [options]
+#
+# Failure contract: any step that fails — the tinyactor generation run —
+# aborts the whole script with a nonzero exit and NEVER syncs static assets
+# (rsync --delete) over a failed or partial tree. This is achieved with
+# `set -euo pipefail`.
+
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TINYACTOR="${TINYACTOR:-/Users/genius/project/tinyactor/tinyactor}"
@@ -31,22 +38,13 @@ Environment Variables:
 EOF
 }
 
-# ta has no file.mkdir yet, so every output directory must pre-exist.
-# The entry program's `dirs` command prints them all (posts,
-# category/<name>, tags/<name> — names may nest, e.g. tags/call/cc/);
-# mkdir -p each line before the generator runs.
-prepare_dirs() {
-    cd "$SCRIPT_DIR"
-    "$TINYACTOR" run src-ta/gen.ta dirs | while IFS= read -r d; do
-        [ -n "$d" ] && mkdir -p "$SCRIPT_DIR/$d"
-    done
-}
-
+# gen.ta creates every output directory itself (file.mkdir_p) before the
+# generator writes, so the wrapper invokes tinyactor exactly once and only
+# syncs static assets after that single run succeeds.
 run_ta() {
     local cmd="$1"
-    local arg="$2"
+    local arg="${2:-}"
     cd "$SCRIPT_DIR"
-    prepare_dirs
     if [ -n "$arg" ]; then
         "$TINYACTOR" run src-ta/gen.ta "$cmd" "$arg"
     else
@@ -66,7 +64,7 @@ case "${1:-help}" in
         sync_static
         ;;
     file)
-        if [ -z "$2" ]; then
+        if [ -z "${2:-}" ]; then
             echo "Error: filename required"
             echo "Usage: blog-gen-ta file <filename>"
             exit 1

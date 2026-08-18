@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # core_test.sh — run the core module acceptance test with its scratch tree.
 #
-# ta has no file.mkdir yet, so the output directories core_test.ta writes
-# into must pre-exist; this script prepares ./.coretest/, runs the test
-# (which byte-compares against generate/ inside ta), then adds shell
-# `diff` evidence for each generated file and cleans up.
+# core_test.ta calls core.write_* directly (not via gen.ta, whose
+# ensure_dirs() creates the output directories before generating), so the
+# scratch output tree ./.coretest/ must pre-exist; this script prepares
+# it, runs the test (which byte-compares against generate/ inside ta),
+# then adds shell `diff` evidence for each generated file and cleans up.
 #
 # Usage (from anywhere): src-ta/test/core_test.sh
 
