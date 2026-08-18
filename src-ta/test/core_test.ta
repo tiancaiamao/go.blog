@@ -1,0 +1,272 @@
+// src-ta/test/core_test.ta — core module acceptance tests.
+//
+// Two kinds of evidence against cora's products in generate/:
+//
+// 1. FULL byte-identity for the pages from cora's latest consistent run
+//    (all mtime 8/16 22:22 — a `blog-gen file an-ai-debug-story.md`):
+//      index.html                          full blog listing + full sidebar
+//      an-ai-debug-story.md/index.html     a post page (tags + md body)
+//      category/AI/index.html              a category summary page
+//      tags/raft/index.html                a tags summary page
+//      feed.atom                           the atom feed (10 full entries)
+//
+// 2. MODULO-STALE-SIDEBAR checks for pages NOT touched by that run
+//    (older mtimes, older sidebar tag set): gitbbs.md (post with Tags
+//    null + Category "" — the known data edges) and about.html (static
+//    page). Their bytes outside the sidebar well are compared; the stale
+//    sidebar is spliced out and replaced with the fresh sidebar carved
+//    from our own index.html output (itself byte-identical to cora's
+//    fresh one), and the WHOLE spliced page must then match our output.
+//
+// Plus pure-logic unit checks for the data-edge items (12: no Category;
+// 19-style Tags null) and the tag/category map shapes.
+//
+// The scratch output tree ./.coretest/ is pre-created by core_test.sh (ta
+// has no file.mkdir yet). Assertions pass silently; a failure prints a
+// message and crashes the process. Run from the go.blog repo root:
+//   tinyactor run src-ta/test/core_test.ta
+
+import core
+
+fn fail(msg) -> string {
+  print(str.concat("CORE TEST FAIL: ", msg))
+  str.from_int(1 / 0)
+}
+
+fn len(lst) {
+  if null?(lst) {
+    0
+  } else {
+    1 + len(cdr(lst))
+  }
+}
+
+// find_entry: the assoc entry [name item...] whose name matches.
+fn find_entry(lst, name) {
+  if null?(lst) {
+    fail(str.concat("entry not found: ", name))
+  } else {
+    let e = car(lst)
+    if str.eq(car(e), name) {
+      e
+    } else {
+      find_entry(cdr(lst), name)
+    }
+  }
+}
+
+// read_or_fail: read a file or crash.
+fn read_or_fail(path) {
+  let s = file.read(path)
+  if null?(s) {
+    print(str.concat("  missing: ", path))
+    fail("required file cannot be read (run from repo root / via core_test.sh?)")
+    nil
+  } else {
+    s
+  }
+}
+
+// assert_file_eq: byte-compare the generated file against the cora baseline.
+fn assert_file_eq(gen_path, base_path, msg) {
+  let a = read_or_fail(gen_path)
+  let b = read_or_fail(base_path)
+  if str.eq(a, b) {
+    print(str.concat("ok ", msg))
+    nil
+  } else {
+    print(str.concat("  generated: ", gen_path))
+    print(str.concat("  baseline:  ", base_path))
+    print(str.concat("  sizes: ", str.concat(str.from_int(str.length(a)),
+    str.concat(" vs ", str.from_int(str.length(b))))))
+    fail(msg)
+    nil
+  }
+}
+
+// assert_str_eq: byte-compare two strings.
+fn assert_str_eq(actual, expected, msg) {
+  if str.eq(actual, expected) {
+    print(str.concat("ok ", msg))
+    nil
+  } else {
+    print(str.concat("  actual:   ", actual))
+    print(str.concat("  expected: ", expected))
+    fail(msg)
+    nil
+  }
+}
+
+// last_index_of: the last occurrence of pat in s (-1 if absent); scans by
+// repeated index_of on successive suffixes.
+fn last_index_of(s, pat, from, best) {
+  let sub = str.substr(s, from, str.length(s) - from)
+  let i = str.index_of(sub, pat)
+  if i < 0 {
+    best
+  } else {
+    last_index_of(s, pat, from + i + 1, from + i)
+  }
+}
+
+// The sidebar well opens here; the well's closing </div> is the start of
+// the structural closer "</div></div></div><hr />" (col-sm-3, row,
+// container, then <hr />). Both markers are stable skeleton bytes.
+fn well_open() {
+  "<div class=\"well sidebar-nav\">"
+}
+
+fn page_closer() {
+  "</div></div></div><hr />"
+}
+
+// fresh_sidebar: the sidebar region carved out of our own (already
+// byte-verified) index page output.
+fn fresh_sidebar_well(index_page) {
+  let w = str.index_of(index_page, well_open())
+  let c = last_index_of(index_page, page_closer(), 0, -1)
+  str.substr(index_page, w, c - w)
+}
+
+// assert_modulo_stale_sidebar: the cora baseline page was generated with an
+// older tag set, so its sidebar is stale. Replace its sidebar with the
+// fresh one and require our generated page to match the spliced result
+// byte-for-byte (everything outside the sidebar is still compared 1:1).
+fn assert_modulo_stale_sidebar(gen_path, base_path, sb, msg) {
+  let mine = read_or_fail(gen_path)
+  let stale = read_or_fail(base_path)
+  let w = str.index_of(stale, well_open())
+  let c = last_index_of(stale, page_closer(), 0, -1)
+  let expected = str.concat(str.concat(str.substr(stale, 0, w), sb),
+  str.substr(stale, c, str.length(stale) - c))
+  if str.eq(mine, expected) {
+    print(str.concat("ok ", msg))
+    nil
+  } else {
+    print(str.concat("  generated: ", gen_path))
+    print(str.concat("  baseline:  ", base_path))
+    print(str.concat("  sizes: ", str.concat(str.from_int(str.length(mine)),
+    str.concat(" vs spliced ", str.from_int(str.length(expected))))))
+    fail(msg)
+    nil
+  }
+}
+
+fn root() {
+  "./.coretest/"
+}
+
+fn main() {
+  // ---- build the site model ----
+  let index = core.parse_index_file("./content/index.json")
+  if len(index) == 358 {
+    print("ok index has 358 items")
+  } else {
+    print(str.concat("  index size: ", str.from_int(len(index))))
+    fail("index item count")
+    nil
+  }
+  let category = core.build_category(index)
+  let tags = core.build_tags(index)
+  print(str.concat("ok categories: ", str.from_int(len(category))))
+  print(str.concat("ok tags: ", str.from_int(len(tags))))
+
+  // ---- data-edge unit checks (item with no Category / Tags null) ----
+  let gitbbs = car(cdr(core.find_item_by_file("gitbbs.md", index)))
+  if null?(core.get_tags_from_item(gitbbs)) {
+    print("ok get_tags_from_item: Tags null yields nil (gitbbs)")
+    nil
+  } else {
+    fail("get_tags_from_item on Tags:null")
+    nil
+  }
+    if str.eq(core.get_string_from_item(gitbbs, "Category"), "") {
+    print("ok get_string_from_item: empty Category yields \"\"")
+    nil
+  } else {
+    fail("get_string_from_item on Category:\"\"")
+    nil
+  }
+    // the no-Category/empty-Category items must not appear in any category
+  // entry (build_category's is-string-and-empty guard)
+  let no_cat = car(cdr(core.find_item_by_file(
+  "what-i-learn-from-writing-coding-agent.md", index)))
+  if null?(core.get_string_from_item(no_cat, "Category")) {
+    print("ok get_string_from_item: missing Category yields nil (item 12)")
+    nil
+  } else {
+    fail("get_string_from_item on missing Category")
+    nil
+  }
+  let ai_items = cdr(find_entry(category, "AI"))
+  print(str.concat("ok category AI items: ", str.from_int(len(ai_items))))
+
+  // ---- 1. index page (full listing + full sidebar), cora 22:22 run ----
+  core.write_index_page(root(), category, tags, index)
+  assert_file_eq("./.coretest/index.html", "./generate/index.html",
+  "index.html byte-identical to cora output")
+  let sb_fresh = fresh_sidebar_well(read_or_fail("./.coretest/index.html"))
+
+  // ---- 2. post page (tags + md body), same 22:22 cora run ----
+  core.write_post(root(), category, tags,
+  car(cdr(core.find_item_by_file("an-ai-debug-story.md", index))))
+  assert_file_eq("./.coretest/an-ai-debug-story.md/index.html",
+  "./generate/an-ai-debug-story.md/index.html",
+  "post page byte-identical to cora output")
+
+  // ---- 2b. post page edge (Tags null, Category ""): stale baseline ----
+  core.write_post(root(), category, tags, gitbbs)
+  assert_modulo_stale_sidebar("./.coretest/gitbbs.md/index.html",
+  "./generate/gitbbs.md/index.html", sb_fresh,
+  "post page (no tags) identical to cora output modulo stale sidebar")
+
+  // ---- 3. category summary page, cora 22:22 run ----
+  core.write_category(root(), category, tags, find_entry(category, "AI"))
+  assert_file_eq("./.coretest/category/AI/index.html",
+  "./generate/category/AI/index.html",
+  "category page byte-identical to cora output")
+
+  // ---- 4. tags summary page, cora 22:22 run ----
+  core.write_tags(root(), category, tags, find_entry(tags, "raft"))
+  assert_file_eq("./.coretest/tags/raft/index.html",
+  "./generate/tags/raft/index.html",
+  "tags page byte-identical to cora output")
+
+  // ---- 5. static template page: stale baseline ----
+  core.write_about(root(), category, tags)
+  assert_modulo_stale_sidebar("./.coretest/about.html",
+  "./generate/about.html", sb_fresh,
+  "about.html identical to cora output modulo stale sidebar")
+
+  // ---- 6. atom feed (10 full entries), cora 22:22 run ----
+  core.write_atom(root(), index)
+  assert_file_eq("./.coretest/feed.atom", "./generate/feed.atom",
+  "feed.atom byte-identical to cora output")
+
+  // ---- 7. single-post entry point regenerates the same bytes ----
+  core.generate_file(root(), index, category, tags, "an-ai-debug-story.md")
+  assert_file_eq("./.coretest/index.html", "./generate/index.html",
+  "generate_file refreshes index.html identically")
+  assert_file_eq("./.coretest/an-ai-debug-story.md/index.html",
+  "./generate/an-ai-debug-story.md/index.html",
+  "generate_file refreshes the post page identically")
+  assert_file_eq("./.coretest/category/AI/index.html",
+  "./generate/category/AI/index.html",
+  "generate_file refreshes category page identically")
+  assert_file_eq("./.coretest/tags/raft/index.html",
+  "./generate/tags/raft/index.html",
+  "generate_file refreshes tags page identically")
+  assert_file_eq("./.coretest/feed.atom", "./generate/feed.atom",
+  "generate_file refreshes feed.atom identically")
+
+  // ---- 8. take-n bounds (feed is 10 of 358) ----
+  if len(index) > 10 {
+    print("ok index large enough for the 10-entry feed")
+    nil
+  } else {
+    fail("take-n precondition")
+    nil
+  }
+
+  print("CORE TEST PASS")
+}

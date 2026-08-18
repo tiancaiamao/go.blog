@@ -1,0 +1,274 @@
+// html module: HTML/XML tree (Node ADT) + serializer, pure ta.
+//
+// The tree is the Node ADT:
+//   Elem(tag, attrs, children)  element: tag string, List(Attr), List(Node)
+//   Text(s)                     text node, XML-escaped on output
+//   Raw(s)                      raw node, emitted verbatim (script/atom embeds)
+// Attr is Attr(name, value); both name and value are strings.
+//
+// Serialization is byte-identical to cora's sxml->xml
+// (cora/lib/sxml.cora, element->xml / attribute->xml / string->escaped-xml):
+//   - element with empty children:   <tag name="v" />
+//   - element with children:         <tag name="v">children</tag>
+//   - attributes, in list order:     " name="escaped-value""
+//   - escape set:  " -> &quot;   & -> &amp;   \ -> &apos;   < -> &lt;   > -> &gt;
+//     (single quote ' is NOT escaped; backslash -> &apos; is a quirk of the
+//     cora implementation, preserved verbatim for byte-identical output)
+//   - Text at any level is escaped; Raw at any level is emitted verbatim
+//   - a top-level list renders as the concatenation of its items (cora
+//     sxml->xml-h's [c . more] clause); an empty list renders ""
+//
+// Efficiency: rendering builds strings with BALANCED (divide & conquer)
+// concatenation — O(n log n) total copying, no O(n^2) chains even for the
+// atom feed's ~34KB single text nodes. (An earlier buf-based serializer
+// leaked one of the buf module's 256 fixed handles per render; a full site
+// generate (~720 pages) exhausted them, so the serializer is now pure
+// strings. The output bytes are identical.)
+//
+// The module is self-contained: no `import` (buf/file/str are builtin C
+// modules; ADT variants are pairs, so car/cdr/cons are builtins too).
+
+pub type Node { Elem(tag, attrs, children); Text(s); Raw(s) }
+pub type Attr { Attr(name, value) }
+
+// ---- constructors ----
+
+// elem: element node; attrs is List(Attr) (nil for none), children is
+// List(Node) (nil for an empty body, which renders as the " />" form).
+pub fn elem(tag, attrs, children) {
+  Elem(tag, attrs, children)
+}
+
+// text: escaped text node.
+pub fn text(s) {
+  Text(s)
+}
+
+// raw: unescaped node (script bodies, atom payloads, pre-built HTML).
+pub fn raw(s) {
+  Raw(s)
+}
+
+// attr: a single name="value" attribute.
+pub fn attr(name, value) {
+  Attr(name, value)
+}
+
+// attr_flag: a valueless attribute, rendered as just " name" (cora
+// sxml->xml's attribute->xml symbol clause — e.g. the `disabled` /
+// `checked` markers md4c task lists produce).
+pub fn attr_flag(name) {
+  Attr(name, nil)
+}
+
+// ---- accessors (for the md/template layers that fold/inspect trees) ----
+
+pub fn tag_of(node) {
+  car(cdr(node))
+}
+
+// attrs_of: List(Attr), or nil for an element with no attributes.
+pub fn attrs_of(node) {
+  car(cdr(cdr(node)))
+}
+
+// children_of: List(Node), or nil for an empty element body.
+pub fn children_of(node) {
+  car(cdr(cdr(cdr(node))))
+}
+
+pub fn text_of(node) {
+  car(cdr(node))
+}
+
+pub fn raw_of(node) {
+  car(cdr(node))
+}
+
+// ---- serializer internals (pure strings, no buf) ----
+//
+// Why not buf: the buf module is a fixed table of 256 handles with no
+// free primitive, and one render used to leak one handle — a full site
+// generate (~720 pages) would exhaust it. Instead the tree is serialized
+// into strings with BALANCED (divide & conquer) concatenation: every
+// string is built by joining two halves, so total copying is
+// O(n log n), not O(n^2), and no handles are consumed. The assembled
+// bytes are identical to the previous buf-based serializer.
+
+// hd_esc_segment: escape s[lo,hi) per char (short segments only; per-char
+// str.concat stays cheap when the segment is bounded).
+fn hd_esc_segment(s, lo, hi, acc) {
+  if lo >= hi {
+    acc
+  } else {
+    let c = str.char_at(s, lo)
+    let acc2 = if c == 34 {
+      str.concat(acc, "&quot;")
+    } else {
+      if c == 38 {
+        str.concat(acc, "&amp;")
+      } else {
+        if c == 92 {
+          str.concat(acc, "&apos;")
+        } else {
+          if c == 60 {
+            str.concat(acc, "&lt;")
+          } else {
+            if c == 62 {
+              str.concat(acc, "&gt;")
+            } else {
+              str.concat(acc, str.chr(c))
+            }
+          }
+        }
+      }
+    }
+    hd_esc_segment(s, lo + 1, hi, acc2)
+  }
+}
+
+// HD_ESC_LEAF: max bytes escaped by the linear per-char segment builder.
+fn hd_esc_leaf() {
+  48
+}
+
+// hd_escaped: s with cora's string->escaped-xml escape set applied —
+// balanced recursion so long strings (e.g. an atom entry's whole rendered
+// post) copy in O(n log n).
+fn hd_escaped(s, lo, hi) {
+  if hi - lo <= hd_esc_leaf() {
+    hd_esc_segment(s, lo, hi, "")
+  } else {
+    let mid = lo + (hi - lo) / 2
+    str.concat(hd_escaped(s, lo, mid), hd_escaped(s, mid, hi))
+  }
+}
+
+// hd_length: list length.
+fn hd_length(lst) {
+  if null?(lst) {
+    0
+  } else {
+    1 + hd_length(cdr(lst))
+  }
+}
+
+// hd_drop: the list without its first n elements.
+fn hd_drop(lst, n) {
+  if n == 0 {
+    lst
+  } else {
+    hd_drop(cdr(lst), n - 1)
+  }
+}
+
+// hd_join: balanced concatenation of a list of strings, n = its length.
+// n >= 1 assumed (hd_join(nil,...) is never called; halves stay proper).
+fn hd_join(strs, n) {
+  if n == 1 {
+    car(strs)
+  } else {
+    let half = n / 2
+    str.concat(hd_join(strs, half), hd_join(hd_drop(strs, half), n - half))
+  }
+}
+
+// hd_join_list: concatenation of any string list ("" when empty).
+fn hd_join_list(strs) {
+  if null?(strs) {
+    ""
+  } else {
+    hd_join(strs, hd_length(strs))
+  }
+}
+
+// hd_attr_str: " name=\"escaped-value\"" for one Attr, in list order; a
+// valueless Attr (nil value, from attr_flag) is just " name" — cora
+// sxml->xml's symbol-attribute clause. An Attr node is the tagged pair
+// ('Attr . (name . value)).
+fn hd_attr_str(a) {
+  let name = car(cdr(a))
+  let v = car(cdr(cdr(a)))
+  if null?(v) {
+    str.concat(" ", name)
+  } else {
+    let len = str.length(v)
+    str.concat(str.concat(" ", name),
+    str.concat("=\"", str.concat(hd_escaped(v, 0, len), "\"")))
+  }
+}
+
+// hd_node_str: the serialization of one Node (cora element->xml + the
+// string clauses of sxml->xml-h).
+fn hd_node_str(node) {
+  match node {
+    Elem(tag, attrs, children) -> {
+      let attrs_str = hd_join_list(hd_map_attr_str(attrs))
+      if null?(children) {
+        str.concat(str.concat("<", tag), str.concat(attrs_str, " />"))
+      } else {
+        let body = hd_join_list(hd_map_node_str(children))
+        str.concat(str.concat("<", tag),
+        str.concat(attrs_str,
+        str.concat(">", str.concat(body, str.concat("</",
+        str.concat(tag, ">"))))))
+      }
+    }
+    Text(s) -> hd_escaped(s, 0, str.length(s))
+    Raw(s) -> s
+  }
+}
+
+fn hd_map_node_str(nodes) {
+  if null?(nodes) {
+    nil
+  } else {
+    cons(hd_node_str(car(nodes)), hd_map_node_str(cdr(nodes)))
+  }
+}
+
+fn hd_map_attr_str(attrs) {
+  if null?(attrs) {
+    nil
+  } else {
+    cons(hd_attr_str(car(attrs)), hd_map_attr_str(cdr(attrs)))
+  }
+}
+
+fn hd_write_fail(path) {
+  print(str.concat("html.render_to_file: cannot write ", path))
+  1 / 0
+}
+
+// ---- public API ----
+
+// render: serialize a single Node to a string (cora sxml->xml on one value).
+pub fn render(node : Node) -> string {
+  hd_node_str(node)
+}
+
+// render_list: serialize a top-level List(Node); the empty list renders "".
+pub fn render_list(nodes) {
+  hd_join_list(hd_map_node_str(nodes))
+}
+
+// render_to_file: serialize a Node and write it to a file, returning 1 on
+// success.
+pub fn render_to_file(node : Node, path) {
+  let ok = file.write(path, hd_node_str(node))
+  if ok == 1 {
+    1
+  } else {
+    hd_write_fail(path)
+  }
+}
+
+// render_list_to_file: serialize a top-level List(Node) straight to a file.
+pub fn render_list_to_file(nodes, path) {
+  let ok = file.write(path, render_list(nodes))
+  if ok == 1 {
+    1
+  } else {
+    hd_write_fail(path)
+  }
+}

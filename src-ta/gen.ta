@@ -1,0 +1,85 @@
+// src-ta/gen.ta — blog generator entry point (ta port of blog-gen).
+//
+// Usage (from the go.blog repo root, via the blog-gen-ta wrapper):
+//   tinyactor run src-ta/gen.ta generate        full site -> generate/
+//   tinyactor run src-ta/gen.ta file <name>     single post + index/
+//                                               category/tags/feed refresh
+//   tinyactor run src-ta/gen.ta dirs            print every output
+//                                               directory, one per line
+//   tinyactor run src-ta/gen.ta help            usage
+//
+// argv comes from the VM builtin vm.get_arg (same precedent as
+// tinyactor's lib/driver.ta and lib/serve.ta — no import needed).
+//
+// ta has no file.mkdir yet and writing generate/<post>/index.html needs
+// the directory to exist, so the wrapper first runs the `dirs` command
+// (which prints ./generate/<post>, ./generate/category/<name>,
+// ./generate/tags/<name> — tag names may contain '/', e.g. call/cc) and
+// mkdir -p's each line before running generate/file.
+
+import core
+
+fn each(lst, f) {
+  if null?(lst) {
+    nil
+  } else {
+    f(car(lst))
+    each(cdr(lst), f)
+  }
+}
+
+fn print_dirs() {
+  let index = core.parse_index_file("./content/index.json")
+  let category = core.build_category(index)
+  let tags = core.build_tags(index)
+  each(index, fn(item) {
+  print(str.concat("./generate/", core.get_string_from_item(item, "File")))
+  })
+  each(category, fn(entry) {
+  print(str.concat("./generate/category/", car(entry)))
+  })
+  each(tags, fn(entry) {
+  print(str.concat("./generate/tags/", car(entry)))
+  })
+}
+
+fn run_generate() {
+  let index = core.parse_index_file("./content/index.json")
+  core.generate("./generate/", index, core.build_category(index), core.build_tags(index))
+}
+
+fn run_file(name) {
+  let index = core.parse_index_file("./content/index.json")
+  core.generate_file("./generate/", index, core.build_category(index),
+  core.build_tags(index), name)
+}
+
+fn show_help() {
+  print("Blog Generator (ta) - Generate blog content")
+  print("")
+  print("Usage:")
+  print("    blog-gen-ta generate              Generate all blog content (full rebuild)")
+  print("    blog-gen-ta file <filename>       Generate a single blog post")
+  print("    blog-gen-ta help                  Show this help message")
+}
+
+fn main() {
+  let cmd = vm.get_arg(0)
+  if str.eq(cmd, "generate") {
+    run_generate()
+  } else {
+    if str.eq(cmd, "all") {
+      run_generate()
+    } else {
+      if str.eq(cmd, "file") {
+        run_file(vm.get_arg(1))
+      } else {
+        if str.eq(cmd, "dirs") {
+          print_dirs()
+        } else {
+          show_help()
+        }
+      }
+    }
+  }
+}

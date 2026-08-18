@@ -1,0 +1,74 @@
+// src-ta/test/md_test.ta — md module acceptance tests (spec A2).
+//
+// Every expectation is the cora baseline: src-ta/test/baseline/md/<name>.html,
+// produced by gen_md_baseline.* (cora process-file -> sxml->xml, the exact
+// pipeline the cora blog generator uses). md.html(path) must serialize
+// byte-identical to it.
+//
+// The post set covers the markdown constructs the cora wrap.c special-cases:
+//   200-lines-gc  code blocks WITH language class (language-C/lisp/...)
+//   chibi-scheme1 code blocks with language class
+//   2022          task lists (li class, checkbox input, checked)
+//   raft-2F1A     tables + a blockquote
+//   7900xtx-local-ai  images (img src attr, alt text children)
+//   klambda       nested blockquotes (indented quotes)
+//   2018          mixed content; ordered list starts at 1 (no start attr)
+//   ol-start2     ordered list starting "2." (ol start="2") — fixture
+//   ol-start0     ordered list starting "0." (ol start="0"; cora wrap.c
+//                 omits start only when == 1) — fixture
+//
+// The ol-start* fixtures are hand-written inputs living next to their
+// baselines (no real post has an ordered list with start != 1).
+//
+// Regenerate baselines: ./src-ta/test/baseline/gen_md_baseline.sh
+// (or re-run the per-post cora driver — see that script's header.)
+//
+// Asserts pass silently; a failed assertion prints the divergence and
+// crashes the process (1 / 0) so the runner exits non-zero.
+// Run from the go.blog repo root:  tinyactor run src-ta/test/md_test.ta
+
+import md
+import html
+
+fn fail(msg) {
+  print(str.concat("MD TEST FAIL: ", msg))
+  1 / 0
+}
+
+fn assert_html_eq(name, content_path, baseline_path) {
+  let actual = html.render_list(md.html(content_path))
+  let expected = file.read(baseline_path)
+  if null?(expected) {
+    fail(str.concat("baseline missing: ", baseline_path))
+  } else {
+    if str.eq(actual, expected) {
+      print(str.concat("ok ", name))
+    } else {
+      print(str.concat("  actual:   ", actual))
+      print(str.concat("  expected: ", expected))
+      fail(str.concat("byte mismatch: ", name))
+    }
+  }
+}
+
+fn main() {
+  assert_html_eq("200-lines-gc", "./content/200-lines-gc.md",
+                 "./src-ta/test/baseline/md/200-lines-gc.md.html")
+  assert_html_eq("chibi-scheme1", "./content/chibi-scheme1.md",
+                 "./src-ta/test/baseline/md/chibi-scheme1.md.html")
+  assert_html_eq("2022", "./content/2022.md",
+                 "./src-ta/test/baseline/md/2022.md.html")
+  assert_html_eq("raft-2F1A", "./content/raft-2F1A.md",
+                 "./src-ta/test/baseline/md/raft-2F1A.md.html")
+  assert_html_eq("7900xtx-local-ai", "./content/7900xtx-local-ai.md",
+                 "./src-ta/test/baseline/md/7900xtx-local-ai.md.html")
+  assert_html_eq("klambda", "./content/klambda.md",
+                 "./src-ta/test/baseline/md/klambda.md.html")
+  assert_html_eq("2018", "./content/2018.md",
+                 "./src-ta/test/baseline/md/2018.md.html")
+  assert_html_eq("ol-start2", "./src-ta/test/baseline/md/ol-start2.md",
+                 "./src-ta/test/baseline/md/ol-start2.md.html")
+  assert_html_eq("ol-start0", "./src-ta/test/baseline/md/ol-start0.md",
+                 "./src-ta/test/baseline/md/ol-start0.md.html")
+  print("MD TEST PASS")
+}

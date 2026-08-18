@@ -1,0 +1,189 @@
+// src-ta/test/html_test.ta — html module acceptance tests.
+//
+// Every expectation is derived from cora/lib/sxml.cora (the byte-identical
+// target): element->xml (self-closing " />" for empty bodies), attribute->xml
+// (" name=\"value\"" in list order), string->escaped-xml (escape set:
+// " -> &quot;, & -> &amp;, \ -> &apos;, < -> &lt;, > -> &gt;; single quote
+// NOT escaped). Cross-verified against real cora output in generate/*.html
+// (skipped gracefully when the directory is absent).
+//
+// Asserts pass silently; a failed assertion prints a message and crashes
+// the process (1 / 0) so the runner exits non-zero. All passing → exit 0.
+
+import html
+
+fn fail(msg) {
+  print(str.concat("HTML TEST FAIL: ", msg))
+  1 / 0
+}
+
+fn assert_true(cond, msg) {
+  if cond {
+    nil
+  } else {
+    fail(msg)
+  }
+}
+
+fn assert_str_eq(actual, expected, msg) {
+  if str.eq(actual, expected) {
+    nil
+  } else {
+    print(str.concat("  actual:   ", actual))
+    print(str.concat("  expected: ", expected))
+    fail(msg)
+  }
+}
+
+// ---- small list helpers ----
+
+fn l1(x) {
+  cons(x, nil)
+}
+
+fn l2(x, y) {
+  cons(x, cons(y, nil))
+}
+
+fn l3(x, y, z) {
+  cons(x, cons(y, cons(z, nil)))
+}
+
+fn l4(x, y, z, w) {
+  cons(x, cons(y, cons(z, cons(w, nil))))
+}
+
+fn main() {
+  // ---- simple element, empty body (cora element->xml null branch) ----
+  assert_str_eq(html.render(html.elem("div", nil, nil)),
+  "<div />", "empty element self-closes with ' />'")
+  assert_str_eq(html.render(html.elem("hr", nil, nil)),
+  "<hr />", "bare self-closing element")
+
+  // ---- simple element with text child ----
+  assert_str_eq(html.render(html.elem("p", nil, l1(html.text("hello")))),
+  "<p>hello</p>", "element with text child")
+
+  // empty string text child: body is a non-nil list → open/close form
+  assert_str_eq(html.render(html.elem("p", nil, l1(html.text("")))),
+  "<p></p>", "empty string child keeps open/close form")
+
+  // ---- nesting and multiple children ----
+  let nested = html.elem("div", nil,
+  l2(html.elem("span", nil, l2(html.elem("em", nil, l1(html.text("x"))),
+  html.text("y"))),
+  html.text("z")))
+  assert_str_eq(html.render(nested),
+  "<div><span><em>x</em>y</span>z</div>", "nested elements + mixed children")
+
+  // consecutive text children concatenate without separator
+  assert_str_eq(html.render(html.elem("p", nil, l2(html.text("a"), html.text("b")))),
+  "<p>ab</p>", "multiple text children concatenate")
+
+  // ---- attributes ----
+  assert_str_eq(html.render(html.elem("a", l2(html.attr("href", "/x"),
+  html.attr("class", "btn")), l1(html.text("link")))),
+  "<a href=\"/x\" class=\"btn\">link</a>", "multiple attributes in list order")
+
+  assert_str_eq(html.render(html.elem("meta", l1(html.attr("charset", "utf-8")), nil)),
+  "<meta charset=\"utf-8\" />", "attributes + empty body")
+
+  // attribute value goes through the same escape set as text
+  assert_str_eq(html.render(html.elem("a", l1(html.attr("title",
+  "x & y <z> \" \\")), l1(html.text("t")))),
+  "<a title=\"x &amp; y &lt;z&gt; &quot; &apos;\">t</a>",
+  "attribute value escaping")
+
+  // ---- text escaping: the exact cora string->escaped-xml set ----
+  // input chars: < & > " \ and '
+  assert_str_eq(html.render(html.elem("p", nil, l1(html.text(
+  "a < b & c > d \" e \\ f ' g")))),
+  "<p>a &lt; b &amp; c &gt; d &quot; e &apos; f ' g</p>",
+  "text escaping set (quote, amp, backslash, lt, gt; apostrophe untouched)")
+
+  // escape order quirk: & itself must become &amp; (the cora cond matches
+  // the raw character, so a literal "&amp;" in the source becomes "&amp;amp;")
+  assert_str_eq(html.render(html.text("&amp;")),
+  "&amp;amp;", "double-escape of literal entity text")
+
+  // ---- Raw vs Text ----
+  let raw_src = "a <b> & 'c' \ d \" e"
+  assert_str_eq(html.render(html.raw(raw_src)),
+  raw_src, "Raw at top level is verbatim")
+  assert_str_eq(html.render(html.text(raw_src)),
+  "a &lt;b&gt; &amp; 'c' &apos; d &quot; e", "same content via Text is escaped")
+
+  // Raw nested in an element (disqus script / atom embed case)
+  let js = "var t = \"x\"; // 1 < 2 & 3 > 0"
+  let script = html.elem("script", l1(html.attr("type", "text/javascript")),
+  l1(html.raw(js)))
+    assert_str_eq(html.render(script),
+  str.concat("<script type=\"text/javascript\">",
+  str.concat(js, "</script>")),
+  "Raw body inside script is verbatim")
+
+  // ---- unicode passes through ----
+  assert_str_eq(html.render(html.elem("p", nil, l1(html.text("中文")))),
+  "<p>中文</p>", "utf-8 text passes through")
+
+  // ---- top-level list dispatch (cora sxml->xml-h [c . more] clause) ----
+  assert_str_eq(html.render_list(l2(html.text("a"),
+  html.elem("b", nil, l1(html.text("c"))))),
+  "a<b>c</b>", "top-level list concatenates items")
+  assert_str_eq(html.render_list(nil),
+  "", "empty top-level list renders empty string")
+
+  // ---- accessors ----
+  let e = html.elem("h1", l1(html.attr("id", "Title")), l1(html.text("t")))
+  assert_str_eq(html.tag_of(e), "h1", "tag_of")
+      let at = html.attrs_of(e)
+  assert_str_eq(car(cdr(car(at))), "id", "attrs_of name")
+  assert_str_eq(car(cdr(cdr(car(at)))), "Title", "attrs_of value")
+    assert_str_eq(car(cdr(car(html.children_of(e)))), "t", "children_of text payload")
+  assert_str_eq(html.text_of(html.text("t")), "t", "text_of")
+  assert_str_eq(html.raw_of(html.raw("r")), "r", "raw_of")
+
+  // ---- cross-verification against real cora output (generate/*.html) ----
+  // Rebuild template.cora footer/meta/link nodes and check the rendered
+  // strings byte-for-byte, and that they appear in the cora-generated page.
+  let footer = html.elem("p", l1(html.attr("class", "nav navbar-nav navbar-right")),
+  l4(html.text("Powered by "),
+  html.elem("a", l1(html.attr("href", "https://clojure.org/")),
+  l1(html.text("Clojure"))),
+  html.text(" & "),
+  html.elem("a", l1(html.attr("href", "//getbootstrap.com/")),
+    l1(html.text("Bootstrap")))))
+  let footer_str = html.render(footer)
+  let footer_expected =
+  str.concat("<p class=\"nav navbar-nav navbar-right\">Powered by ",
+  str.concat("<a href=\"https://clojure.org/\">Clojure</a> &amp; ",
+  "<a href=\"//getbootstrap.com/\">Bootstrap</a></p>"))
+  assert_str_eq(footer_str, footer_expected, "template footer fragment")
+
+  let link = html.elem("link", l2(html.attr("rel", "stylesheet"),
+  html.attr("href", "/static/style.css")), nil)
+  assert_str_eq(html.render(link),
+  "<link rel=\"stylesheet\" href=\"/static/style.css\" />",
+  "template link fragment")
+
+  let page = file.read("generate/index.html")
+  if null?(page) {
+    print("note: generate/index.html missing, skipping cora cross-check")
+  } else {
+    assert_true(str.index_of(page, footer_str) >= 0,
+    "footer fragment found byte-identical in cora output")
+    assert_true(str.index_of(page, html.render(link)) >= 0,
+    "link fragment found byte-identical in cora output")
+    assert_true(str.index_of(page, "<meta charset=\"utf-8\" />") >= 0,
+    "meta fragment found in cora output")
+  }
+
+  // ---- render_to_file round-trip ----
+  let out_path = "/tmp/html_test_out.tmp"
+  let ok = html.render_to_file(footer, out_path)
+  assert_true(ok == 1, "render_to_file returns 1")
+    let written = file.read(out_path)
+  assert_str_eq(written, footer_str, "render_to_file byte-identical to render")
+
+  print("PASS")
+}

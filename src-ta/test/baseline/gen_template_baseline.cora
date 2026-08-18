@@ -1,0 +1,115 @@
+;; template baseline: render the five template.cora constructors with the
+;; FIXED argument set below and write each sxml->xml result to
+;; src-ta/test/baseline/template/<name>.html. Byte-identical reference for
+;; the ta template module (src-ta/lib/template.ta).
+;;
+;; Driver: gen_template_baseline.sh
+;;
+;; The args are real blog data (extracted from generate/index.html sidebar
+;; and content/index.json for chicken-scheme-practice2.md), except:
+;;   - TAGS is only the first five sidebar tags (the full list is 337
+;;     entries; a contiguous prefix keeps the real-file cross-checks in the
+;;     test meaningful without embedding the whole sidebar)
+;;   - FIXED_CONTENT is a small list chosen to pin escaping semantics
+;;     (& < in text children)
+;;   - disqus_escape pins the Text-vs-Raw distinction: the title contains
+;;     escapable characters, so cora's escaped-string output differs from
+;;     verbatim output and the ta side must use html.text
+;;
+;; NOTE (disqus): template.cora's disqus is currently DEAD CODE with a
+;; latent bug — the script body reads `(script (@ (type "text/javascript"))
+;; script)` where the inner `script` is missing its unquote comma, so it
+;; embeds the SYMBOL script and cora's sxml->xml crashes on it (verified:
+;; "undefined global variable cora/lib/sxml#error"). No disqus block exists
+;; in generate/*.html (the disqus call is commented out of article). The
+;; disqus baselines below therefore inline template.cora's disqus with the
+;; single missing comma restored — cora's own sxml->xml on the intended
+;; structure is still the ground truth for the bytes.
+;;
+;; NOTE: keep each write in its own top-level let (flat shape) — see
+;; gen_md_baseline.cora's NOTE about cora's evaluator and nested lets.
+
+(import "cora/lib/sys")
+(import "cora/lib/io")
+(import "cora/lib/sxml")
+(import "go.blog/src/template")
+
+;; sidebar.html — sidebar(CATS, TAGS)
+(let f (open-output-file "src-ta/test/baseline/template/sidebar.html")
+  (begin
+   (write-bytes f (sxml->xml (sidebar
+                              '("编译器" "编程语言" "高性能服务器" "分布式" "Android游戏开发" "AI")
+                              '("lisp" "源代码分析" "chibi-scheme" "golang" "rbtree"))))
+   (close-output-file f)))
+
+;; NOTE (cora quirk): the disqus sxml must be built inside a defun —
+;; a quasiquote with unquote directly in a top-level let body segfaults
+;; cora's evaluator (same family of quirks as gen_md_baseline.cora's NOTE).
+
+(defun disqus-fixed (title url)
+  (let script (fold-apply string-append "\nvar disqus_identifier = 'http://www.zenlife.tk" url "';\n"
+			       "var disqus_title = '" title "';\n"
+			       "var disqus_url = 'http://www.zenlife.tk" url "';\n\n"
+			       "(function() {\n"
+			       "\tvar dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;\n"
+			       "\tdsq.src = '//codingnow.disqus.com/embed.js';\n"
+			       "\t(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);\n"
+			       "})();\n")
+    `(aside (@ (id "comments"))
+	      (div (h2 "Comments"))
+	      (div (@ (id "disqus_thread")))
+	      (script (@ (type "text/javascript")) ,script)
+	      (noscript "Please enable JavaScript to view the "
+			(a (@ (href "http://disqus.com/?ref_noscript"))
+			   "comments powered by Disqus."))
+	      (a (@ (href "http://disqus.com")
+		    (class "dsq-brlink"))
+		 "comments powered by"
+		 (span (@ (class "logo-disqus")) "Disqus")))))
+
+;; disqus.html — disqus(real title, real permlink); disqus-fixed is
+;; template.cora's disqus with the missing unquote restored (see NOTE above).
+(let f (open-output-file "src-ta/test/baseline/template/disqus.html")
+  (begin
+   (write-bytes f (sxml->xml (disqus-fixed "chicken scheme实践之二" "/chicken-scheme-practice2.md")))
+   (close-output-file f)))
+
+;; disqus_escape.html — same with escapable characters in the title, to pin
+;; that the script body is an escaped (Text) node, not verbatim (Raw).
+(let f (open-output-file "src-ta/test/baseline/template/disqus_escape.html")
+  (begin
+   (write-bytes f (sxml->xml (disqus-fixed "a \"b\" & <c>" "/x")))
+   (close-output-file f)))
+
+;; article.html — article(real title/date/tags/permlink, FIXED_CONTENT)
+(let f (open-output-file "src-ta/test/baseline/template/article.html")
+  (begin
+   (write-bytes f (sxml->xml (article
+                              "chicken scheme实践之二"
+                              "2015-08-12"
+                              '((p "hello & <world>") (h2 (@ (id "x")) "标题"))
+                              '("blog" "scheme" "chicken")
+                              false
+                              false
+                              "chicken-scheme-practice2.md")))
+   (close-output-file f)))
+
+;; container.html — container(FIXED_CONTENT, CATS, TAGS)
+(let f (open-output-file "src-ta/test/baseline/template/container.html")
+  (begin
+   (write-bytes f (sxml->xml (container
+                              '((p "hello & <world>") (h2 (@ (id "x")) "标题"))
+                              '("编译器" "编程语言" "高性能服务器" "分布式" "Android游戏开发" "AI")
+                              '("lisp" "源代码分析" "chibi-scheme" "golang" "rbtree"))))
+   (close-output-file f)))
+
+;; page.html — page("blog", container(FIXED_CONTENT, CATS, TAGS))
+(let f (open-output-file "src-ta/test/baseline/template/page.html")
+  (begin
+   (write-bytes f (sxml->xml (page
+                              "blog"
+                              (container
+                               '((p "hello & <world>") (h2 (@ (id "x")) "标题"))
+                               '("编译器" "编程语言" "高性能服务器" "分布式" "Android游戏开发" "AI")
+                               '("lisp" "源代码分析" "chibi-scheme" "golang" "rbtree")))))
+   (close-output-file f)))
