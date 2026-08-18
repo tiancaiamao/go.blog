@@ -11,7 +11,19 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TINYACTOR="${TINYACTOR:-/Users/genius/project/tinyactor/tinyactor}"
+
+if [ -n "${TINYACTOR:-}" ]; then
+    TINYACTOR="$TINYACTOR"
+elif command -v tinyactor >/dev/null 2>&1; then
+    TINYACTOR="$(command -v tinyactor)"
+else
+    TINYACTOR="$SCRIPT_DIR/../tinyactor/tinyactor"
+fi
+if [ ! -x "$TINYACTOR" ]; then
+    echo "Error: TinyActor CLI not found: $TINYACTOR" >&2
+    echo "Set TINYACTOR or put tinyactor on PATH." >&2
+    exit 1
+fi
 
 show_help() {
     cat << 'EOF'
@@ -33,7 +45,8 @@ Commands:
     help        Show this help message
 
 Environment Variables:
-    TINYACTOR   Path to the tinyactor CLI (default: /Users/genius/project/tinyactor/tinyactor)
+        TINYACTOR   Optional path to the tinyactor CLI; otherwise uses PATH or
+                ../tinyactor/tinyactor relative to this checkout
 
 EOF
 }
