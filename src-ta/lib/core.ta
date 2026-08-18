@@ -31,7 +31,7 @@
 //   summery-handler &
 //   category/tags-handler        -> write_summary / write_category /
 //                                   write_tags
-//   take-n/atom-entry/atom-handler -> co_take_n / atom_entry / atom_feed
+//   take-n/atom-entry/atom-handler -> list.take / atom_entry / atom_feed
 //   generate                     -> generate
 //
 // Ordering notes pinned by cora's semantics (verified against generate/):
@@ -48,6 +48,7 @@ import html
 import json
 import md
 import template
+import list
 
 // ---- small local list helpers (self-contained, like template.ta) ----
 
@@ -93,19 +94,6 @@ fn co_append(a, b) {
 // co_reverse: new list with elements reversed.
 fn co_reverse(lst) {
   co_foldl(fn(acc, x) { cons(x, acc) }, nil, lst)
-}
-
-// co_take_n: the first n elements (cora take-n).
-fn co_take_n(n, lst) {
-  if n == 0 {
-    nil
-  } else {
-    if null?(lst) {
-      nil
-    } else {
-      cons(car(lst), co_take_n(n - 1, cdr(lst)))
-    }
-  }
 }
 
 // co_die: print msg and crash the process (1 / 0). The blog-gen-ta wrapper
@@ -316,7 +304,7 @@ fn co_l8(x, y, z, w, v, u, t, s) {
 pub fn atom_feed(index) {
   let recent = co_reverse(index)
   let updated_date = get_string_from_item(car(recent), "Date")
-  let entries = co_map(fn(item) { atom_entry(item) }, co_take_n(10, recent))
+  let entries = co_map(fn(item) { atom_entry(item) }, list.take(10, recent))
   let url = str.concat(co_site_url(), "/")
   html.elem("feed", co_l1(html.attr("xmlns", "http://www.w3.org/2005/Atom")),
   co_append(co_l8(
