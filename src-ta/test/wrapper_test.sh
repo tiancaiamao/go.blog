@@ -27,7 +27,13 @@ cd "$(dirname "$0")/../.."
 
 ROOT="$PWD"
 BLOG_GEN_TA="${BLOG_GEN_TA:-$ROOT/blog-gen-ta}"
-TINYACTOR="${TINYACTOR:-/Users/genius/project/tinyactor/tinyactor}"
+if [ -n "${TINYACTOR:-}" ]; then
+    TINYACTOR="$TINYACTOR"
+elif command -v tinyactor >/dev/null 2>&1; then
+    TINYACTOR="$(command -v tinyactor)"
+else
+    TINYACTOR="$ROOT/../tinyactor/tinyactor"
+fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT

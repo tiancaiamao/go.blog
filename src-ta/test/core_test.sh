@@ -13,7 +13,14 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 ROOT=.coretest
-TINYACTOR="${TINYACTOR:-/Users/genius/project/tinyactor/tinyactor}"
+if [ -n "${TINYACTOR:-}" ]; then
+  TINYACTOR="$TINYACTOR"
+elif command -v tinyactor >/dev/null 2>&1; then
+  TINYACTOR="$(command -v tinyactor)"
+else
+  TINYACTOR="$PWD/../tinyactor/tinyactor"
+fi
+[ -x "$TINYACTOR" ] || { echo "CORE TEST FAIL: TinyActor CLI not found: $TINYACTOR" >&2; exit 1; }
 
 rm -rf "$ROOT"
 mkdir -p "$ROOT/an-ai-debug-story.md" \
