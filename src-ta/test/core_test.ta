@@ -21,8 +21,9 @@
 // Plus pure-logic unit checks for the data-edge items (12: no Category;
 // 19-style Tags null) and the tag/category map shapes.
 //
-// The scratch output tree ./.coretest/ is pre-created by core_test.sh (ta
-// has no file.mkdir yet). Assertions pass silently; a failure prints a
+// The scratch output tree ./.coretest/ is pre-created by core_test.sh
+// (core.write_* does not create directories — only gen.ta's ensure_dirs
+// does that at the entry point). Assertions pass silently; a failure prints a
 // message and crashes the process. Run from the go.blog repo root:
 //   tinyactor run src-ta/test/core_test.ta
 

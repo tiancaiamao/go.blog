@@ -4,20 +4,22 @@
 //   tinyactor run src-ta/gen.ta generate        full site -> generate/
 //   tinyactor run src-ta/gen.ta file <name>     single post + index/
 //                                               category/tags/feed refresh
-//   tinyactor run src-ta/gen.ta dirs            print every output
-//                                               directory, one per line
 //   tinyactor run src-ta/gen.ta help            usage
 //
 // argv comes from the VM builtin vm.get_arg (same precedent as
 // tinyactor's lib/driver.ta and lib/serve.ta — no import needed).
 //
-// ta has no file.mkdir yet and writing generate/<post>/index.html needs
-// the directory to exist, so the wrapper first runs the `dirs` command
-// (which prints ./generate/<post>, ./generate/category/<name>,
-// ./generate/tags/<name> — tag names may contain '/', e.g. call/cc) and
-// mkdir -p's each line before running generate/file.
+// The generator creates every output directory itself: before
+// core.generate / core.generate_file writes anything, ensure_dirs() runs
+// fs.mkdir_p on the output root and on every ./generate/<post>,
+// ./generate/category/<name> and ./generate/tags/<name> — tag names may
+// contain '/', e.g. call/cc, and mkdir_p handles the nesting. A mkdir_p
+// failure is a hard error (core.co_die => crash, nonzero exit), matching
+// the project's failure convention, so the blog-gen-ta wrapper never
+// syncs static assets over a partially-created output tree.
 
 import core
+import fs
 
 fn each(lst, f) {
   if null?(lst) {
@@ -28,30 +30,45 @@ fn each(lst, f) {
   }
 }
 
-fn print_dirs() {
-  let index = core.parse_index_file("./content/index.json")
-  let category = core.build_category(index)
-  let tags = core.build_tags(index)
+// ensure_dir: create one output directory; hard-fail on error.
+fn ensure_dir(d) {
+  if fs.mkdir_p(d) == 1 {
+    nil
+  } else {
+    core.co_die(str.concat("gen: cannot create directory ", d))
+  }
+}
+
+// ensure_dirs: create the output root and every post/category/tags
+// directory the generator writes into (names may nest, e.g. tags/call/cc).
+fn ensure_dirs(index, category, tags) {
+  let root = "./generate/"
+  ensure_dir(root)
   each(index, fn(item) {
-  print(str.concat("./generate/", core.get_string_from_item(item, "File")))
+  ensure_dir(str.concat(root, core.get_string_from_item(item, "File")))
   })
   each(category, fn(entry) {
-  print(str.concat("./generate/category/", car(entry)))
+  ensure_dir(str.concat(str.concat(root, "category/"), car(entry)))
   })
   each(tags, fn(entry) {
-  print(str.concat("./generate/tags/", car(entry)))
+  ensure_dir(str.concat(str.concat(root, "tags/"), car(entry)))
   })
 }
 
 fn run_generate() {
   let index = core.parse_index_file("./content/index.json")
-  core.generate("./generate/", index, core.build_category(index), core.build_tags(index))
+  let category = core.build_category(index)
+  let tags = core.build_tags(index)
+  ensure_dirs(index, category, tags)
+  core.generate("./generate/", index, category, tags)
 }
 
 fn run_file(name) {
   let index = core.parse_index_file("./content/index.json")
-  core.generate_file("./generate/", index, core.build_category(index),
-  core.build_tags(index), name)
+  let category = core.build_category(index)
+  let tags = core.build_tags(index)
+  ensure_dirs(index, category, tags)
+  core.generate_file("./generate/", index, category, tags, name)
 }
 
 fn show_help() {
@@ -74,11 +91,7 @@ fn main() {
       if str.eq(cmd, "file") {
         run_file(vm.get_arg(1))
       } else {
-        if str.eq(cmd, "dirs") {
-          print_dirs()
-        } else {
-          show_help()
-        }
+        show_help()
       }
     }
   }
