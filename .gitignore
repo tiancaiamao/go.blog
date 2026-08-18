@@ -15,4 +15,5 @@ publish.sh
 tavm
 lib/bootstrap.tabc
 lib/json.ta
+lib/mpc.ta
 .ta-html-tmp

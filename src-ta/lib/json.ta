@@ -1,18 +1,58 @@
-// json module: JSON parser + value accessors, pure ta (no C deps).
+// vendored from tinyactor lib/json.ta @ 32307f8
+// json module: RFC 8259 JSON parser + value accessors, built on mpc.
 //
-// Values are represented by the Json ADT:
+// The grammar's token level (numbers — the historical weak spot) is a real
+// combinator pipeline: `-? int frac? exp?` with int = "0" | [1-9][0-9]*,
+// frac = "." digit+, exp = [eE] [+-]? digit+. Malformed numbers therefore
+// fail at the exact offending offset through the mpc error channel, never
+// silently accepted ("1e" is not 1.0, "01" is not 1). Strings, arrays and
+// objects are hand-written fn(s, i) parsers (mpc's documented escape hatch
+// for hand parsers): they thread a nesting depth and raise errors with
+// mpc.err_at so every failure merges into the same channel — line/col come
+// free via mpc.fmt_err.
+//
+// Value representation (same shape as go.blog's json.ta, but NOT a drop-in
+// replacement — three same-name API divergences, see below):
 //   JStr(s) / JInt(n) / JFloat(f) / JBool(b) / JNull / JArr(items) / JObj(fields)
-// Objects store fields as a list of (name . value) pairs; a missing key
-// comes back as nil (distinct from an explicit JNull).
+// JArr items are a list; JObj fields are a (name . value) assoc list in
+// document order.
 //
-// The parser is a small recursive-descent scanner over str.char_at bytes.
-// Malformed input prints a message and crashes the process (1 / 0), a
-// fail-fast choice that fits the blog-generator toolchain: a broken
-// index.json should abort the build, not silently produce empty pages.
+// Differences from go.blog's json.ta (migrating go.blog consumers):
+//   1. parse error behavior: go.blog's parse is fail-fast (prints the error
+//      and crashes on bad input); here parse returns nil on error and the
+//      fail-fast variant is parse_or_fail — switch call sites that relied
+//      on the crash to parse_or_fail, or nil-check parse results.
+//   2. object_fields element shape: go.blog fields are (bare-string . value)
+//      with the key directly comparable as a string; here the key is a JStr
+//      value — unwrap it with string_value before string-comparing keys.
+//   3. duplicate object keys: go.blog object_get is first-wins; here the
+//      LAST value wins (documented decision below, pinned by tests).
 //
-// The module is self-contained (no `import list`): TA module imports fall
-// back to <cwd>/lib/ which is not under our control here, so the few list
-// helpers needed are re-implemented with a js_ prefix.
+// Documented semantics decisions (all pinned by tests):
+//   - duplicate object keys: LAST value wins (jansson-style). object_get
+//     scans the field list right-to-left semantically (last match).
+//   - \uXXXX escapes: surrogate pairs (D800-DBFF + DC00-DFFF) are merged
+//     into one codepoint and UTF-8 encoded. A LONE surrogate (unpaired or
+//     inverted) is a parse error — the strict reading of RFC 8259 ("the
+//     ABNF permits ... but ... unpredictability"), matching Rust/Go.
+//   - raw non-ASCII bytes inside strings pass through unvalidated (VM
+//     strings are byte strings; UTF-8 well-formedness of raw bytes is the
+//     producer's responsibility). \u escapes are always properly encoded.
+//   - nesting depth: values may nest up to max_depth() (512) levels.
+//     Deeper input is rejected with "nesting too deep" instead of letting
+//     recursive descent exhaust the VM stack.
+//   - integers: VM ints are 48-bit; an integer literal outside
+//     [-140737488355328, 140737488355327] is a parse error (strict, no
+//     silent wraparound). Use a float literal (1e18 style) for magnitudes.
+//   - floats: parsed as IEEE double via Horner accumulation over the
+//     digits, then scaled by a power of ten. ~15-17 significant digits
+//     (double precision), NOT correctly-rounded like C strtod. Underflow
+//     yields 0.0. Overflow (magnitude > ~1.7e308) is a parse error — the
+//     VM cannot represent -Inf, so we refuse both signs symmetrically.
+//   - a lone "-" / "0" mantissa keeps its literal kind: no frac/exp => int
+//     ("-0" is JInt(0)), any frac/exp => float ("-0.0" is JFloat(0.0)).
+
+import mpc
 
 pub type Json {
   JStr(s)
@@ -24,195 +64,57 @@ pub type Json {
   JObj(fields)
 }
 
-// ---- small list helpers (self-contained) ----
+// ---------- configuration ----------
 
-fn js_len(lst) {
-  if null?(lst) {
-    0
-  } else {
-    1 + js_len(cdr(lst))
-  }
+// Maximum value nesting (arrays/objects counting each level). 512 accepts
+// JSONTestSuite's 500-deep i_ case while bounding recursive descent well
+// below any stack pressure. Exposed so callers know the contract.
+pub fn max_depth() {
+  512
 }
 
-fn js_nth(lst, n) {
-  if null?(lst) {
-    nil
-  } else {
-    if pair?(lst) {
-      if n == 0 {
-        car(lst)
-      } else {
-        js_nth(cdr(lst), n - 1)
-      }
+// VM ints are 48-bit signed: [-2^47, 2^47-1]. The value +2^47 itself is
+// NOT representable in .ta source (it wraps to -2^47 at tokenize time),
+// so the accepted JSON integer range is the symmetric [-(2^47-1), 2^47-1]
+// — matching what a .ta author can write. Documented decision.
+const int48_max = 140737488355327
+
+// ---------- parsing: shared helpers ----------
+
+fn is_ws(c) {
+  if c == ' ' { true }
+  else if c == '\t' { true }
+  else if c == '\n' { true }
+  else { c == '\r' }
+}
+
+// skip JSON whitespace (and only that — formfeed & friends are errors)
+fn skip_ws(s, i) {
+  if i < str.length(s) {
+    if is_ws(str.char_at(s, i)) {
+      skip_ws(s, i + 1)
     } else {
-      nil
+      i
     }
+  } else {
+    i
   }
 }
 
-fn js_rev(lst) {
-  js_rev_acc(nil, lst)
+fn is_digit_c(c) {
+  and(c >= '0', c <= '9')
 }
 
-fn js_rev_acc(acc, lst) {
-  if null?(lst) {
-    acc
+// hex digit value, or -1
+fn hex_val(c) {
+  if is_digit_c(c) {
+    c - '0'
   } else {
-    js_rev_acc(cons(car(lst), acc), cdr(lst))
-  }
-}
-
-// ---- parser internals ----
-
-fn js_fail(src, pos, msg) {
-  print(str.concat("json parse error at ", str.concat(str.from_int(pos),
-  str.concat(": ", msg))))
-  1 / 0
-}
-
-fn js_is_digit(c) {
-  c >= 48 && c <= 57
-}
-
-fn js_skip_ws(src, pos) {
-  let c = str.char_at(src, pos)
-  if c == 32 || c == 10 || c == 13 || c == 9 {
-    js_skip_ws(src, pos + 1)
-  } else {
-    pos
-  }
-}
-
-// js_parse_value: returns (value . next_pos)
-fn js_parse_value(src, pos) {
-  let p = js_skip_ws(src, pos)
-  let c = str.char_at(src, p)
-  if c == 123 {
-    js_parse_object(src, p + 1)
-  } else {
-    if c == 91 {
-      js_parse_array(src, p + 1)
+    if and(c >= 'a', c <= 'f') {
+      c - 'a' + 10
     } else {
-      if c == 34 {
-        js_parse_string(src, p + 1)
-      } else {
-        if c == 116 {
-          js_parse_literal(src, p, "true", JBool(true))
-        } else {
-          if c == 102 {
-            js_parse_literal(src, p, "false", JBool(false))
-          } else {
-            if c == 110 {
-              js_parse_literal(src, p, "null", JNull)
-            } else {
-              if c == 45 {
-                js_parse_number(src, p)
-              } else {
-                if js_is_digit(c) {
-                  js_parse_number(src, p)
-                } else {
-                  js_fail(src, p, "unexpected character in value")
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-fn js_parse_literal(src, pos, kw, val) {
-  let p = js_skip_ws(src, pos)
-  let n = str.length(kw)
-  if str.substr(src, p, n) == kw {
-    cons(val, p + n)
-  } else {
-    js_fail(src, p, str.concat("invalid literal, expected ", kw))
-  }
-}
-
-// js_parse_string: pos is just past the opening quote.
-// Returns (JStr(s) . next_pos).
-fn js_parse_string(src, pos) {
-  let r = js_parse_string_body(src, pos, "")
-  cons(JStr(car(r)), cdr(r))
-}
-
-fn js_parse_string_body(src, pos, acc) {
-  let c = str.char_at(src, pos)
-  if c == 34 {
-    cons(acc, pos + 1)
-  } else {
-    if c == 92 {
-      let e = str.char_at(src, pos + 1)
-      if e == 117 {
-        // \uXXXX — parse 4 hex digits, emit UTF-8 bytes
-        let cp = js_parse_hex4(src, pos + 2)
-        let acc2 = str.concat(acc, js_utf8(cp))
-        js_parse_string_body(src, pos + 6, acc2)
-      } else {
-        let ch = js_escape_byte(src, pos + 1)
-        js_parse_string_body(src, pos + 2, str.concat(acc, str.chr(ch)))
-      }
-    } else {
-      if c == -1 {
-        js_fail(src, pos, "unterminated string")
-      } else {
-        js_parse_string_body(src, pos + 1, str.concat(acc, str.chr(c)))
-      }
-    }
-  }
-}
-
-// js_escape_byte: byte value for a one-char JSON escape at `pos`.
-fn js_escape_byte(src, pos) {
-  let e = str.char_at(src, pos)
-  if e == 34 {
-    34
-  } else {
-    if e == 92 {
-      92
-    } else {
-      if e == 47 {
-        47
-      } else {
-        if e == 98 {
-          8
-        } else {
-          if e == 102 {
-            12
-          } else {
-            if e == 110 {
-              10
-            } else {
-              if e == 114 {
-                13
-              } else {
-                if e == 116 {
-                  9
-                } else {
-                  js_fail(src, pos, "invalid escape")
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// js_hex: nibble value of a hex digit char, or -1.
-fn js_hex(c) {
-  if c >= 48 && c <= 57 {
-    c - 48
-  } else {
-    if c >= 65 && c <= 70 {
-      c - 65 + 10
-    } else {
-      if c >= 97 && c <= 102 {
-        c - 97 + 10
+      if and(c >= 'A', c <= 'F') {
+        c - 'A' + 10
       } else {
         -1
       }
@@ -220,262 +122,676 @@ fn js_hex(c) {
   }
 }
 
-fn js_parse_hex4(src, pos) {
-  let h1 = js_hex(str.char_at(src, pos))
-  let h2 = js_hex(str.char_at(src, pos + 1))
-  let h3 = js_hex(str.char_at(src, pos + 2))
-  let h4 = js_hex(str.char_at(src, pos + 3))
-  if h1 < 0 || h2 < 0 || h3 < 0 || h4 < 0 {
-    js_fail(src, pos, "invalid \\u escape")
-  } else {
-    ((h1 * 16 + h2) * 16 + h3) * 16 + h4
+// ---------- parsing: numbers (mpc combinator grammar) ----------
+
+// int = "0" | [1-9] [0-9]*   — yields the digit chars as a list
+fn int_part() {
+  mpc.choice_list([
+  mpc.pmap(fn(_) { cons('0', nil) }, mpc.lit("0")),
+  int_lead(),
+  ])
+}
+
+fn int_lead() {
+  use c < - mpc.range('1', '9')
+  use rest < - mpc.star(mpc.digit())
+  mpc.ret(cons(c, rest))
+}
+
+// frac = "." digit+ — yields the digit chars after the dot
+fn frac_part() {
+  use _ < - mpc.lit(".")
+  use ds < - mpc.plus(mpc.digit())
+  mpc.ret(ds)
+}
+
+fn exp_char() {
+  mpc.choice(mpc.lit("e"), mpc.lit("E"))
+}
+
+fn exp_sign() {
+  mpc.choice(mpc.lit("+"), mpc.lit("-"))
+}
+
+// exp = [eE] [+-]? digit+ — yields ("-"|nil . digit-chars)
+fn exp_part() {
+  use _ < - exp_char()
+  use sg < - mpc.opt(exp_sign())
+  use ds < - mpc.plus(mpc.digit())
+  mpc.ret(cons(sg, ds))
+}
+
+// number = "-"? int frac? exp? — yields ("-"|nil int frac exp).
+// A frac or exp that cannot complete simply fails inside opt(), so the
+// number stops early and the enclosing structure fails at the leftover
+// characters ("1." never parses as 1, "0.e1" never parses as 0).
+fn number_grammar() {
+  use neg < - mpc.opt(mpc.lit("-"))
+  use ip < - int_part()
+  use fr < - mpc.opt(frac_part())
+  use ex < - mpc.opt(exp_part())
+  mpc.ret(cons(neg, cons(ip, cons(fr, cons(ex, nil)))))
+}
+
+// Public entry: parse a JSON number at s[i]. Success yields
+// ('ok JInt|JFloat . next); failure is an mpc-channel error positioned at
+// the start of the number (out-of-range diagnostics point at the literal).
+fn jnumber() {
+  fn(s, i) {
+    let r = number_grammar()(s, i)
+    if mpc.fail?(r) {
+      r
+    } else {
+      let parts = car(cdr(r))
+      make_number(parts, i, cdr(cdr(r)))
+    }
   }
 }
 
-// js_utf8: UTF-8 byte string for a BMP code point.
-fn js_utf8(cp) {
+// convert grammar parts to JInt/JFloat; err_at on out-of-range
+fn make_number(parts, start, j) {
+  let neg = car(parts)
+  let ip = car(cdr(parts))
+  let fr = car(cdr(cdr(parts)))
+  let ex = car(cdr(cdr(cdr(parts))))
+  if and(ex == nil, fr == nil) {
+    make_int(neg, ip, start, j)
+  } else {
+    make_float(neg, ip, fr, ex, start, j)
+  }
+}
+
+// accumulate digit chars as an int with int48 overflow checking
+fn make_int(neg, ip, start, j) {
+  let v = int_acc(ip, 0, start)
+  if mpc.fail?(v) {
+    v
+  } else {
+    let m = car(cdr(v))
+    if neg == nil {
+      cons('ok, cons(JInt(m), j))
+    } else {
+      cons('ok, cons(JInt(0 - m), j))
+    }
+  }
+}
+
+fn int_acc(ds, v, start) {
+  if null?(ds) {
+    cons('ok, cons(v, nil))
+  } else {
+    let d = car(ds) - '0'
+    if v > (int48_max - d) / 10 {
+      mpc.err_at("integer out of 48-bit range", start)
+    } else {
+      int_acc(cdr(ds), v * 10 + d, start)
+    }
+  }
+}
+
+// 10.0^k for k >= 0, by repeated multiplication (exact up to 10^22,
+// good enough as a scaling factor at double precision)
+fn pow10f(k : int) -> float {
+  if k <= 0 {
+    1.0
+  } else {
+    10.0 * pow10f(k - 1)
+  }
+}
+
+// overflow threshold: ~1.7e308, just below DBL_MAX. Magnitudes above it
+// are refused (the VM cannot represent -Inf, so we refuse both signs).
+fn float_max() {
+  17.0 * pow10f(307)
+}
+
+// NOTE ON FLOATS: the typechecker binds unconstrained/unannotated parameters
+// to int on first arith use ("int-first", see lib/typecheck.ta infer_num), and
+// named-fn float param annotations do not participate in inference. Floats
+// therefore never travel as bare parameters: they are threaded in cons cells
+// ("boxed") and immediately unpacked into let bindings, where float arith
+// works (see test/basic/float-arith.ta). Purely a lib-level idiom.
+
+// accumulate digit chars as a boxed float magnitude (Horner), failing once
+// the magnitude passes float_max() — VM inf/overflow never gets constructed
+// (note: VM division yields IEEE inf, and inf > float_max() is true, so the
+// guard below also catches any inf produced upstream)
+fn float_acc(ds, box) {
+  if null?(ds) {
+    cons('ok, cons(box, nil))
+  } else {
+    let v = car(box)
+    let w = v * 10.0 + (car(ds) - '0')
+    if w > float_max() {
+      mpc.err_at("float overflow", 0)
+    } else {
+      float_acc(cdr(ds), cons(w, nil))
+    }
+  }
+}
+
+// exponent digits -> int, saturating at 100000 so huge exponent strings
+// (hundreds of digits) cannot wrap or loop forever
+fn exp_acc(ds, v) {
+  if null?(ds) {
+    v
+  } else {
+    if v >= 100000 {
+      100000
+    } else {
+      exp_acc(cdr(ds), v * 10 + (car(ds) - '0'))
+    }
+  }
+}
+
+// scale a boxed magnitude by 10^e10 (e10 may be negative); overflow-checked
+// on every multiply (VM gives IEEE inf on overflow; inf > float_max() is
+// true, so it is caught here), underflow degrades to 0.0 (accepted,
+// RFC-typical) and short-circuits via the m == 0.0 test
+fn float_scale(box, e10, start) {
+  let m = car(box)
+  if m == 0.0 {
+    cons('ok, cons(box, nil))
+  } else {
+    if e10 > 0 {
+      let w = m * 10.0
+      if w > float_max() {
+        mpc.err_at("float overflow", start)
+      } else {
+        float_scale(cons(w, nil), e10 - 1, start)
+      }
+    } else {
+      if e10 < 0 {
+        float_scale(cons(m / 10.0, nil), e10 + 1, start)
+      } else {
+        cons('ok, cons(box, nil))
+      }
+    }
+  }
+}
+
+fn make_float(neg, ip, fr, ex, start, j) {
+  let a = float_acc(ip, cons(0.0, nil))
+  if mpc.fail?(a) {
+    mpc.err_at("float overflow", start)
+  } else {
+    let b = float_acc(fr, car(cdr(a)))
+    if mpc.fail?(b) {
+      mpc.err_at("float overflow", start)
+    } else {
+      let fdig = list_length(fr, 0)
+      // ex = nil | (nil|"+"/"-" . digit-chars); only "-" makes it negative
+      let e = if ex == nil {
+        0
+      } else {
+        if str.eq(car(ex), "-") {
+          0 - exp_acc(cdr(ex), 0)
+        } else {
+          exp_acc(cdr(ex), 0)
+        }
+      }
+      let sc = float_scale(car(cdr(b)), e - fdig, start)
+      if mpc.fail?(sc) {
+        sc
+      } else {
+        let mag = car(car(cdr(sc)))
+        if neg == nil {
+          cons('ok, cons(JFloat(mag), j))
+        } else {
+          cons('ok, cons(JFloat(0.0 - mag), j))
+        }
+      }
+    }
+  }
+}
+
+fn list_length(l, n) {
+  if null?(l) {
+    n
+  } else {
+    list_length(cdr(l), n + 1)
+  }
+}
+
+// 0-based nth of a list, nil out of range
+fn list_nth(l, n) {
+  if null?(l) {
+    nil
+  } else {
+    if n == 0 {
+      car(l)
+    } else {
+      list_nth(cdr(l), n - 1)
+    }
+  }
+}
+
+// ---------- parsing: strings ----------
+
+// plain body char: not a quote, not a backslash, not a raw control char
+// (bytes >= 128 pass through — see module header on raw UTF-8 policy)
+fn is_plain(c) {
+  and(c != '"', and(c != '\\', c >= ' '))
+}
+
+// parse a JSON string; i is just past the opening quote. Yields
+// ('ok JStr(s) . next) or an err_at failure.
+fn jstring(s, i) {
+  str_body(s, i, "")
+}
+
+fn str_body(s, i, acc) {
+  let j = plain_end(s, i)
+  let acc2 = str.concat(acc, str.substr(s, i, j - i))
+  let c = str.char_at(s, j)
+  if c == '"' {
+    cons('ok, cons(JStr(acc2), j + 1))
+  } else {
+    if c == '\\' {
+      str_escape(s, j, acc2)
+    } else {
+      if c < ' ' {
+        mpc.err_at("raw control character in string", j)
+      } else {
+        // char_at returns -1 past the end: unterminated string
+        mpc.err_at("unterminated string", j)
+      }
+    }
+  }
+}
+
+// end of the run of plain chars at or after i
+fn plain_end(s, i) {
+  if i < str.length(s) {
+    if is_plain(str.char_at(s, i)) {
+      plain_end(s, i + 1)
+    } else {
+      i
+    }
+  } else {
+    i
+  }
+}
+
+// one escape sequence at s[j] == '\\'
+fn str_escape(s, j, acc) {
+  if j + 1 >= str.length(s) {
+    mpc.err_at("unterminated escape", j)
+  } else {
+    let e = str.char_at(s, j + 1)
+    if e == 'u' {
+      str_u_escape(s, j, acc)
+    } else {
+      let c = simple_escape_char(e)
+      if c < 0 {
+        mpc.err_at("invalid escape character", j + 1)
+      } else {
+        str_body(s, j + 2, str.concat(acc, str.chr(c)))
+      }
+    }
+  }
+}
+
+// byte value of a simple escape, or -1 for invalid
+fn simple_escape_char(e) {
+  if e == '"' {
+    '"'
+  } else {
+    if e == '\\' {
+      '\\'
+    } else {
+      if e == '/' {
+        '/'
+      } else {
+        if e == 'b' {
+          8
+        } else {
+          if e == 'f' {
+            12
+          } else {
+            if e == 'n' {
+              '\n'
+            } else {
+              if e == 'r' {
+                '\r'
+              } else {
+                if e == 't' {
+                  '\t'
+                } else {
+                  -1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// \uXXXX (with surrogate pair merging) at s[j] == '\\'
+fn str_u_escape(s, j, acc) {
+  let hi = hex4(s, j + 2)
+  if hi < 0 {
+    mpc.err_at("expecting 4 hex digits after \\u", j)
+  } else {
+    if and(hi >= 55296, hi <= 56319) {
+      // high surrogate: the next sequence must be \uDC00-\uDFFF
+      if and(j + 7 < str.length(s), and(str.char_at(s, j + 6) == '\\', str.char_at(s, j + 7) == 'u')) {
+        let lo = hex4(s, j + 8)
+        if and(lo >= 56320, lo <= 57343) {
+          let cp = 65536 + (hi - 55296) * 1024 + (lo - 56320)
+          str_body(s, j + 12, str.concat(acc, utf8_encode(cp)))
+        } else {
+          mpc.err_at("invalid low surrogate after high surrogate", j)
+        }
+      } else {
+        mpc.err_at("lone high surrogate", j)
+      }
+    } else {
+      if and(hi >= 56320, hi <= 57343) {
+        mpc.err_at("lone low surrogate", j)
+      } else {
+        str_body(s, j + 6, str.concat(acc, utf8_encode(hi)))
+      }
+    }
+  }
+}
+
+// 4 hex digits starting at s[i] -> int, or -1 (also bounds-checked: a
+// \u at end of input yields -1, reported as an escape error by callers)
+fn hex4(s, i) {
+  hex4_loop(s, i, 0, 4)
+}
+
+fn hex4_loop(s, i, v, n) {
+  if n == 0 {
+    v
+  } else {
+    if i >= str.length(s) {
+      -1
+    } else {
+      let h = hex_val(str.char_at(s, i))
+      if h < 0 {
+        -1
+      } else {
+        hex4_loop(s, i + 1, v * 16 + h, n - 1)
+      }
+    }
+  }
+}
+
+// UTF-8 encode a codepoint (from \u escapes; always in range — lone
+// surrogates are rejected before this runs) as 1-4 bytes via str.chr.
+fn utf8_encode(cp) {
   if cp < 128 {
     str.chr(cp)
   } else {
     if cp < 2048 {
       str.concat(str.chr(192 + cp / 64), str.chr(128 + cp % 64))
     } else {
-      str.concat(str.chr(224 + cp / 4096),
-      str.concat(str.chr(128 + (cp / 64) % 64), str.chr(128 + cp % 64)))
+      if cp < 65536 {
+        str.concat(str.chr(224 + cp / 4096),
+        str.concat(str.chr(128 + (cp / 64) % 64), str.chr(128 + cp % 64)))
+      } else {
+        str.concat(str.chr(240 + cp / 262144),
+        str.concat(str.chr(128 + (cp / 4096) % 64),
+        str.concat(str.chr(128 + (cp / 64) % 64), str.chr(128 + cp % 64))))
+      }
     }
   }
 }
 
-// js_parse_array: pos is just past '['.
-// Returns (JArr(items) . next_pos).
-fn js_parse_array(src, pos) {
-  let p = js_skip_ws(src, pos)
-  if str.char_at(src, p) == 93 {
-    cons(JArr(nil), p + 1)
+// ---------- parsing: values, arrays, objects ----------
+
+// literal keyword (true/false/null) via mpc.lit
+fn jliteral(s, i, kw, v) {
+  let r = mpc.lit(kw)(s, i)
+  if mpc.fail?(r) {
+    r
   } else {
-    let r = js_parse_array_items(src, p, nil)
-    cons(JArr(car(r)), cdr(r))
+    cons('ok, cons(v, cdr(cdr(r))))
   }
 }
 
-fn js_parse_array_items(src, pos, acc) {
-  let vr = js_parse_value(src, pos)
-  let v = car(vr)
-  let p = js_skip_ws(src, cdr(vr))
-  let c = str.char_at(src, p)
-  if c == 44 {
-    js_parse_array_items(src, p + 1, cons(v, acc))
+// parse one value at s[i] (i is at first non-ws char). depth counts the
+// nesting level of the value being parsed (1 = top level).
+fn pvalue(s, i, depth) {
+  if depth > max_depth() {
+    mpc.err_at(str.concat("nesting too deep (max ", str.concat(str.from_int(max_depth()), " levels)")), i)
   } else {
-    if c == 93 {
-      cons(js_rev(cons(v, acc)), p + 1)
+    let c = str.char_at(s, i)
+    if c == '[' {
+      parray(s, i + 1, depth + 1)
     } else {
-      js_fail(src, p, "expected ',' or ']' in array")
-    }
-  }
-}
-
-// js_parse_object: pos is just past '{'.
-// Returns (JObj(fields) . next_pos); fields are (name . value) pairs.
-fn js_parse_object(src, pos) {
-  let p = js_skip_ws(src, pos)
-  if str.char_at(src, p) == 125 {
-    cons(JObj(nil), p + 1)
-  } else {
-    let r = js_parse_object_fields(src, p, nil)
-    cons(JObj(car(r)), cdr(r))
-  }
-}
-
-fn js_parse_object_fields(src, pos, acc) {
-  let p = js_skip_ws(src, pos)
-  if str.char_at(src, p) == 125 {
-    cons(acc, p + 1)
-  } else {
-    if str.char_at(src, p) == 34 {
-      let sr = js_parse_string(src, p + 1)
-      let name = js_str_value(car(sr))
-      let p2 = js_skip_ws(src, cdr(sr))
-      if str.char_at(src, p2) == 58 {
-        let vr = js_parse_value(src, p2 + 1)
-        let field = cons(name, car(vr))
-        let p3 = js_skip_ws(src, cdr(vr))
-        let c = str.char_at(src, p3)
-        if c == 44 {
-          js_parse_object_fields(src, p3 + 1, cons(field, acc))
+      if c == '{' {
+        pobject(s, i + 1, depth + 1)
+      } else {
+        if c == '"' {
+          jstring(s, i + 1)
         } else {
-          if c == 125 {
-            cons(js_rev(cons(field, acc)), p3 + 1)
+          if c == 't' {
+            jliteral(s, i, "true", JBool(true))
           } else {
-            js_fail(src, p3, "expected ',' or '}' in object")
+            if c == 'f' {
+              jliteral(s, i, "false", JBool(false))
+            } else {
+              if c == 'n' {
+                jliteral(s, i, "null", JNull)
+              } else {
+                if or(c == '-', is_digit_c(c)) {
+                  jnumber()(s, i)
+                } else {
+                  mpc.err_at("expecting JSON value", i)
+                }
+              }
+            }
           }
         }
-      } else {
-        js_fail(src, p2, "expected ':' after object key")
-      }
-    } else {
-      js_fail(src, p, "expected string key in object")
-    }
-  }
-}
-
-// ---- numbers ----
-
-fn js_parse_number(src, pos) {
-  let end = js_num_end(src, pos)
-  let tok = str.substr(src, pos, end - pos)
-  if js_is_float_tok(tok) {
-    let f = js_float_value(tok)
-    if f == nil {
-      js_fail(src, pos, "invalid number")
-    } else {
-      cons(JFloat(f), end)
-    }
-  } else {
-    cons(JInt(str.to_int(tok)), end)
-  }
-}
-
-fn js_num_end(src, pos) {
-  let c = str.char_at(src, pos)
-  if js_is_digit(c) {
-    js_num_end(src, pos + 1)
-  } else {
-    if c == 46 || c == 101 || c == 69 {
-      js_num_end(src, pos + 1)
-    } else {
-      if c == 43 || c == 45 {
-        js_num_end(src, pos + 1)
-      } else {
-        pos
       }
     }
   }
 }
 
-fn js_is_float_tok(tok) {
-  if str.index_of(tok, ".") >= 0 {
-    true
+// array items; i is just past '['. Tail-recursive per element.
+fn parray(s, i, depth) {
+  let i1 = skip_ws(s, i)
+  if str.char_at(s, i1) == ']' {
+    cons('ok, cons(JArr(nil), i1 + 1))
   } else {
-    if str.index_of(tok, "e") >= 0 {
-      true
+    arr_items(s, i1, depth, nil)
+  }
+}
+
+// (arr_items, not array_items: the public accessor array_items(v) below
+// exposes the go.blog contract; a later duplicate fn would shadow this one)
+fn arr_items(s, i, depth, acc) {
+  let r = pvalue(s, i, depth)
+  if mpc.fail?(r) {
+    r
+  } else {
+    let v = car(cdr(r))
+    let j = skip_ws(s, cdr(cdr(r)))
+    let c = str.char_at(s, j)
+    if c == ']' {
+      cons('ok, cons(JArr(j_rev(cons(v, acc), nil)), j + 1))
     } else {
-      str.index_of(tok, "E") >= 0
+      if c == ',' {
+        arr_items(s, skip_ws(s, j + 1), depth, cons(v, acc))
+      } else {
+        mpc.err_at("expecting ',' or ']'", j)
+      }
     }
   }
 }
 
-fn js_pow10f(k : int) -> float {
-  if k <= 0 {
-    1.0
+// object members; i is just past '{'. Tail-recursive per member.
+fn pobject(s, i, depth) {
+  let i1 = skip_ws(s, i)
+  if str.char_at(s, i1) == '}' {
+    cons('ok, cons(JObj(nil), i1 + 1))
   } else {
-    10.0 * js_pow10f(k - 1)
+    object_pairs(s, i1, depth, nil)
   }
 }
 
-fn js_float_from_parts(neg, int_part, frac_part, frac_digits, exp) {
-  let base = int_part + (frac_part + 0.0) / js_pow10f(frac_digits)
-  let scaled = if exp >= 0 {
-    base * js_pow10f(exp)
+fn object_pairs(s, i, depth, acc) {
+  // key must start with '"' — otherwise jstring would scan past the closing
+  // '}' to end-of-input and report a confusing "control character" error
+  if str.char_at(s, i) != '"' {
+    mpc.err_at("expecting '\\\"' for object key", i)
   } else {
-    base / js_pow10f(0 - exp)
-  }
-  if neg == 1 {
-    0.0 - scaled
-  } else {
-    scaled
-  }
-}
-
-// js_float_value: parse a float token; nil if malformed (second '.').
-fn js_float_value(tok) {
-  let neg = if str.char_at(tok, 0) == 45 { 1 } else { 0 }
-  let body = if neg == 1 {
-    str.substr(tok, 1, str.length(tok) - 1)
-  } else {
-    tok
-  }
-  let e1 = str.index_of(body, "e")
-  let e2 = str.index_of(body, "E")
-  let epos = if e1 >= 0 {
-    if e2 >= 0 {
-      if e1 < e2 { e1 } else { e2 }
+    let rk = jstring(s, i + 1)
+    if mpc.fail?(rk) {
+      rk
     } else {
-      e1
+      let k = car(cdr(rk))
+      let j1 = skip_ws(s, cdr(cdr(rk)))
+      if str.char_at(s, j1) != ':' {
+        mpc.err_at("expecting ':' after object key", j1)
+      } else {
+        let j2 = skip_ws(s, j1 + 1)
+        let rv = pvalue(s, j2, depth)
+        if mpc.fail?(rv) {
+          rv
+        } else {
+          let v = car(cdr(rv))
+          let j3 = skip_ws(s, cdr(cdr(rv)))
+          let c = str.char_at(s, j3)
+          if c == '}' {
+            cons('ok, cons(JObj(j_rev(cons(cons(k, v), acc), nil)), j3 + 1))
+          } else {
+            if c == ',' {
+              object_pairs(s, skip_ws(s, j3 + 1), depth, cons(cons(k, v), acc))
+            } else {
+              mpc.err_at("expecting ',' or '}'", j3)
+            }
+          }
+        }
+      }
     }
-  } else {
-    e2
   }
-  let mant = if epos >= 0 { str.substr(body, 0, epos) } else { body }
-  let exp = if epos >= 0 {
-    str.to_int(str.substr(body, epos + 1, str.length(body) - epos - 1))
+}
+
+fn j_rev(l, acc) {
+  if null?(l) {
+    acc
   } else {
-    0
+    j_rev(cdr(l), cons(car(l), acc))
   }
-  let dot = str.index_of(mant, ".")
-  if dot >= 0 {
-    let tail = str.substr(mant, dot + 1, str.length(mant) - dot - 1)
-    if str.index_of(tail, ".") >= 0 {
-      nil
+}
+
+// ---------- public API: parsing ----------
+
+// try_parse: ('ok value) | ('err "line L, col C: msg"). The error string
+// is pre-formatted (mpc.fmt_err) so callers can surface it directly.
+// NOTE: the value/error are wrapped in a proper list — cons('ok, v) with
+// the bare-symbol JNull would be an improper pair and crash cdr/car access.
+pub fn try_parse(text) {
+  let r = pvalue(text, skip_ws(text, 0), 1)
+  if mpc.fail?(r) {
+    cons('err, cons(mpc.fmt_err(text, r), nil))
+  } else {
+    let j = skip_ws(text, cdr(cdr(r)))
+    if j == str.length(text) {
+      cons('ok, cons(car(cdr(r)), nil))
     } else {
-      js_float_from_parts(neg, str.to_int(str.substr(mant, 0, dot)),
-      str.to_int(tail), str.length(tail), exp)
+      cons('err, cons(mpc.fmt_err(text, mpc.err_at("expecting end of input", j)), nil))
     }
-  } else {
-    js_float_from_parts(neg, str.to_int(mant), 0, 0, exp)
   }
 }
 
-// ---- public API ----
-
-// parse: parse a JSON document from a string; fails the process on error.
-pub fn parse(src) {
-  let r = js_parse_value(src, 0)
-  let v = car(r)
-  let p = js_skip_ws(src, cdr(r))
-  if str.length(src) > p {
-    js_fail(src, p, "trailing data after JSON value")
+// parse: the value, or nil on any error. nil is also a parse failure of
+// the empty input — use try_parse when the distinction matters. (A JSON
+// null inside a document is JNull, never nil, so nil unambiguously means
+// "did not parse".)
+pub fn parse(text) {
+  let r = try_parse(text)
+  if car(r) == 'ok {
+    car(cdr(r))
   } else {
-    v
+    nil
   }
 }
 
-// load: read a file and parse it.
+// parse_or_fail: the value, or print the error and abort the process —
+// go.blog's fail-fast contract (a broken index.json should abort the
+// build, not silently produce empty pages).
+pub fn parse_or_fail(text) {
+  let r = try_parse(text)
+  if car(r) == 'ok {
+    car(cdr(r))
+  } else {
+    print(str.concat("json parse error: ", car(cdr(r))))
+    1 / 0
+  }
+}
+
+// load: read a file and parse it (parse_or_fail semantics, with the path
+// in the message); a missing/unreadable file also aborts.
 pub fn load(path) {
   let s = file.read(path)
   if null?(s) {
     print(str.concat("json.load: cannot read ", path))
     1 / 0
   } else {
-    parse(s)
+    let r = try_parse(s)
+    if car(r) == 'ok {
+      car(cdr(r))
+    } else {
+      print(str.concat("json: ", str.concat(path, str.concat(": ", car(cdr(r))))))
+      1 / 0
+    }
   }
 }
 
-fn js_str_value(v) {
-  car(cdr(v))
+// try_load: ('ok value) | ('err message) — the non-crashing variant.
+pub fn try_load(path) {
+  let s = file.read(path)
+  if null?(s) {
+    cons('err, cons(str.concat("cannot read ", path), nil))
+  } else {
+    let r = try_parse(s)
+    if car(r) == 'ok {
+      r
+    } else {
+      cons('err, cons(str.concat(str.concat(path, ": "), car(cdr(r))), nil))
+    }
+  }
 }
 
+// ---------- public API: accessors (go.blog contract) ----------
+
 pub fn is_string(v) {
-  if pair?(v) && car(v) == 'JStr { true } else { false }
+  if pair?(v) { car(v) == 'JStr } else { false }
+}
+
+pub fn is_int(v) {
+  if pair?(v) { car(v) == 'JInt } else { false }
+}
+
+pub fn is_float(v) {
+  if pair?(v) { car(v) == 'JFloat } else { false }
 }
 
 pub fn is_number(v) {
-  if pair?(v) && (car(v) == 'JInt || car(v) == 'JFloat) { true } else { false }
+  or(is_int(v), is_float(v))
 }
 
 pub fn is_bool(v) {
-  if pair?(v) && car(v) == 'JBool { true } else { false }
+  if pair?(v) { car(v) == 'JBool } else { false }
 }
 
 pub fn is_null(v) {
-  v == 'JNull
+  v == JNull
 }
 
 pub fn is_array(v) {
-  if pair?(v) && car(v) == 'JArr { true } else { false }
+  if pair?(v) { car(v) == 'JArr } else { false }
 }
 
 pub fn is_object(v) {
-  if pair?(v) && car(v) == 'JObj { true } else { false }
+  if pair?(v) { car(v) == 'JObj } else { false }
 }
 
 // kind: symbol describing the value ('string/'number/'bool/'null/
@@ -513,20 +829,16 @@ pub fn string_value(v) {
 }
 
 pub fn int_value(v) {
-  if pair?(v) && car(v) == 'JInt { car(cdr(v)) } else { nil }
+  if is_int(v) { car(cdr(v)) } else { nil }
 }
 
 pub fn float_value(v) {
-  if pair?(v) && car(v) == 'JFloat { car(cdr(v)) } else { nil }
+  if is_float(v) { car(cdr(v)) } else { nil }
 }
 
 // number_value: int for JInt, float for JFloat.
 pub fn number_value(v) {
-  if pair?(v) && (car(v) == 'JInt || car(v) == 'JFloat) {
-    car(cdr(v))
-  } else {
-    nil
-  }
+  if is_number(v) { car(cdr(v)) } else { nil }
 }
 
 pub fn bool_value(v) {
@@ -535,7 +847,7 @@ pub fn bool_value(v) {
 
 pub fn array_size(v) {
   if is_array(v) {
-    js_len(car(cdr(v)))
+    list_length(car(cdr(v)), 0)
   } else {
     0
   }
@@ -544,7 +856,7 @@ pub fn array_size(v) {
 // array_get: 0-based element access; out-of-range returns nil.
 pub fn array_get(v, i) {
   if is_array(v) {
-    js_nth(car(cdr(v)), i)
+    list_nth(car(cdr(v)), i)
   } else {
     nil
   }
@@ -555,23 +867,27 @@ pub fn array_items(v) {
 }
 
 // object_get: field value, or nil when missing or not an object.
+// Duplicate keys: the LAST occurrence wins.
 pub fn object_get(v, key) {
   if is_object(v) {
-    js_field(car(cdr(v)), key)
+    field_last(car(cdr(v)), key, nil)
   } else {
     nil
   }
 }
 
-fn js_field(fields, key) {
+// scan all fields, remembering the LAST match (last-wins semantics).
+// fields are ((JStr key) . value); the key is unwrapped before str.eq.
+fn field_last(fields, key, best) {
   if null?(fields) {
-    nil
+    best
   } else {
     let f = car(fields)
-    if car(f) == key {
-      cdr(f)
+    let k = car(f)
+    if and(is_string(k), str.eq(car(cdr(k)), key)) {
+      field_last(cdr(fields), key, cdr(f))
     } else {
-      js_field(cdr(fields), key)
+      field_last(cdr(fields), key, best)
     }
   }
 }
