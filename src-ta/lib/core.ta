@@ -50,7 +50,7 @@ import md
 import template
 import list
 
-// ---- small local list helpers (self-contained, like template.ta) ----
+// ---- small local list construction helpers ----
 
 fn co_l1(x) {
   cons(x, nil)
@@ -62,38 +62,6 @@ fn co_l2(x, y) {
 
 fn co_l3(x, y, z) {
   cons(x, cons(y, cons(z, nil)))
-}
-
-// co_foldl: left fold over a list, f(acc, item) — cora's foldl order.
-fn co_foldl(f, acc, lst) {
-  if null?(lst) {
-    acc
-  } else {
-    co_foldl(f, f(acc, car(lst)), cdr(lst))
-  }
-}
-
-// co_map: order-preserving map.
-fn co_map(f, lst) {
-  if null?(lst) {
-    nil
-  } else {
-    cons(f(car(lst)), co_map(f, cdr(lst)))
-  }
-}
-
-// co_append: new list a ++ b.
-fn co_append(a, b) {
-  if null?(a) {
-    b
-  } else {
-    cons(car(a), co_append(cdr(a), b))
-  }
-}
-
-// co_reverse: new list with elements reversed.
-fn co_reverse(lst) {
-  co_foldl(fn(acc, x) { cons(x, acc) }, nil, lst)
 }
 
 // co_die: print msg and crash the process (1 / 0). The blog-gen-ta wrapper
@@ -139,7 +107,7 @@ fn co_index_collect(data, i, n, acc) {
 // build_category: assoc every item onto its (non-empty string) Category;
 // entry = [name item...]. Items with a missing/null Category are skipped.
 pub fn build_category(index) {
-  co_foldl(fn(acc, item) {
+  list.foldl(fn(acc, item) {
     let category = json.object_get(item, "Category")
     if json.is_string(category) {
       let cv = json.string_value(category)
@@ -156,8 +124,8 @@ pub fn build_category(index) {
 
 // build_tags: assoc every item onto each of its string tags.
 pub fn build_tags(index) {
-  co_foldl(fn(acc, item) {
-    co_foldl(fn(init, tag) {
+  list.foldl(fn(acc, item) {
+    list.foldl(fn(init, tag) {
       co_assoc(tag, item, init)
     }, acc, get_tags_from_item(item))
   }, nil, index)
@@ -211,8 +179,8 @@ fn co_item_date10(item) {
 // container0: container with the site-wide sidebar — category names then
 // tag names, in build order (cora's (map car CATEGORY)/(map car TAGS)).
 fn container0(category, tags, content) {
-  template.container(content, co_map(fn(e) { car(e) }, category),
-  co_map(fn(e) { car(e) }, tags))
+  template.container(content, list.map(fn(e) { car(e) }, category),
+  list.map(fn(e) { car(e) }, tags))
 }
 
 // static_page: the About/Project/Home pages — one #content div whose
@@ -262,7 +230,7 @@ fn blog_item(acc, item) {
 // summary page (cora blog-handler).
 pub fn blog_page(category, tags, title, indices) {
   template.page(title, container0(category, tags,
-  co_foldl(fn(acc, item) { blog_item(acc, item) }, nil, indices)))
+  list.foldl(fn(acc, item) { blog_item(acc, item) }, nil, indices)))
 }
 
 // ---- atom feed ----
@@ -302,12 +270,12 @@ fn co_l8(x, y, z, w, v, u, t, s) {
 // atom_feed: the whole <feed> node — fixed head (through <author>), then
 // the 10 most recent entries spliced in (cora atom-handler).
 pub fn atom_feed(index) {
-  let recent = co_reverse(index)
+  let recent = list.reverse(index)
   let updated_date = get_string_from_item(car(recent), "Date")
-  let entries = co_map(fn(item) { atom_entry(item) }, list.take(10, recent))
+  let entries = list.map(fn(item) { atom_entry(item) }, list.take(10, recent))
   let url = str.concat(co_site_url(), "/")
   html.elem("feed", co_l1(html.attr("xmlns", "http://www.w3.org/2005/Atom")),
-  co_append(co_l8(
+  list.append(co_l8(
   html.elem("title", nil, co_l1(html.text("Arthur 的博客"))),
   html.elem("subtitle", nil, co_l1(html.text("伟大的野心家，实践家"))),
   html.elem("updated", nil, co_l1(html.text(updated_date))),
@@ -410,8 +378,8 @@ pub fn generate_file(root, index, category, tags, filename) {
     print(str.concat("Generating: ", filename))
     write_post(root, category, tags, car(cdr(res)))
     write_index_page(root, category, tags, index)
-            co_map(fn(data) { write_category(root, category, tags, data) }, category)
-    co_map(fn(data) { write_tags(root, category, tags, data) }, tags)
+            list.map(fn(data) { write_category(root, category, tags, data) }, category)
+    list.map(fn(data) { write_tags(root, category, tags, data) }, tags)
     write_atom(root, index)
     nil
   } else {
@@ -421,13 +389,13 @@ pub fn generate_file(root, index, category, tags, filename) {
 
 // generate: the full site into root (cora generate).
 pub fn generate(root, index, category, tags) {
-  co_map(fn(item) { write_post(root, category, tags, item) }, index)
+  list.map(fn(item) { write_post(root, category, tags, item) }, index)
   write_about(root, category, tags)
   write_project(root, category, tags)
   write_home(root, category, tags)
   write_index_page(root, category, tags, index)
-  co_map(fn(data) { write_category(root, category, tags, data) }, category)
-  co_map(fn(data) { write_tags(root, category, tags, data) }, tags)
+  list.map(fn(data) { write_category(root, category, tags, data) }, category)
+  list.map(fn(data) { write_tags(root, category, tags, data) }, tags)
   write_atom(root, index)
   nil
 }
