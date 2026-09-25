@@ -1,5 +1,12 @@
 [
     {
+    "Title": "tinyactor 是如何处理 GC 与 C API 交互的",
+    "Date": "2026-09-25T22:22:42Z",
+    "Category": "编程语言",
+    "Tags": ["GC","tinyactor"],
+    "File": "tinyactor-gc.md"
+    },
+    {
     "Title": "本地 AI 体验",
     "Date": "2026-08-16T09:42:42Z",
     "Category": "AI",
