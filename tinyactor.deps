@@ -1,8 +1,18 @@
 # go.blog 的依赖（tinyactor 新模块契约，docs/modules.md §10）。
-# `tinyactor vendor` 读这份文件生成 vendor/（生成物，不进 git）。
-#   树名        来源             说明
-#   go.blog     .                项目自己（自指）—— src-ta/lib 下的模块挂这棵树
-#   tinyactor   ../tinyactor     工具链标准库（直接指 checkout，不派生）
+# `tinyactor vendor` 读这份文件生成 vendor/（生成物，不进 git）；
+# git+ 来源的解析结果钉在 tinyactor.lock（入 git）。
+#   树名        来源                                       版本
+#   go.blog     .                                          项目自己（自指）—— src-ta/lib 下的模块挂这棵树
+#   tinyactor   git+https://github.com/tiancaiamao/tinyactor  7270e7c04c9bf067bd3c53730ae718a748f2798e
+#
+# tinyactor 钉死到 40-hex sha，而不是指本地 checkout：工具链升级变成显式动作
+# （`tinyactor vendor --update`），分支推进不自动跟，两台机器 vendor 出逐字节相同
+# 的标准库。这也挡掉了「HEAD 一动、md4c.dylib 的 ABI 和 stdlib 表示法同时过期」
+# 那种只在运行时崩的失败。
+#
+# 改 tinyactor 同时想在 go.blog 里立刻生效时，把来源换成
+# `git+file:///Users/genius/project/tinyactor <sha>`（或本地目录），验证完再推上去
+# 换成 https + 新 sha —— 别提交 file:// 来源。
 #
 # 这里曾经有一棵 deps/tinyactor 派生树（45 条逐文件软链 + md4c.ta），用来绕开
 # #433：external fn 声明侧是 verbatim C 全名，引用侧却按目标单元的前缀 mangle，
@@ -14,4 +24,4 @@
 # 树删了，md4c.ta 就留在 src-ta/lib/ 由 go.blog 树提供（`make -C src-ta sync`
 # 及它维护的软链农场一并删除）。
 go.blog	.
-tinyactor	../tinyactor
+tinyactor	git+https://github.com/tiancaiamao/tinyactor	7270e7c04c9bf067bd3c53730ae718a748f2798e
