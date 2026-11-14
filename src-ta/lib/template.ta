@@ -35,9 +35,11 @@
 //   - article's second div: `(div ,tag-links (ul (@ (class "pager"))))` —
 //     the pager ul is empty, so it renders `<ul class="pager" />`.
 
-import html
+import "tinyactor:lib/html"
+import "tinyactor:lib/list"
 
-// ---- small local list helpers (self-contained module, like html.ta) ----
+// ---- small local list constructors (list *literals*; list.map/append come
+// from tinyactor:lib/list) ----
 
 fn l1(x) {
   cons(x, nil)
@@ -59,25 +61,6 @@ fn l5(x, y, z, w, v) {
   cons(x, cons(y, cons(z, cons(w, cons(v, nil)))))
 }
 
-// tp_map: order-preserving map (tinyactor lib/list.map, kept local so the
-// module only imports html).
-fn tp_map(f, lst) {
-  if null?(lst) {
-    nil
-  } else {
-    cons(f(car(lst)), tp_map(f, cdr(lst)))
-  }
-}
-
-// tp_append: new list a ++ b.
-fn tp_append(a, b) {
-  if null?(a) {
-    b
-  } else {
-    cons(car(a), tp_append(cdr(a), b))
-  }
-}
-
 // tp_tag_link: the tag pill anchor shared by sidebar and article —
 // cora: `(a (@ (href ,(string-append "/tags/" x)) (class "btn btn-info btn-xs")) ,x)`
 fn tp_tag_link(name) {
@@ -94,17 +77,17 @@ fn tp_tag_link(name) {
 // flattens a list child, append produces the same bytes).
 pub fn sidebar(category, tags) {
   html.elem("div", l1(html.attr("class", "well sidebar-nav")),
-  tp_append(l3(html.elem("h2", l1(html.attr("id", "nav-pills")),
+  list.append(l3(html.elem("h2", l1(html.attr("id", "nav-pills")),
   l1(html.text("Category"))),
   html.elem("ul", l1(html.attr("class", "nav nav-pills nav-stacked")),
-  tp_map(fn(name) {
+  list.map(fn(name) {
     html.elem("li", nil,
     l1(html.elem("a", l1(html.attr("href", str.concat("/category/", name))),
     l1(html.text(name)))))
   }, category)),
   html.elem("h2", l1(html.attr("id", "nav-pills")),
   l1(html.text("Tags")))),
-  tp_map(fn(name) {
+  list.map(fn(name) {
     tp_tag_link(name)
   }, tags)))
 }
@@ -159,7 +142,7 @@ pub fn container(content, category, tags) {
   html.elem("div", l1(html.attr("class", "container")),
   l1(html.elem("div",
   l1(html.attr("class", "row row-offcanvas row-offcanvas-right")),
-  tp_append(l1(html.elem("div", l1(html.attr("class", "col-sm-9")), content)),
+  list.append(l1(html.elem("div", l1(html.attr("class", "col-sm-9")), content)),
   l1(html.elem("div",
   l3(html.attr("class", "col-sm-3"),
   html.attr("id", "sidebar"),
@@ -227,12 +210,12 @@ fn tp_footer() {
 // the content div after the date paragraph.
 pub fn article(title, date, content, tags, prev, next, permlink) {
   l2(html.elem("div", l1(html.attr("id", "content")),
-  tp_append(l2(html.elem("h1", l1(html.attr("id", "Title")),
+  list.append(l2(html.elem("h1", l1(html.attr("id", "Title")),
   l1(html.text(title))),
   html.elem("p", nil, l1(html.text(date)))),
   content)),
   html.elem("div", nil,
-  tp_append(tp_map(fn(name) {
+  list.append(list.map(fn(name) {
     tp_tag_link(name)
   }, tags),
   l1(html.elem("ul", l1(html.attr("class", "pager")), nil)))))

@@ -27,18 +27,18 @@
 // message and crashes the process. Run from the go.blog repo root:
 //   tinyactor run src-ta/test/core_test.ta
 
-import core
+import "go.blog:src-ta/lib/core"
 
 fn fail(msg) -> string {
   print(str.concat("CORE TEST FAIL: ", msg))
   str.from_int(1 / 0)
 }
 
-fn len(lst) {
+fn count(lst) {
   if null?(lst) {
     0
   } else {
-    1 + len(cdr(lst))
+    1 + count(cdr(lst))
   }
 }
 
@@ -153,24 +153,24 @@ fn assert_modulo_stale_sidebar(gen_path, base_path, sb, msg) {
   }
 }
 
-fn root() {
+fn scratch_dir() {
   "./.coretest/"
 }
 
 fn main() {
   // ---- build the site model ----
   let index = core.parse_index_file("./content/index.json")
-  if len(index) == 358 {
-    print("ok index has 358 items")
+    if count(index) == 360 {
+    print("ok index has 360 items")
   } else {
-    print(str.concat("  index size: ", str.from_int(len(index))))
+    print(str.concat("  index size: ", str.from_int(count(index))))
     fail("index item count")
     nil
   }
   let category = core.build_category(index)
   let tags = core.build_tags(index)
-  print(str.concat("ok categories: ", str.from_int(len(category))))
-  print(str.concat("ok tags: ", str.from_int(len(tags))))
+  print(str.concat("ok categories: ", str.from_int(count(category))))
+  print(str.concat("ok tags: ", str.from_int(count(tags))))
 
   // ---- data-edge unit checks (item with no Category / Tags null) ----
   let gitbbs = car(cdr(core.find_item_by_file("gitbbs.md", index)))
@@ -200,52 +200,52 @@ fn main() {
     nil
   }
   let ai_items = cdr(find_entry(category, "AI"))
-  print(str.concat("ok category AI items: ", str.from_int(len(ai_items))))
+  print(str.concat("ok category AI items: ", str.from_int(count(ai_items))))
 
   // ---- 1. index page (full listing + full sidebar), cora 22:22 run ----
-  core.write_index_page(root(), category, tags, index)
+  core.write_index_page(scratch_dir(), category, tags, index)
   assert_file_eq("./.coretest/index.html", "./generate/index.html",
   "index.html byte-identical to cora output")
   let sb_fresh = fresh_sidebar_well(read_or_fail("./.coretest/index.html"))
 
   // ---- 2. post page (tags + md body), same 22:22 cora run ----
-  core.write_post(root(), category, tags,
+  core.write_post(scratch_dir(), category, tags,
   car(cdr(core.find_item_by_file("an-ai-debug-story.md", index))))
   assert_file_eq("./.coretest/an-ai-debug-story.md/index.html",
   "./generate/an-ai-debug-story.md/index.html",
   "post page byte-identical to cora output")
 
   // ---- 2b. post page edge (Tags null, Category ""): stale baseline ----
-  core.write_post(root(), category, tags, gitbbs)
+  core.write_post(scratch_dir(), category, tags, gitbbs)
   assert_modulo_stale_sidebar("./.coretest/gitbbs.md/index.html",
   "./generate/gitbbs.md/index.html", sb_fresh,
   "post page (no tags) identical to cora output modulo stale sidebar")
 
   // ---- 3. category summary page, cora 22:22 run ----
-  core.write_category(root(), category, tags, find_entry(category, "AI"))
+  core.write_category(scratch_dir(), category, tags, find_entry(category, "AI"))
   assert_file_eq("./.coretest/category/AI/index.html",
   "./generate/category/AI/index.html",
   "category page byte-identical to cora output")
 
   // ---- 4. tags summary page, cora 22:22 run ----
-  core.write_tags(root(), category, tags, find_entry(tags, "raft"))
+  core.write_tags(scratch_dir(), category, tags, find_entry(tags, "raft"))
   assert_file_eq("./.coretest/tags/raft/index.html",
   "./generate/tags/raft/index.html",
   "tags page byte-identical to cora output")
 
   // ---- 5. static template page: stale baseline ----
-  core.write_about(root(), category, tags)
+  core.write_about(scratch_dir(), category, tags)
   assert_modulo_stale_sidebar("./.coretest/about.html",
   "./generate/about.html", sb_fresh,
   "about.html identical to cora output modulo stale sidebar")
 
   // ---- 6. atom feed (10 full entries), cora 22:22 run ----
-  core.write_atom(root(), index)
+  core.write_atom(scratch_dir(), index)
   assert_file_eq("./.coretest/feed.atom", "./generate/feed.atom",
   "feed.atom byte-identical to cora output")
 
   // ---- 7. single-post entry point regenerates the same bytes ----
-  core.generate_file(root(), index, category, tags, "an-ai-debug-story.md")
+  core.generate_file(scratch_dir(), index, category, tags, "an-ai-debug-story.md")
   assert_file_eq("./.coretest/index.html", "./generate/index.html",
   "generate_file refreshes index.html identically")
   assert_file_eq("./.coretest/an-ai-debug-story.md/index.html",
@@ -261,7 +261,7 @@ fn main() {
   "generate_file refreshes feed.atom identically")
 
   // ---- 8. take-n bounds (feed is 10 of 358) ----
-  if len(index) > 10 {
+  if count(index) > 10 {
     print("ok index large enough for the 10-entry feed")
     nil
   } else {

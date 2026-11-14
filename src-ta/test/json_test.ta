@@ -3,21 +3,22 @@
 // Asserts pass silently; a failed assertion prints a message and crashes
 // the process (1 / 0) so the runner exits non-zero. All passing → exit 0.
 //
-// Covered: real content/index.json (root array, first 3 items' fields:
+// Covered: real content/index.json (root array, first 4 items' fields:
 // Title/Date/Category/Tags/File) + edge cases (empty array, empty object,
 // nesting, escape sequences incl. \uXXXX and surrogate pairs, int/float
 // numbers, booleans, null, missing keys, duplicate keys, malformed input).
 //
-// Migrated to the mpc-based json lib (vendored from tinyactor):
+// Now resolves from the tinyactor standard library (lib/mpc.ta + lib/json.ta
+// are no longer vendored in go.blog):
 //   - consumer API unchanged (load/array_size/array_get/object_get/
 //     is_string/string_value/is_array/... all keep the go.blog contract)
-//   - json.parse now returns nil on error (try_parse carries the
-//     formatted error); malformed numbers are REJECTED, not silently
+//   - json.parse returns nil on error (try_parse returns a Result; use
+//     match, not car()); malformed numbers are REJECTED, not silently
 //     accepted — asserted below via parse/try_parse on "1e"/"01"
 //   - duplicate object keys are last-wins (jansson-style)
 //   - \uD83D\uDE00 surrogate pairs merge into one codepoint
 
-import json
+import "tinyactor:lib/json"
 
 fn fail(msg) {
   print(str.concat("JSON TEST FAIL: ", msg))
@@ -56,65 +57,76 @@ fn main() {
   // ---- real content/index.json ----
   let data = json.load("content/index.json")
   assert_true(json.is_array(data), "index.json root should be an array")
-  assert_int_eq(json.array_size(data), 358, "index.json should have 358 items")
+  assert_int_eq(json.array_size(data), 360, "index.json should have 360 items")
 
-  // item 0
+  // item 0 (newest post: no Category key)
   let it0 = json.array_get(data, 0)
   assert_true(json.is_object(it0), "item 0 should be an object")
   assert_str_eq(json.string_value(json.object_get(it0, "Title")),
-  "本地 AI 体验", "item0 Title")
+  "tinyactor 来碰瓷 Go 啦！关于性能的误区", "item0 Title")
   assert_str_eq(json.string_value(json.object_get(it0, "Date")),
-  "2026-08-16T09:42:42Z", "item0 Date")
-  assert_str_eq(json.string_value(json.object_get(it0, "Category")),
-  "AI", "item0 Category")
+  "2026-11-14T16:38:42Z", "item0 Date")
   assert_str_eq(json.string_value(json.object_get(it0, "File")),
-  "7900xtx-local-ai.md", "item0 File")
+  "tinyactor-vs-go-performance.md", "item0 File")
+  assert_true(json.object_get(it0, "Category") == nil, "item0 Category missing")
   let tags0 = json.object_get(it0, "Tags")
   assert_true(json.is_array(tags0), "item0 Tags is array")
-  assert_int_eq(json.array_size(tags0), 3, "item0 Tags size")
-  assert_str_eq(json.string_value(json.array_get(tags0, 0)), "AI", "item0 tag0")
-  assert_str_eq(json.string_value(json.array_get(tags0, 1)), "7900xtx", "item0 tag1")
-  assert_str_eq(json.string_value(json.array_get(tags0, 2)), "local AI", "item0 tag2")
+  assert_int_eq(json.array_size(tags0), 1, "item0 Tags size")
+  assert_str_eq(json.string_value(json.array_get(tags0, 0)), "tinyactor", "item0 tag0")
   assert_true(json.object_get(it0, "NoSuchField") == nil, "missing key returns nil")
 
   // item 1
   let it1 = json.array_get(data, 1)
   assert_str_eq(json.string_value(json.object_get(it1, "Title")),
-  "最近两个 AI 没搞定的 case 分析", "item1 Title")
+  "tinyactor 是如何处理 GC 与 C API 交互的", "item1 Title")
   assert_str_eq(json.string_value(json.object_get(it1, "Date")),
-  "2026-07-21T18:16:42Z", "item1 Date")
+  "2026-09-25T22:22:42Z", "item1 Date")
+  assert_str_eq(json.string_value(json.object_get(it1, "Category")),
+  "编程语言", "item1 Category")
   assert_str_eq(json.string_value(json.object_get(it1, "File")),
-  "two-ai-failure-case-analysis.md", "item1 File")
-  assert_int_eq(json.array_size(json.object_get(it1, "Tags")), 1, "item1 Tags size")
+  "tinyactor-gc.md", "item1 File")
+  assert_int_eq(json.array_size(json.object_get(it1, "Tags")), 2, "item1 Tags size")
 
   // item 2
   let it2 = json.array_get(data, 2)
   assert_str_eq(json.string_value(json.object_get(it2, "Title")),
-  "使用 ai 编程大半年后的心态变化", "item2 Title")
+  "本地 AI 体验", "item2 Title")
   assert_str_eq(json.string_value(json.object_get(it2, "Date")),
-  "2026-06-26T22:18:42Z", "item2 Date")
+  "2026-08-16T09:42:42Z", "item2 Date")
   assert_str_eq(json.string_value(json.object_get(it2, "Category")),
   "AI", "item2 Category")
   assert_str_eq(json.string_value(json.object_get(it2, "File")),
-  "mindset-change-after-ai-for-half-year.md", "item2 File")
+  "7900xtx-local-ai.md", "item2 File")
+  assert_int_eq(json.array_size(json.object_get(it2, "Tags")), 3, "item2 Tags size")
 
-  // item 12 has no Category key — object_get must return nil, and the
+  // item 3
+  let it3 = json.array_get(data, 3)
+  assert_str_eq(json.string_value(json.object_get(it3, "Title")),
+  "最近两个 AI 没搞定的 case 分析", "item3 Title")
+  assert_str_eq(json.string_value(json.object_get(it3, "Date")),
+  "2026-07-21T18:16:42Z", "item3 Date")
+  assert_str_eq(json.string_value(json.object_get(it3, "Category")),
+  "AI", "item3 Category")
+  assert_str_eq(json.string_value(json.object_get(it3, "File")),
+  "two-ai-failure-case-analysis.md", "item3 File")
+
+  // item 14 has no Category key — object_get must return nil, and the
   // other fields must still parse
-  let it12 = json.array_get(data, 12)
-  assert_true(json.object_get(it12, "Category") == nil, "item12 Category missing")
-  assert_str_eq(json.string_value(json.object_get(it12, "Title")),
-  "自己实现一个 coding agent 学到的", "item12 Title")
-  assert_str_eq(json.string_value(json.object_get(it12, "File")),
-  "what-i-learn-from-writing-coding-agent.md", "item12 File")
-  assert_true(json.is_array(json.object_get(it12, "Tags")), "item12 Tags array")
+  let it14 = json.array_get(data, 14)
+  assert_true(json.object_get(it14, "Category") == nil, "item14 Category missing")
+  assert_str_eq(json.string_value(json.object_get(it14, "Title")),
+  "自己实现一个 coding agent 学到的", "item14 Title")
+  assert_str_eq(json.string_value(json.object_get(it14, "File")),
+  "what-i-learn-from-writing-coding-agent.md", "item14 File")
+  assert_true(json.is_array(json.object_get(it14, "Tags")), "item14 Tags array")
 
-  // item 193 has Tags: null — must come back as JNull, not an array
-  let it193 = json.array_get(data, 193)
-  assert_true(json.is_null(json.object_get(it193, "Tags")), "item193 Tags null")
-  assert_str_eq(json.string_value(json.object_get(it193, "Title")),
-  "又搞了一次事故", "item193 Title")
-  assert_str_eq(json.string_value(json.object_get(it193, "File")),
-  "another-accident.md", "item193 File")
+  // item 195 has Tags: null — must come back as JNull, not an array
+  let it195 = json.array_get(data, 195)
+  assert_true(json.is_null(json.object_get(it195, "Tags")), "item195 Tags null")
+  assert_str_eq(json.string_value(json.object_get(it195, "Title")),
+  "又搞了一次事故", "item195 Title")
+  assert_str_eq(json.string_value(json.object_get(it195, "File")),
+  "another-accident.md", "item195 File")
 
   // ---- edge cases ----
   // empty array
@@ -133,7 +145,7 @@ fn main() {
   let na = json.object_get(nested, "a")
   assert_true(json.is_array(na), "nested a is array")
   assert_int_eq(json.array_size(na), 2, "nested a size")
-  assert_true(json.array_get(na, 1), "nested a[1] exists")
+    assert_true(json.array_get(na, 1) != nil, "nested a[1] exists")
   let nb = json.object_get(json.array_get(na, 1), "b")
   assert_str_eq(json.string_value(nb), "x", "nested a[1].b")
   assert_true(json.bool_value(json.object_get(nested, "c")) == true, "nested c")
@@ -168,9 +180,9 @@ fn main() {
   // generate level by injecting a bad index.json).
   assert_true(json.parse("[1e]") == nil, "1e rejected by parse")
   assert_true(json.parse("[01]") == nil, "01 rejected by parse")
-  let r1e = json.try_parse("[1e]")
-  assert_true(car(r1e) == 'err, "1e try_parse is err")
-    assert_true(car(json.try_parse("[01]")) == 'err, "01 try_parse is err")
+    let r1e = json.try_parse("[1e]")
+  assert_true(match r1e { Err(_) -> true, Ok(_) -> false }, "1e try_parse is err")
+  assert_true(match json.try_parse("[01]") { Err(_) -> true, Ok(_) -> false }, "01 try_parse is err")
 
   // duplicate object keys: LAST value wins (jansson-style), not the old
   // first-wins

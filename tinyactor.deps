@@ -1,0 +1,17 @@
+# go.blog 的依赖（tinyactor 新模块契约，docs/modules.md §10）。
+# `tinyactor vendor` 读这份文件生成 vendor/（生成物，不进 git）。
+#   树名        来源             说明
+#   go.blog     .                项目自己（自指）—— src-ta/lib 下的模块挂这棵树
+#   tinyactor   ../tinyactor     工具链标准库（直接指 checkout，不派生）
+#
+# 这里曾经有一棵 deps/tinyactor 派生树（45 条逐文件软链 + md4c.ta），用来绕开
+# #433：external fn 声明侧是 verbatim C 全名，引用侧却按目标单元的前缀 mangle，
+# 只有 SELF_IDENTITY（"tinyactor"）树的 lib/ 前缀恰好不被 mangle —— 于是别人的
+# C 模块为了能编过，只能把声明文件塞进工具链树名之下。
+#
+# #433 修好后 driver.ta 在装载完成后跑 ext_refs_seq：按各单元的 external 声明表
+# 把 <mangle 前缀>.<成员> 改回 verbatim 全名，树名不再有任何特殊要求。所以派生
+# 树删了，md4c.ta 就留在 src-ta/lib/ 由 go.blog 树提供（`make -C src-ta sync`
+# 及它维护的软链农场一并删除）。
+go.blog	.
+tinyactor	../tinyactor

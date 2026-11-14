@@ -44,11 +44,11 @@
 //   - atom: recent = reverse(INDEX) = array order; updated = the Date of
 //     its first (newest) item; entries = the first 10 items of that list
 
-import html
-import json
-import md
-import template
-import list
+import "tinyactor:lib/html"
+import "tinyactor:lib/json"
+import "go.blog:src-ta/lib/md"
+import "go.blog:src-ta/lib/template"
+import "tinyactor:lib/list"
 
 // ---- small local list construction helpers ----
 
