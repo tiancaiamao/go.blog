@@ -54,7 +54,28 @@
 //           close uses a plain cons (byte-identical, and avoids the O(n^2)
 //           per-leave reversal).
 
-import html
+import "tinyactor:lib/html"
+// md4c.events 的声明在同目录的 md4c.ta，就挂在 go.blog 这棵树上。external fn
+// 的声明侧是 verbatim C 全名、引用侧默认会被 mangle，但 driver.ta 的
+// ext_refs_seq（#433）按各单元的 external 表把引用改回全名，所以声明文件放在
+// 哪棵树都行，不需要工具链树名。
+import "go.blog:src-ta/lib/md4c"
+
+// md_rev: reverse a node list (the fold accumulates in reverse order).
+//
+// Deliberately local: `list.reverse` (tinyactor:lib/list) is polymorphic and
+// this module is untyped — the accumulator seeded by md_enter's plain `nil`
+// makes the instantiation fail typecheck with
+//   [E0001] in function 'md_build': cannot unify List('a) with Node
+// (no annotation on md_build/body fixes it either). A 6-line monomorphic
+// recursion sidesteps it; delete this the day the inference handles it.
+fn md_rev(lst, acc) {
+  if null?(lst) {
+    acc
+  } else {
+    md_rev(cdr(lst), cons(car(lst), acc))
+  }
+}
 
 // ---- close-time element builders (cora's special cases) ----
 
@@ -154,15 +175,6 @@ fn md_a_node(href_title, body) {
     cons(html.attr("href", href), cons(html.attr("title", title), nil))
   }
   html.elem("a", attrs, body)
-}
-
-// md_rev: reverse a node list (the fold accumulates in reverse order).
-fn md_rev(lst, acc) {
-  if null?(lst) {
-    acc
-  } else {
-    md_rev(cdr(lst), cons(car(lst), acc))
-  }
 }
 
 // md_build: (tag . info) + REVERSED body -> node. info is the open-time

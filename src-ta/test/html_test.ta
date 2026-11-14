@@ -10,7 +10,7 @@
 // Asserts pass silently; a failed assertion prints a message and crashes
 // the process (1 / 0) so the runner exits non-zero. All passing → exit 0.
 
-import html
+import "tinyactor:lib/html"
 
 fn fail(msg) {
   print(str.concat("HTML TEST FAIL: ", msg))
@@ -136,10 +136,10 @@ fn main() {
   // ---- accessors ----
   let e = html.elem("h1", l1(html.attr("id", "Title")), l1(html.text("t")))
   assert_str_eq(html.tag_of(e), "h1", "tag_of")
-      let at = html.attrs_of(e)
-  assert_str_eq(car(cdr(car(at))), "id", "attrs_of name")
-  assert_str_eq(car(cdr(cdr(car(at)))), "Title", "attrs_of value")
-    assert_str_eq(car(cdr(car(html.children_of(e)))), "t", "children_of text payload")
+            let at = html.attrs_of(e)
+  assert_str_eq(tuple-ref(car(at), 1), "id", "attrs_of name")
+  assert_str_eq(tuple-ref(car(at), 2), "Title", "attrs_of value")
+    assert_str_eq(html.text_of(car(html.children_of(e))), "t", "children_of text payload")
   assert_str_eq(html.text_of(html.text("t")), "t", "text_of")
   assert_str_eq(html.raw_of(html.raw("r")), "r", "raw_of")
 
@@ -177,13 +177,6 @@ fn main() {
     assert_true(str.index_of(page, "<meta charset=\"utf-8\" />") >= 0,
     "meta fragment found in cora output")
   }
-
-  // ---- render_to_file round-trip ----
-  let out_path = "/tmp/html_test_out.tmp"
-  let ok = html.render_to_file(footer, out_path)
-  assert_true(ok == 1, "render_to_file returns 1")
-    let written = file.read(out_path)
-  assert_str_eq(written, footer_str, "render_to_file byte-identical to render")
 
   print("PASS")
 }

@@ -18,8 +18,8 @@
 // the project's failure convention, so the blog-gen-ta wrapper never
 // syncs static assets over a partially-created output tree.
 
-import core
-import fs
+import "go.blog:src-ta/lib/core"
+import "tinyactor:lib/fs"
 
 fn each(lst, f) {
   if null?(lst) {

@@ -1,0 +1,12 @@
+// md4c module — external C primitive signatures (lib/md4c.dylib).
+//
+// The md4c.* primitives live in a lazy C dylib (src-ta/md4c/glue.c built by
+// `make -C src-ta md4c` -> lib/md4c.dylib), not in tavm. The first `md4c.*`
+// reference triggers the runtime's lazy dlopen of lib/md4c.dylib
+// (cwd-relative lib/, docs/c-module.md). This file declares the primitive
+// signature so that importing it resolves the call at compile time.
+//
+// events returns a flat, document-ordered event list (grammar documented at
+// the top of md.ta); nil if the file cannot be read.
+
+external fn md4c.events(String) -> a

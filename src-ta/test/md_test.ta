@@ -27,8 +27,8 @@
 // crashes the process (1 / 0) so the runner exits non-zero.
 // Run from the go.blog repo root:  tinyactor run src-ta/test/md_test.ta
 
-import md
-import html
+import "go.blog:src-ta/lib/md"
+import "tinyactor:lib/html"
 
 fn fail(msg) {
   print(str.concat("MD TEST FAIL: ", msg))

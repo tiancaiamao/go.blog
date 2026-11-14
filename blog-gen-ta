@@ -54,6 +54,23 @@ EOF
 # gen.ta creates every output directory itself (file.mkdir_p) before the
 # generator writes, so the wrapper invokes tinyactor exactly once and only
 # syncs static assets after that single run succeeds.
+#
+# md4c is a C module compiled against the toolchain's ta.h (src-ta/Makefile).
+# After a tinyactor upgrade the prebuilt lib/md4c.dylib can reference VM
+# symbols the new tavm no longer exports, and the lazy dlopen fails mid-run
+# ("cannot load C module 'md4c'"). The make rule is dependency-checked, so
+# this is a no-op unless ta.h/glue.c/md4c source changed.
+build_md4c() {
+    local ext=dylib root
+    [ "$(uname -s)" = "Darwin" ] || ext=so
+    # Build against the headers of the toolchain that will load the module
+    # (the TINYACTOR launcher's repo root). Fall back to the Makefile's
+    # default TA_ROOT when TINYACTOR points at a stub/substitute binary.
+    root="$(cd "$(dirname "$TINYACTOR")" && pwd)"
+    [ -f "$root/ta.h" ] || root=""
+    make -s -C "$SCRIPT_DIR/src-ta" "../lib/md4c.$ext" ${root:+TA_ROOT="$root"}
+}
+
 run_ta() {
     local cmd="$1"
     local arg="${2:-}"
@@ -73,6 +90,7 @@ sync_static() {
 # Main
 case "${1:-help}" in
     generate|all)
+        build_md4c
         run_ta generate
         sync_static
         ;;
@@ -82,6 +100,7 @@ case "${1:-help}" in
             echo "Usage: blog-gen-ta file <filename>"
             exit 1
         fi
+        build_md4c
         run_ta file "$(basename "$2")"
         sync_static
         ;;

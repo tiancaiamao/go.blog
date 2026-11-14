@@ -19,9 +19,9 @@
  * TD emit nothing (cora's enter switch has no th/td case either, and no
  * blog post contains a markdown table).
  *
- * GC discipline: the event accumulator `acc` and each in-flight payload
- * are rooted with gc_root_push while further allocations may run
- * (see ta.h GC_ROOTS_SCOPE docs, rule 2).
+  * GC discipline: none needed — a C module call is wrapped in the
+ * proc_gc_enter gate (no collection can run until it returns) and the
+ * actor arena never moves after first allocation (tinyactor issue #160).
  */
 
 #include "md4c.h"
@@ -45,27 +45,23 @@ static Val sym_text, sym_br;
 
 typedef struct {
     Proc *p;
-    int acc_slot; /* index into p->gc_roots of the parked accumulator */
+    Val acc; /* reversed event list accumulator */
 } md4c_state;
 
 /* Append one (sym . payload) event.
  *
- * GC semantics: gc_root_push stores a COPY of the Val; the copy is fixed up
- * in place when the (copying) GC runs; gc_root_pop returns that refreshed
- * copy. C locals / C-struct fields are NOT refreshed by GC — after any
- * allocation they may point into the moved heap, so the accumulator is
- * never kept in a C variable: it lives in the parked root slot
- * s->acc_slot for the whole parse, and every read of it goes through that
- * slot (which GC / proc_grow keep correct).
+ * GC semantics (tinyactor issue #160 gate model): a C module call is
+ * wrapped in proc_gc_enter — no collection can run while any of these
+ * callbacks execute, and the actor arena never moves after first
+ * allocation. So a plain C local / struct-field Val is valid across
+ * allocations and no rooting is needed (gc_root_push was removed from
+ * the VM API).
  *
  * val_pair roots car and cdr itself before its allocation, so a freshly
- * built `payload` and the slot-refreshed `ev` are safe to pass directly. */
+ * built `payload` is safe to pass directly. */
 static void md4c_event(md4c_state *s, Val sym, Val payload) {
-    Proc *p = s->p;
-    Val ev = val_pair(p, sym, payload); /* ev fresh; alloc rooted its args */
-    Val acc = p->gc_roots[s->acc_slot]; /* slot kept current by GC fixup */
-    Val head = val_pair(p, ev, acc);
-    p->gc_roots[s->acc_slot] = head; /* re-park the new head */
+    Val ev = val_pair(s->p, sym, payload); /* ev fresh; alloc rooted its args */
+    s->acc = val_pair(s->p, ev, s->acc);
 }
 
 static void md4c_event_nil(md4c_state *s, Val sym) { md4c_event(s, sym, val_nil()); }
@@ -232,15 +228,13 @@ static int enter_span(MD_SPANTYPE type, void *detail, void *userdata) {
         break;
     case MD_SPAN_A: {
         const MD_SPAN_A_DETAIL *det = (const MD_SPAN_A_DETAIL *)detail;
-        /* payload: (href . title); title is nil when absent. Park href in
-         * a root slot: building title allocates, which can move the heap
-         * and invalidate the href C local. */
+        /* payload: (href . title); title is nil when absent. Plain C
+         * locals are safe across allocations — no GC can run inside a
+         * C module call (issue #160 gate model). */
         Val href = md4c_attr_text(s, &det->href);
-        gc_root_push(s->p, href);
         Val title = val_nil();
         if (det->title.text != NULL)
             title = md4c_attr_text(s, &det->title);
-        href = gc_root_pop(s->p); /* refreshed after title's alloc */
         Val payload = val_pair(s->p, href, title);
         md4c_event(s, sym_s_a, payload);
         break;
@@ -349,7 +343,7 @@ static Val md4c_events(VM *vm, Val *args, int nargs) {
 
     md4c_state s;
     s.p = p;
-    s.acc_slot = -1;
+    s.acc = val_nil();
 
     static const unsigned parser_flags =
         MD_FLAG_STRIKETHROUGH | MD_FLAG_TASKLISTS; /* cora wrap.c flags */
@@ -357,41 +351,21 @@ static Val md4c_events(VM *vm, Val *args, int nargs) {
     MD_PARSER parser = {0,          parser_flags, enter_block, leave_block, enter_span,
                         leave_span, text_cb,      debug_log,   NULL};
 
-    /* Park the accumulator in a root slot for the whole parse. The slot
-     * (not a C variable) is the single source of truth for the current
-     * head: GC and proc_grow both fix up gc_roots in place, so it stays
-     * valid across every allocation the callbacks make. */
-    int saved_count = p->gc_root_count;
-    gc_root_push(p, val_nil());
-    s.acc_slot = p->gc_root_count - 1;
+    /* No rooting needed: no GC can run inside a C module call (the
+     * proc_gc_enter gate defers collection until after we return), and
+     * the arena never moves — the accumulator is safe in a C struct. */
     int ret = md_parse(buf, (MD_SIZE)got, &parser, &s);
-    Val acc = p->gc_roots[s.acc_slot];
-    p->gc_root_count = saved_count;
     free(buf);
     if (ret != 0)
         return val_nil();
 
-    /* Reverse the accumulator back to document order (event level only).
-     * Per iteration: park event, cell and in-flight result, allocate the
-     * new head, then pop all three (explicit, in push order) — never use
-     * a C-local Val across an allocation. */
-    /* The iterator itself must be parked: val_pair allocates and can run
-     * GC/proc_grow, which moves every heap object — a C-local `it` would
-     * go stale. Park it (and the in-flight result) each iteration. */
-    int saved2 = p->gc_root_count;
-    gc_root_push(p, acc);
-    gc_root_push(p, val_nil()); /* slot for the in-flight result */
-    int it_slot = p->gc_root_count - 2;
-    int res_slot = p->gc_root_count - 1;
-    while (!val_is_nil(p->gc_roots[it_slot])) {
-        Val cell = p->gc_roots[it_slot];
-        Val e = val_get_car(cell);
-        Val next = val_get_cdr(cell);
-        p->gc_roots[it_slot] = next;
-        p->gc_roots[res_slot] = val_pair(p, e, p->gc_roots[res_slot]);
+    /* Reverse the accumulator back to document order (event level only). */
+    Val rev = val_nil();
+    Val it = s.acc;
+    while (!val_is_nil(it)) {
+        rev = val_pair(p, val_get_car(it), rev);
+        it = val_get_cdr(it);
     }
-    Val rev = p->gc_roots[res_slot];
-    p->gc_root_count = saved2;
     return rev;
 }
 

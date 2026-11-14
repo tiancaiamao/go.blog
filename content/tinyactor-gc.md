@@ -1,5 +1,3 @@
-# tinyactor 是如何处理 GC 与 C API 交互的
-
 之前写过一篇[tiny-actor](/tiny-actor.md)，一个参考 Erlang/Gleam 的小的 actor 语言。
 最近为了它的 GC 和 C 模块交互的设计，前前后后跟 AI 讨论了很多轮，最后收敛到一个我自己觉得相当漂亮的设计。
 感觉值得记录一下。

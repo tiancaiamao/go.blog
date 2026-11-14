@@ -27,9 +27,9 @@
 // the process (1 / 0). Run from the go.blog repo root:
 //   tinyactor run src-ta/test/template_test.ta
 
-import html
-import md
-import template
+import "tinyactor:lib/html"
+import "go.blog:src-ta/lib/md"
+import "go.blog:src-ta/lib/template"
 
 // fail: print msg and crash; string-typed expression so callers can
 // annotate their return type (html.ta hd_die pattern — the VM aborts on
