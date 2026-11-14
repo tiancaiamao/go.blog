@@ -15,11 +15,15 @@ cd "$(dirname "$0")/../.."
 ROOT=.coretest
 if [ -n "${TINYACTOR:-}" ]; then
   TINYACTOR="$TINYACTOR"
+elif [ -x "$PWD/vendor/tinyactor/tinyactor" ]; then
+  TINYACTOR="$PWD/vendor/tinyactor/tinyactor"
+  [ -x "$PWD/vendor/tinyactor/tavm" ] || make -s -C "$PWD/vendor/tinyactor" >&2
 elif command -v tinyactor >/dev/null 2>&1; then
   TINYACTOR="$(command -v tinyactor)"
 else
   TINYACTOR="$PWD/../tinyactor/tinyactor"
 fi
+
 [ -x "$TINYACTOR" ] || { echo "CORE TEST FAIL: TinyActor CLI not found: $TINYACTOR" >&2; exit 1; }
 
 rm -rf "$ROOT"
