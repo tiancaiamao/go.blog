@@ -1,22 +1,20 @@
-/target
-/classes
-/checkouts
-profiles.clj
-pom.xml
-pom.xml.asc
-*.jar
-*.class
-/.lein-*
-/.nrepl-port
-.hgignore
-.hg/
-publish.sh
-.pge/
-tavm
-lib/bootstrap.tabc
-lib/json.ta
-lib/mpc.ta
-.ta-html-tmp
+# generated site output: a symlink to the published-site checkout
+# (../tiancaiamao.github.io), machine-specific, never committed
+/generate
+
+# vendored dependencies (tinyactor vendor) and their build products
 /vendor
+
+# build output
 /.build
 /lib/*.dylib
+/lib/*.so
+/src/*.so
+*.so.dSYM/
+
+# agent/planner state
+.pge/
+
+# OS/editor droppings
+.DS_Store
+*~

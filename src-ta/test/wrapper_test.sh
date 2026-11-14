@@ -29,11 +29,15 @@ ROOT="$PWD"
 BLOG_GEN_TA="${BLOG_GEN_TA:-$ROOT/blog-gen-ta}"
 if [ -n "${TINYACTOR:-}" ]; then
     TINYACTOR="$TINYACTOR"
+elif [ -x "$ROOT/vendor/tinyactor/tinyactor" ]; then
+    TINYACTOR="$ROOT/vendor/tinyactor/tinyactor"
+    [ -x "$ROOT/vendor/tinyactor/tavm" ] || make -s -C "$ROOT/vendor/tinyactor" >&2
 elif command -v tinyactor >/dev/null 2>&1; then
     TINYACTOR="$(command -v tinyactor)"
 else
     TINYACTOR="$ROOT/../tinyactor/tinyactor"
 fi
+
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
