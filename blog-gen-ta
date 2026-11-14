@@ -51,6 +51,23 @@ Environment Variables:
 EOF
 }
 
+# Fail loudly when vendor/tinyactor is not the toolchain pinned in
+# tinyactor.lock: a stale clone builds the site against a stdlib the lock
+# never named, which is the silent failure the pin exists to prevent.
+# Local-directory sources have no lock row, so they skip this (return 0).
+check_toolchain_pin() {
+    local lock="$SCRIPT_DIR/tinyactor.lock" vend="$SCRIPT_DIR/vendor/tinyactor" want got
+    [ -f "$lock" ] || return 0
+    [ -d "$vend" ] || return 0
+    want="$(awk -F'\t' '$1 == "tinyactor" { print $4 }' "$lock")"
+    [ -n "$want" ] || return 0
+    got="$(git -C "$vend" rev-parse HEAD 2>/dev/null || true)"
+    [ "$got" = "$want" ] && return 0
+    echo "Error: vendor/tinyactor is ${got:-not a git clone}, tinyactor.lock pins $want" >&2
+    echo "Run: tinyactor vendor" >&2
+    exit 1
+}
+
 # gen.ta creates every output directory itself (file.mkdir_p) before the
 # generator writes, so the wrapper invokes tinyactor exactly once and only
 # syncs static assets after that single run succeeds.
@@ -90,6 +107,7 @@ sync_static() {
 # Main
 case "${1:-help}" in
     generate|all)
+        check_toolchain_pin
         build_md4c
         run_ta generate
         sync_static
@@ -100,6 +118,7 @@ case "${1:-help}" in
             echo "Usage: blog-gen-ta file <filename>"
             exit 1
         fi
+        check_toolchain_pin
         build_md4c
         run_ta file "$(basename "$2")"
         sync_static
