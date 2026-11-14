@@ -148,15 +148,15 @@ fn main() {
   // strings byte-for-byte, and that they appear in the cora-generated page.
   let footer = html.elem("p", l1(html.attr("class", "nav navbar-nav navbar-right")),
   l4(html.text("Powered by "),
-  html.elem("a", l1(html.attr("href", "https://clojure.org/")),
-  l1(html.text("Clojure"))),
+  html.elem("a", l1(html.attr("href", "https://github.com/tiancaiamao/tinyactor")),
+  l1(html.text("TinyActor"))),
   html.text(" & "),
   html.elem("a", l1(html.attr("href", "//getbootstrap.com/")),
     l1(html.text("Bootstrap")))))
   let footer_str = html.render(footer)
   let footer_expected =
   str.concat("<p class=\"nav navbar-nav navbar-right\">Powered by ",
-  str.concat("<a href=\"https://clojure.org/\">Clojure</a> &amp; ",
+  str.concat("<a href=\"https://github.com/tiancaiamao/tinyactor\">TinyActor</a> &amp; ",
   "<a href=\"//getbootstrap.com/\">Bootstrap</a></p>"))
   assert_str_eq(footer_str, footer_expected, "template footer fragment")
 
