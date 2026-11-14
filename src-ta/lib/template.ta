@@ -191,13 +191,13 @@ fn tp_nav_item(href, label) {
   l1(html.text(label)))))
 }
 
-// tp_footer: the "Powered by Clojure & Bootstrap" footer paragraph.
+// tp_footer: the "Powered by TinyActor & Bootstrap" footer paragraph.
 fn tp_footer() {
   html.elem("footer", nil,
   l1(html.elem("p", l1(html.attr("class", "nav navbar-nav navbar-right")),
   l4(html.text("Powered by "),
-  html.elem("a", l1(html.attr("href", "https://clojure.org/")),
-  l1(html.text("Clojure"))),
+  html.elem("a", l1(html.attr("href", "https://github.com/tiancaiamao/tinyactor")),
+  l1(html.text("TinyActor"))),
   html.text(" & "),
   html.elem("a", l1(html.attr("href", "//getbootstrap.com/")),
   l1(html.text("Bootstrap")))))))

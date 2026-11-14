@@ -70,7 +70,7 @@
 	    (footer
 	     (p (@ (class "nav navbar-nav navbar-right"))
 		"Powered by "
-		(a (@ (href "https://clojure.org/")) "Clojure")
+		(a (@ (href "https://github.com/tiancaiamao/tinyactor")) "TinyActor")
 		" & "
 		(a (@ (href "//getbootstrap.com/")) "Bootstrap"))))))
 
