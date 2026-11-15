@@ -54,6 +54,17 @@ a:hover {
 	background: none;
 	padding: 0;
 }
+#content table {
+	border-collapse: collapse;
+	margin: 1em 0;
+}
+#content th, #content td {
+	border: 1px solid #ddd;
+	padding: 4px 10px;
+}
+#content th {
+	background: #f5f5f5;
+}
 
 /* Sidebar */
 .sidebar-nav h2 {

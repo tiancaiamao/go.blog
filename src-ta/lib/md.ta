@@ -1,4 +1,5 @@
-// md module: markdown -> html Node tree (byte-identical to cora's wrap.c).
+// md module: markdown -> html Node tree (byte-identical to cora's wrap.c,
+// except tables — see the md4c configuration note below).
 //
 // md4c.events(path) (C module, src-ta/md4c/glue.c) produces a flat,
 // document-ordered event list; md.fold turns it into the html Node ADT and
@@ -24,6 +25,10 @@
 //   (e-hr . nil)                               self-contained <hr /> (no leave)
 //   (e-table . nil) / (e-thead . nil) / (e-tbody . nil) / (e-tr . nil)
 //   + matching l-* events                     <table>/<thead>/<tbody>/<tr>
+//   (e-th . align) / (e-td . align)           <th [align="L"]> / <td [align="L"]>
+//   + matching l-th / l-td events             align: 0 unset (no attr),
+//                                               1 left, 2 center, 3 right
+//                                               (MD_ALIGN)
 //   (s-em . nil) (s-strong . nil) (s-code . nil) (s-del . nil) + matching
 //   sl-* events                              <em>/<strong>/<code>/<del>
 //   (s-a . (href . title))  (sl-a)             <a href=... [title=...]>
@@ -32,12 +37,16 @@
 //                                               carries soft-break "\n")
 //   (br . nil)                                <br />
 //
-// md4c configuration is byte-identical to cora/lib/md4c/wrap.c: parser flags
-// MD_FLAG_STRIKETHROUGH | MD_FLAG_TASKLISTS; MD_TEXT_HTML dropped (cora:
-// "it conflicts with sxml"); MD_TEXT_SOFTBR falls through to the plain
-// text case like cora's default clause — md4c delivers it as the 1-byte
-// string "\n", so soft line breaks survive as text nodes; MD_BLOCK_DOC/
-// HTML emit nothing; MD_BLOCK_TH/TD emit nothing.
+// md4c configuration follows cora/lib/md4c/wrap.c, with ONE deliberate
+// divergence: MD_FLAG_TABLES is enabled here and the th/td block events are
+// emitted. cora never set that flag (and its enter switch had no th/td
+// case), so a markdown table in a post rendered as one run-on paragraph of
+// "|" text — go.blog posts do use tables, so the ta generator parses them.
+// Everything else is byte-identical: flags STRIKETHROUGH | TASKLISTS |
+// TABLES; MD_TEXT_HTML dropped (cora: "it conflicts with sxml");
+// MD_TEXT_SOFTBR falls through to the plain text case like cora's default
+// clause — md4c delivers it as the 1-byte string "\n", so soft line breaks
+// survive as text nodes; MD_BLOCK_DOC/HTML emit nothing.
 //
 // Serialization: html.render / html.render_list (cora sxml->xml). A top-level
 // post is a List(Node); the empty document renders "".
@@ -177,6 +186,38 @@ fn md_a_node(href_title, body) {
   html.elem("a", attrs, body)
 }
 
+// md_align_attrs: table cell alignment (markdown `:---:`) -> attrs list.
+// MD_ALIGN: 0 default (no attribute), 1 left, 2 center, 3 right. No cora
+// counterpart: cora dropped table cells entirely, so this shape is ours
+// (pinned by src-ta/test/baseline/md/table.md.html).
+fn md_align_attrs(align) {
+  if align == 1 {
+    cons(html.attr("align", "left"), nil)
+  } else {
+    if align == 2 {
+      cons(html.attr("align", "center"), nil)
+    } else {
+      if align == 3 {
+        cons(html.attr("align", "right"), nil)
+      } else {
+        nil
+      }
+    }
+  }
+}
+
+// md_cell_body: an empty table cell renders as <td></td>, not the
+// self-closing <td /> the empty-children form would produce (HTML5 has no
+// self-closing syntax for non-void elements). A Raw("") child is the same
+// trick the code-block `@` quirk uses.
+fn md_cell_body(body) {
+  if null?(body) {
+    cons(html.raw(""), nil)
+  } else {
+    body
+  }
+}
+
 // md_build: (tag . info) + REVERSED body -> node. info is the open-time
 // payload (nil for plain blocks). The top-level frame has tag nil: its
 // "element" is the document's top-level List(Node).
@@ -235,7 +276,15 @@ fn md_build(frame, body) {
               if tag == "img" {
                 html.elem("img", cons(html.attr("src", info), nil), b)
               } else {
-                html.elem(tag, nil, b)
+                if tag == "th" {
+                  html.elem("th", md_align_attrs(info), md_cell_body(b))
+                } else {
+                  if tag == "td" {
+                    html.elem("td", md_align_attrs(info), md_cell_body(b))
+                  } else {
+                    html.elem(tag, nil, b)
+                  }
+                }
               }
             }
           }
@@ -306,6 +355,10 @@ fn md_fold_ev(ev, state) {
     "l-tbody" -> md_close(state)
     "e-tr" -> md_enter("tr", nil, state)
     "l-tr" -> md_close(state)
+    "e-th" -> md_enter("th", p, state)
+    "l-th" -> md_close(state)
+    "e-td" -> md_enter("td", p, state)
+    "l-td" -> md_close(state)
     "s-em" -> md_enter("em", nil, state)
     "sl-em" -> md_close(state)
     "s-strong" -> md_enter("strong", nil, state)

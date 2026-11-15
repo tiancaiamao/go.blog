@@ -85,7 +85,9 @@ src-ta/test/wrapper_test.sh                  # blog-gen-ta behaviour
 must be generated (and current) before running them. Markdown expectations under
 `src-ta/test/baseline/` were produced by the previous generator; the `gen_*.sh`
 scripts there regenerate them with `cora` (`CORA_BIN`, default
-`/Users/genius/project/cora/cora`).
+`/Users/genius/project/cora/cora`). Exception: the table expectations
+(`raft-2F1A`, the `table` fixture) are ta-generated — cora has no tables support
+(no `MD_FLAG_TABLES`), and the ta generator does.
 
 ## History
 

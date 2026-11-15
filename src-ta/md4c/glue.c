@@ -13,11 +13,15 @@
  * is documented at the top of src-ta/lib/md.ta; the two sides must stay
  * in sync.
  *
- * md4c configuration is byte-identical to cora/lib/md4c/wrap.c:
- * parser flags MD_FLAG_STRIKETHROUGH | MD_FLAG_TASKLISTS; MD_TEXT_HTML and
- * MD_TEXT_SOFTBR are dropped; MD_BLOCK_DOC/HTML emit nothing; MD_BLOCK_TH/
- * TD emit nothing (cora's enter switch has no th/td case either, and no
- * blog post contains a markdown table).
+ * md4c configuration follows cora/lib/md4c/wrap.c EXCEPT for the tables
+ * extension: cora never enabled MD_FLAG_TABLES (so a markdown table reached
+ * the sxml layer as one run-on paragraph of "|" text), while go.blog posts
+ * do contain tables. This module enables MD_FLAG_TABLES and emits the th/td
+ * block events cora's enter switch was missing.
+ *
+ * Parser flags: MD_FLAG_STRIKETHROUGH | MD_FLAG_TASKLISTS | MD_FLAG_TABLES.
+ * MD_TEXT_HTML and MD_TEXT_SOFTBR are dropped; MD_BLOCK_DOC/HTML emit
+ * nothing.
  *
   * GC discipline: none needed — a C module call is wrapped in the
  * proc_gc_enter gate (no collection can run until it returns) and the
@@ -34,9 +38,9 @@
 /* ---- pre-interned event symbols (set in vm_load_self) ---- */
 
 static Val sym_e_p, sym_e_quote, sym_e_ul, sym_e_ol, sym_e_li, sym_e_h, sym_e_code, sym_e_hr,
-    sym_e_table, sym_e_thead, sym_e_tbody, sym_e_tr;
+    sym_e_table, sym_e_thead, sym_e_tbody, sym_e_tr, sym_e_th, sym_e_td;
 static Val sym_l_p, sym_l_quote, sym_l_ul, sym_l_ol, sym_l_li, sym_l_h, sym_l_code, sym_l_table,
-    sym_l_thead, sym_l_tbody, sym_l_tr;
+    sym_l_thead, sym_l_tbody, sym_l_tr, sym_l_th, sym_l_td;
 static Val sym_s_em, sym_s_strong, sym_s_code, sym_s_del, sym_s_a, sym_s_img, sym_sl_em,
     sym_sl_strong, sym_sl_code, sym_sl_del, sym_sl_a, sym_sl_img;
 static Val sym_text, sym_br;
@@ -96,10 +100,7 @@ static int enter_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
     switch (type) {
     case MD_BLOCK_DOC:
     case MD_BLOCK_HTML:
-    case MD_BLOCK_TH:
-    case MD_BLOCK_TD:
-        /* cora wrap.c: DOC/HTML are noops; TH/TD have no enter case
-         * (default -> assert, a no-op in release builds). */
+        /* cora wrap.c: DOC/HTML are noops. */
         break;
     case MD_BLOCK_QUOTE:
         md4c_event_nil(s, sym_e_quote);
@@ -153,6 +154,14 @@ static int enter_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
     case MD_BLOCK_TR:
         md4c_event_nil(s, sym_e_tr);
         break;
+    case MD_BLOCK_TH:
+    case MD_BLOCK_TD: {
+        /* payload = MD_ALIGN of the column (0 default/unset, 1 left,
+         * 2 center, 3 right); the ta side maps it to an align attribute. */
+        const MD_BLOCK_TD_DETAIL *det = (const MD_BLOCK_TD_DETAIL *)detail;
+        md4c_event(s, type == MD_BLOCK_TH ? sym_e_th : sym_e_td, val_int((int)det->align));
+        break;
+    }
     default:
         break;
     }
@@ -166,8 +175,6 @@ static int leave_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
     case MD_BLOCK_DOC:
     case MD_BLOCK_HR:
     case MD_BLOCK_HTML:
-    case MD_BLOCK_TH:
-    case MD_BLOCK_TD:
         break;
     case MD_BLOCK_QUOTE:
         md4c_event_nil(s, sym_l_quote);
@@ -202,6 +209,12 @@ static int leave_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
         break;
     case MD_BLOCK_TR:
         md4c_event_nil(s, sym_l_tr);
+        break;
+    case MD_BLOCK_TH:
+        md4c_event_nil(s, sym_l_th);
+        break;
+    case MD_BLOCK_TD:
+        md4c_event_nil(s, sym_l_td);
         break;
     default:
         break;
@@ -346,7 +359,7 @@ static Val md4c_events(VM *vm, Val *args, int nargs) {
     s.acc = val_nil();
 
     static const unsigned parser_flags =
-        MD_FLAG_STRIKETHROUGH | MD_FLAG_TASKLISTS; /* cora wrap.c flags */
+        MD_FLAG_STRIKETHROUGH | MD_FLAG_TASKLISTS | MD_FLAG_TABLES;
 
     MD_PARSER parser = {0,          parser_flags, enter_block, leave_block, enter_span,
                         leave_span, text_cb,      debug_log,   NULL};
@@ -386,6 +399,8 @@ void vm_load_self(VM *vm) {
     sym_e_thead = val_symbol(vm_intern_symbol(vm, "e-thead"));
     sym_e_tbody = val_symbol(vm_intern_symbol(vm, "e-tbody"));
     sym_e_tr = val_symbol(vm_intern_symbol(vm, "e-tr"));
+    sym_e_th = val_symbol(vm_intern_symbol(vm, "e-th"));
+    sym_e_td = val_symbol(vm_intern_symbol(vm, "e-td"));
     sym_l_p = val_symbol(vm_intern_symbol(vm, "l-p"));
     sym_l_quote = val_symbol(vm_intern_symbol(vm, "l-quote"));
     sym_l_ul = val_symbol(vm_intern_symbol(vm, "l-ul"));
@@ -397,6 +412,8 @@ void vm_load_self(VM *vm) {
     sym_l_thead = val_symbol(vm_intern_symbol(vm, "l-thead"));
     sym_l_tbody = val_symbol(vm_intern_symbol(vm, "l-tbody"));
     sym_l_tr = val_symbol(vm_intern_symbol(vm, "l-tr"));
+    sym_l_th = val_symbol(vm_intern_symbol(vm, "l-th"));
+    sym_l_td = val_symbol(vm_intern_symbol(vm, "l-td"));
     sym_s_em = val_symbol(vm_intern_symbol(vm, "s-em"));
     sym_s_strong = val_symbol(vm_intern_symbol(vm, "s-strong"));
     sym_s_code = val_symbol(vm_intern_symbol(vm, "s-code"));

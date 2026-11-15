@@ -1,24 +1,37 @@
 // src-ta/test/md_test.ta — md module acceptance tests (spec A2).
 //
-// Every expectation is the cora baseline: src-ta/test/baseline/md/<name>.html,
-// produced by gen_md_baseline.* (cora process-file -> sxml->xml, the exact
+// Every expectation is a baseline file: src-ta/test/baseline/md/<name>.html,
+// produced by gen_md_baseline.sh (cora process-file -> sxml->xml, the exact
 // pipeline the cora blog generator uses). md.html(path) must serialize
 // byte-identical to it.
+//
+// EXCEPTION — tables. cora never enabled md4c's tables extension
+// (MD_FLAG_TABLES) and its enter switch had no th/td case, so a markdown
+// table reached the output as one run-on paragraph of "|" text. The ta
+// generator parses tables for real, so two baselines here are goldens from
+// the ta generator itself (not cora references):
+//   raft-2F1A    the real post with a table (re-rendered by ta)
+//   table        hand-written fixture covering alignment + inline spans +
+//                escaping + an empty cell (see table.md)
+// Regenerating either from cora would restore the broken output;
+// gen_md_baseline.sh therefore skips them.
 //
 // The post set covers the markdown constructs the cora wrap.c special-cases:
 //   200-lines-gc  code blocks WITH language class (language-C/lisp/...)
 //   chibi-scheme1 code blocks with language class
 //   2022          task lists (li class, checkbox input, checked)
-//   raft-2F1A     tables + a blockquote
+//   raft-2F1A     tables + a blockquote (ta-generated, see above)
 //   7900xtx-local-ai  images (img src attr, alt text children)
 //   klambda       nested blockquotes (indented quotes)
 //   2018          mixed content; ordered list starts at 1 (no start attr)
 //   ol-start2     ordered list starting "2." (ol start="2") — fixture
 //   ol-start0     ordered list starting "0." (ol start="0"; cora wrap.c
 //                 omits start only when == 1) — fixture
+//   table         table alignment / escaping / empty cell — fixture
 //
-// The ol-start* fixtures are hand-written inputs living next to their
-// baselines (no real post has an ordered list with start != 1).
+// The ol-start*/table fixtures are hand-written inputs living next to their
+// baselines (no real post has an ordered list with start != 1; the ta
+// generator is the only thing that renders tables at all).
 //
 // Regenerate baselines: ./src-ta/test/baseline/gen_md_baseline.sh
 // (or re-run the per-post cora driver — see that script's header.)
@@ -70,5 +83,7 @@ fn main() {
                  "./src-ta/test/baseline/md/ol-start2.md.html")
   assert_html_eq("ol-start0", "./src-ta/test/baseline/md/ol-start0.md",
                  "./src-ta/test/baseline/md/ol-start0.md.html")
+  assert_html_eq("table", "./src-ta/test/baseline/md/table.md",
+                 "./src-ta/test/baseline/md/table.md.html")
   print("MD TEST PASS")
 }

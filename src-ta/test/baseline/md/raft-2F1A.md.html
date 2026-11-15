@@ -59,13 +59,7 @@ A 已经写到了 [200]
   → B 作为 learner 向 A 请求 [100, 200) 的日志
   → 追平后，upgrade 回 acceptor
 </code></pre><p>追赶期间，B 不能参与 quorum（否则可能把未追平的状态带入 commit 决策）。这就是
-<code>degraded_learnerlist</code> 存在的意义。</p><p>| 问题 | 一句话 | 做不好的后果 |
-|------|--------|------------|
-| 怎么判断挂了？ | 不是超时就踢，需要 Arbiter+幸存者共识投票 | 脑裂，双主写 |
-| 踢人需要共识 | 配置变更本身需要 Arbiter 参与投票 | 变更丢失，回退到旧配置 |
-| Commit 到哪了？ | Degrade 完成前不能 commit 新日志 | 已提交数据丢失 |
-| 老主怎么办？ | Term/Lease fencing | 老主继续写，数据分叉 |
-| 恢复时怎么追？ | 降级为 learner，追平再升级 | 脏数据参与决策 |</p><p>这不是不可行 但这不是 &quot;加个 arbiter 就完事了&quot; 的简单工程。
+<code>degraded_learnerlist</code> 存在的意义。</p><table><thead><tr><th>问题</th><th>一句话</th><th>做不好的后果</th></tr></thead><tbody><tr><td>怎么判断挂了？</td><td>不是超时就踢，需要 Arbiter+幸存者共识投票</td><td>脑裂，双主写</td></tr><tr><td>踢人需要共识</td><td>配置变更本身需要 Arbiter 参与投票</td><td>变更丢失，回退到旧配置</td></tr><tr><td>Commit 到哪了？</td><td>Degrade 完成前不能 commit 新日志</td><td>已提交数据丢失</td></tr><tr><td>老主怎么办？</td><td>Term/Lease fencing</td><td>老主继续写，数据分叉</td></tr><tr><td>恢复时怎么追？</td><td>降级为 learner，追平再升级</td><td>脏数据参与决策</td></tr></tbody></table><p>这不是不可行 但这不是 &quot;加个 arbiter 就完事了&quot; 的简单工程。
 它是一个完整的分布式共识协议的变体。上述 5 个问题，每一个都需要精确的设计和实现。</p><p>现在不看上面的内容，再回到 raft。具体到 raft 两副本的时候，有几个问题就是挺不好处理的。</p><p>首先集群成员变更。在 raft 的 conf change 中，join consensus 有描述变更的处理。
 它是要求变更前的配置，和变更后的配置，两者能同时达成 majority。</p><p>比如 3 副本情况下 {1, 2, 3} -&gt; {2, 3, 4} 把 1 拿掉，把 4 加进来，挂任何一个点，前后配置还可以满足 majority。
 但是 2 副本情况下 {1, 2} -&gt; {2, 3} 变更过程中, 只要挂掉 1 个，无论挂哪一个，都会出现前后配置无法达成 majority，

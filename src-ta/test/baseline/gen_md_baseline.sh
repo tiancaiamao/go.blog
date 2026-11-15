@@ -5,11 +5,16 @@
 # the ta md module (spec A2).
 #
 # POSTS    — content/ posts (the delivered baseline set md_test.ta asserts
-#            against): code blocks + language class, task lists, tables,
-#            images, nested blockquotes, and ordered lists.
+#            against): code blocks + language class, task lists, images,
+#            nested blockquotes, and ordered lists.
 # FIXTURES — small hand-written inputs living next to their baselines, for
 #            constructs no real post contains (e.g. ordered lists whose
 #            start != 1, rendered with a start attribute).
+#
+# NOT regenerated here — raft-2F1A and table.md: cora has no tables support
+# (no MD_FLAG_TABLES, no th/td case in its enter switch), so it would render
+# those two as a run-on paragraph. The ta generator supports tables, so those
+# two baselines are ta-generated goldens; see src-ta/test/md_test.ta.
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../../.."   # go.blog root
@@ -25,7 +30,6 @@ POSTS=(
   7900xtx-local-ai.md
   chibi-scheme1.md
   klambda.md
-  raft-2F1A.md
 )
 FIXTURES=(
   ol-start0.md
