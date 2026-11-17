@@ -1,0 +1,29 @@
+// src-ta/test/dsl_test.ta — DSL sugar regression test.
+//
+// Renders dsl/features.dsl, which exercises:
+//   - a zero-arg `def` used as a bare expression (must compile to a KL call)
+//   - backquote grouping and ,@ splicing of a Node list
+// The generated stub is external; the runner splices the compiled template
+// KL in front, so no dylib is needed.
+
+import "go.blog:build/features_stub"
+import "tinyactor:lib/html"
+
+fn fail(msg) {
+  print(str.concat("DSL TEST FAIL: ", msg))
+  1 / 0
+}
+
+fn main() {
+  let xs = cons(html.elem("span", nil, cons(html.text("A"), nil)),
+            cons(html.elem("span", nil, cons(html.text("B"), nil)), nil))
+  let got = html.render_list(template.feature_box(xs))
+  let expected = "<div class=\"box\">hi<span>A</span><span>B</span></div>"
+  if str.eq(got, expected) {
+    print("DSL TEST PASS")
+  } else {
+    print(str.concat("  actual:   ", got))
+    print(str.concat("  expected: ", expected))
+    fail("backquote/splice/def render mismatch")
+  }
+}

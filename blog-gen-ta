@@ -110,14 +110,12 @@ build_md4c() {
 }
 
 run_ta() {
-    local cmd="$1"
-    local arg="${2:-}"
     cd "$SCRIPT_DIR"
-    if [ -n "$arg" ]; then
-        "$TINYACTOR" run src-ta/gen.ta "$cmd" "$arg"
-    else
-        "$TINYACTOR" run src-ta/gen.ta "$cmd"
-    fi
+    # Page templates (and the atom feed) now live in dsl/templates.dsl; the
+    # generated KL is spliced in front of the TA entry so template.* is
+    # defined before use. Failure here aborts before any output is touched.
+    "$SCRIPT_DIR/tools/build-dsl.sh" src-ta/gen.ta build/blog-gen.kl >&2
+    "$TINYACTOR" run build/blog-gen.kl "$@"
 }
 
 sync_static() {

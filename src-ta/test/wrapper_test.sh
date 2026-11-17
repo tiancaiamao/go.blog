@@ -4,9 +4,10 @@
 # Scope (go.blog fix/blog-generator-errors):
 #   1. the single tinyactor run (generate) fails -> wrapper exits nonzero,
 #      static sync NOT run
-#   2. the single tinyactor run (file) fails -> wrapper exits nonzero,
-#      static sync NOT run, and tinyactor is invoked EXACTLY ONCE (the
-#      wrapper no longer runs a separate `dirs` preparation pass)
+#   2. the single generator run (file) fails -> wrapper exits nonzero,
+#      static sync NOT run, and the generator is invoked EXACTLY ONCE
+#      (the wrapper no longer runs a separate `dirs` preparation pass;
+#      DSL/KL build invocations are separate and may succeed)
 #   3. `file <absent-name>` -> nonzero exit (core.ta co_die signal), no
 #      static sync, and the generated tree is left untouched
 #
@@ -60,12 +61,16 @@ run_capture() {
 # ---- Test 1: tinyactor run failure (generate) propagates, no static sync ----
 cat > "$WORK/stub_fail_generate" <<'EOF'
 #!/usr/bin/env bash
-echo "stub tinyactor: generation failed as expected" >&2
-exit 9
+echo "$*" >> "$CALLS"
+case "$*" in
+  *build/blog-gen.kl*) echo "stub tinyactor: generation failed as expected" >&2; exit 9 ;;
+esac
+exit 0
 EOF
 chmod +x "$WORK/stub_fail_generate"
 
-run_capture env TINYACTOR="$WORK/stub_fail_generate" "$BLOG_GEN_TA" generate
+run_capture env TINYACTOR="$WORK/stub_fail_generate" CALLS="$WORK/calls-gen.log" \
+    "$BLOG_GEN_TA" generate
 [ "$RC" -eq 9 ] || fail "generate failure: expected exit 9, got $RC (out: $CAPTURED)"
 if printf '%s' "$CAPTURED" | grep -q "Syncing static assets"; then
     fail "generate failure: static sync ran despite failure"
@@ -76,8 +81,10 @@ ok "tinyactor run failure (generate) -> nonzero exit, static sync skipped"
 cat > "$WORK/stub_fail_file" <<'EOF'
 #!/usr/bin/env bash
 echo "$*" >> "$CALLS"
-echo "stub tinyactor: generation failed as expected" >&2
-exit 7
+case "$*" in
+  *build/blog-gen.kl*) echo "stub tinyactor: generation failed as expected" >&2; exit 7 ;;
+esac
+exit 0
 EOF
 chmod +x "$WORK/stub_fail_file"
 
@@ -87,13 +94,14 @@ run_capture env TINYACTOR="$WORK/stub_fail_file" CALLS="$WORK/calls.log" \
 if printf '%s' "$CAPTURED" | grep -q "Syncing static assets"; then
     fail "file failure: static sync ran despite failure"
 fi
-if [ "$(wc -l < "$WORK/calls.log")" -ne 1 ]; then
-    fail "file failure: expected exactly 1 tinyactor invocation, got: $(cat "$WORK/calls.log")"
+grep "build/blog-gen.kl" "$WORK/calls.log" > "$WORK/run-calls.log" || true
+if [ "$(wc -l < "$WORK/run-calls.log")" -ne 1 ]; then
+    fail "file failure: expected exactly 1 generator run, got: $(cat "$WORK/calls.log")"
 else
-    grep -qx "run src-ta/gen.ta file some-post.md" "$WORK/calls.log" \
-        || fail "file failure: unexpected invocation args: $(cat "$WORK/calls.log")"
+    grep -qx "run build/blog-gen.kl file some-post.md" "$WORK/run-calls.log" \
+        || fail "file failure: unexpected generator run args: $(cat "$WORK/run-calls.log")"
 fi
-ok "tinyactor run failure (file) -> nonzero exit, exactly-once invocation, no static sync"
+ok "generator run failure (file) -> nonzero exit, single generator run, no static sync"
 
 # ---- Test 3: `file <absent>` fails with the real toolchain ----
 [ -x "$TINYACTOR" ] || { echo "WRAPPER TEST FAIL: TINYACTOR not executable: $TINYACTOR" >&2; exit 1; }

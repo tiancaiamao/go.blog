@@ -1,0 +1,26 @@
+// dsl/main.ta — compile a .dsl file to KL + a TA stub file.
+//
+// usage: tinyactor run compiler.tabc <src.dsl> <out.kl> <out.ta>
+import "go.blog:dsl/expand"
+import "go.blog:dsl/reader"
+import "tinyactor:lib/file"
+import "tinyactor:lib/vm"
+
+fn main() {
+  let src = vm.get_arg(0)
+  let kl_out = vm.get_arg(1)
+  let stub_out = vm.get_arg(2)
+  let text = file.read(src)
+  match reader.read_program(text) {
+    Err(e) -> crash(e)
+    Ok(forms) -> {
+      file.write(kl_out, expand.compile_program(forms))
+      file.write(stub_out, expand.stub_program(forms))
+    }
+  }
+}
+
+fn crash(msg) -> string {
+  print(str.concat("dsl: ", msg))
+  str.from_int(1 / 0)
+}

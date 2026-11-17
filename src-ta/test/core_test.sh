@@ -37,7 +37,8 @@ while IFS= read -r d; do
   mkdir -p "$ROOT/$d"
 done < <(cd generate && find category tags -type d)
 
-"$TINYACTOR" run src-ta/test/core_test.ta
+TINYACTOR="$TINYACTOR" ./tools/build-dsl.sh src-ta/test/core_test.ta build/core-test.kl >&2
+"$TINYACTOR" run build/core-test.kl
 
 echo "--- diff evidence (generated vs generate/) ---"
 FILES=(

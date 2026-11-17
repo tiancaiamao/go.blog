@@ -249,14 +249,7 @@ fn atom_entry(item) {
   let entry_url = str.concat(str.concat(co_site_url(), "/"), file)
   let md_nodes = md.html(str.concat("./content/", file))
   let html_content = html.render_list(md_nodes)
-  html.elem("entry", nil, co_l5(
-  html.elem("title", nil, co_l1(html.text(title))),
-  html.elem("link", co_l3(html.attr("href", entry_url),
-  html.attr("type", "text/html"), html.attr("rel", "alternate")), nil),
-  html.elem("id", nil, co_l1(html.text(entry_url))),
-  html.elem("updated", nil, co_l1(html.text(date))),
-  html.elem("content", co_l1(html.attr("type", "html")),
-  co_l1(html.text(html_content)))))
+  template.atom_entry(title, date, entry_url, html_content)
 }
 
 fn co_l5(x, y, z, w, v) {
@@ -274,22 +267,7 @@ pub fn atom_feed(index) {
   let updated_date = get_string_from_item(car(recent), "Date")
   let entries = list.map(fn(item) { atom_entry(item) }, list.take(10, recent))
   let url = str.concat(co_site_url(), "/")
-  html.elem("feed", co_l1(html.attr("xmlns", "http://www.w3.org/2005/Atom")),
-  list.append(co_l8(
-  html.elem("title", nil, co_l1(html.text("Arthur 的博客"))),
-  html.elem("subtitle", nil, co_l1(html.text("伟大的野心家，实践家"))),
-  html.elem("updated", nil, co_l1(html.text(updated_date))),
-  html.elem("link", co_l3(html.attr("rel", "alternate"),
-  html.attr("type", "text/html"), html.attr("href", url)), nil),
-  html.elem("link", co_l3(html.attr("rel", "self"),
-  html.attr("type", "application/atom+xml"),
-  html.attr("href", str.concat(co_site_url(), "/feed.atom"))), nil),
-  html.elem("rights", nil, co_l1(html.text("Copyright (c) 2025, Arthur Mao"))),
-  html.elem("id", nil, co_l1(html.text(url))),
-  html.elem("author", nil, co_l2(
-  html.elem("name", nil, co_l1(html.text("Arthur"))),
-  html.elem("email", nil, co_l1(html.text("tiancaiamao@gmail.com")))))),
-  entries))
+  template.atom_feed(updated_date, entries, url)
 }
 
 // ---- file output (root-parameterized) ----
@@ -309,7 +287,7 @@ pub fn write_file(path, data) {
 pub fn write_post(root, category, tags, item) {
   let file = get_string_from_item(item, "File")
   let path = str.concat(str.concat(root, file), "/index.html")
-  write_file(path, html.render(post_page(category, tags, item)))
+  write_file(path, html.render_list(post_page(category, tags, item)))
 }
 
 // write_summary: <root>/<kind>/<name>/index.html listing the entry's items
@@ -318,7 +296,7 @@ pub fn write_post(root, category, tags, item) {
 pub fn write_summary(root, category, tags, kind, data) {
   let path = str.concat(str.concat(str.concat(str.concat(root, kind), "/"),
   car(data)), "/index.html")
-  write_file(path, html.render(blog_page(category, tags, kind, cdr(data))))
+  write_file(path, html.render_list(blog_page(category, tags, kind, cdr(data))))
 }
 
 pub fn write_category(root, category, tags, data) {
@@ -332,26 +310,26 @@ pub fn write_tags(root, category, tags, data) {
 // write_index_page: <root>/index.html (the "blog" listing).
 pub fn write_index_page(root, category, tags, index) {
   write_file(str.concat(root, "index.html"),
-  html.render(blog_page(category, tags, "blog", index)))
+  html.render_list(blog_page(category, tags, "blog", index)))
 }
 
 pub fn write_about(root, category, tags) {
-  write_file(str.concat(root, "about.html"), html.render(about_page(category, tags)))
+  write_file(str.concat(root, "about.html"), html.render_list(about_page(category, tags)))
 }
 
 pub fn write_project(root, category, tags) {
-  write_file(str.concat(root, "project.html"), html.render(project_page(category, tags)))
+  write_file(str.concat(root, "project.html"), html.render_list(project_page(category, tags)))
 }
 
 pub fn write_home(root, category, tags) {
-  write_file(str.concat(root, "home.html"), html.render(home_page(category, tags)))
+  write_file(str.concat(root, "home.html"), html.render_list(home_page(category, tags)))
 }
 
 pub fn write_atom(root, index) {
   print("Generating: feed.atom")
   write_file(str.concat(root, "feed.atom"),
   str.concat("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n",
-  html.render(atom_feed(index))))
+  html.render_list(atom_feed(index))))
 }
 
 // ---- single-post / full generation ----

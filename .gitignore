@@ -18,3 +18,5 @@
 # OS/editor droppings
 .DS_Store
 *~
+# generated DSL compiler output and combined KL images
+/build

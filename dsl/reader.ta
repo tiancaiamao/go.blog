@@ -1,0 +1,192 @@
+// dsl/reader.ta — DSL reader: text -> untyped s-expr tree (the same value
+// shape the pinned KL reader/writer uses: symbols, strings, ints, lists).
+//
+// It adds the sugar the KL reader does not have:
+//   `x   -> (__bq x)
+//   ,x   -> (__uq x)
+//   ,@x  -> (__splice x)
+//   'x   -> (quote x)
+//
+// Atoms follow KL conventions: nil/true/false, int48 integers, otherwise
+// symbols. Strings accept \" \\ \n \t \r escapes. `;` starts a line comment.
+import "tinyactor:lib/result"
+
+type Step {
+  Step(f, pos)
+}
+
+pub fn read_program(text) {
+  read_forms(text, 0, str.length(text), nil)
+}
+
+fn read_forms(text, i, n, acc) {
+  let j = skip_ws(text, i, n)
+  if j >= n {
+    Ok(reverse(acc, nil))
+  } else {
+    match parse_form(text, j, n, 0) {
+      Err(msg) -> Err(msg)
+      Ok(Step(f, pos)) -> read_forms(text, pos, n, cons(f, acc))
+    }
+  }
+}
+
+fn reverse(xs, acc) {
+  if null?(xs) { acc } else { reverse(cdr(xs), cons(car(xs), acc)) }
+}
+
+fn skip_ws(text, i, n) {
+  if i >= n {
+    i
+  } else {
+    let c = str.char_at(text, i)
+        if c == 59 { // ';'
+      skip_ws(text, skip_comment(text, i + 1, n), n)
+    } else if c == 47 && i + 1 < n && str.char_at(text, i + 1) == 47 { // //
+      skip_ws(text, skip_comment(text, i + 2, n), n)
+    } else if c == 32 || c == 9 || c == 10 || c == 13 {
+      skip_ws(text, i + 1, n)
+    } else {
+      i
+    }
+  }
+}
+
+fn skip_comment(text, i, n) {
+  if i >= n { n }
+  else if str.char_at(text, i) == 10 { i + 1 }
+  else { skip_comment(text, i + 1, n) }
+}
+
+fn parse_form(text, i, n, depth) {
+  if depth > 400 {
+    Err("dsl read: nesting too deep")
+  } else {
+    let j = skip_ws(text, i, n)
+    if j >= n {
+      Err("dsl read: unexpected end of input")
+    } else {
+      let c = str.char_at(text, j)
+      if c == 40 { // (
+        parse_list(text, j + 1, n, depth + 1, nil)
+      } else if c == 41 { // )
+        Err("dsl read: unexpected ')'")
+      } else if c == 34 { // "
+        match parse_string(text, j + 1, n, "") {
+          Err(msg) -> Err(msg)
+          Ok(Step(s, pos)) -> Ok(Step(s, pos))
+        }
+      } else if c == 96 { // `
+        parse_prefixed(text, j + 1, n, depth, '__bq)
+      } else if c == 39 { // '
+        parse_prefixed(text, j + 1, n, depth, 'quote)
+      } else if c == 44 { // ,
+        if j + 1 < n && str.char_at(text, j + 1) == 64 {
+          parse_prefixed(text, j + 2, n, depth, '__splice)
+        } else {
+          parse_prefixed(text, j + 1, n, depth, '__uq)
+        }
+      } else {
+        parse_atom(text, j, n)
+      }
+    }
+  }
+}
+
+fn parse_prefixed(text, i, n, depth, tag) {
+  match parse_form(text, i, n, depth) {
+    Err(msg) -> Err(msg)
+    Ok(Step(f, pos)) -> Ok(Step(cons(tag, cons(f, nil)), pos))
+  }
+}
+
+fn parse_list(text, i, n, depth, acc) {
+  let j = skip_ws(text, i, n)
+  if j >= n {
+    Err("dsl read: unterminated list")
+  } else if str.char_at(text, j) == 41 { // )
+    Ok(Step(reverse(acc, nil), j + 1))
+  } else {
+    match parse_form(text, j, n, depth) {
+      Err(msg) -> Err(msg)
+      Ok(Step(f, pos)) -> parse_list(text, pos, n, depth, cons(f, acc))
+    }
+  }
+}
+
+fn parse_string(text, i, n, acc) {
+  if i >= n {
+    Err("dsl read: unterminated string")
+  } else {
+    let c = str.char_at(text, i)
+    if c == 34 { // "
+      Ok(Step(acc, i + 1))
+    } else if c == 92 { // backslash
+      if i + 1 >= n {
+        Err("dsl read: dangling string escape")
+      } else {
+        let e = str.char_at(text, i + 1)
+        if e == 110 { // n
+          parse_string(text, i + 2, n, str.concat(acc, "\n"))
+        } else if e == 116 { // t
+          parse_string(text, i + 2, n, str.concat(acc, "\t"))
+        } else if e == 114 { // r
+          parse_string(text, i + 2, n, str.concat(acc, "\r"))
+        } else if e == 34 {
+          parse_string(text, i + 2, n, str.concat(acc, "\""))
+        } else if e == 92 {
+          parse_string(text, i + 2, n, str.concat(acc, "\\"))
+        } else {
+          Err("dsl read: unknown string escape")
+        }
+      }
+    } else {
+            parse_string(text, i + 1, n, str.concat(acc, str.substr(text, i, 1)))
+    }
+  }
+}
+
+fn parse_atom(text, i, n) {
+  let j = atom_end(text, i, n)
+    let tok = str.substr(text, i, j - i)
+  if str.eq(tok, "nil") {
+    Ok(Step(nil, j))
+  } else if str.eq(tok, "true") {
+    Ok(Step(true, j))
+  } else if str.eq(tok, "false") {
+    Ok(Step(false, j))
+  } else if int_text(tok, 0, str.length(tok)) {
+    Ok(Step(str.to_int(tok), j))
+  } else {
+    Ok(Step(str.to_sym(tok), j))
+  }
+}
+
+fn atom_end(text, i, n) {
+  if i >= n {
+    n
+  } else {
+    let c = str.char_at(text, i)
+    if c == 40 || c == 41 || c == 34 || c == 59 || c == 96 || c == 39 || c == 44 ||
+       c == 32 || c == 9 || c == 10 || c == 13 {
+      i
+    } else {
+      atom_end(text, i + 1, n)
+    }
+  }
+}
+
+fn int_text(tok, i, n) {
+  if i >= n {
+    n > 0
+  } else {
+    let c = str.char_at(tok, i)
+    if c >= 48 && c <= 57 {
+      int_text(tok, i + 1, n)
+    } else if i == 0 && c == 45 && n > 1 {
+      int_text(tok, 1, n)
+    } else {
+      false
+    }
+  }
+}

@@ -119,7 +119,7 @@ fn main() {
   let baseline = "./src-ta/test/baseline/template/"
 
   // ---- 1. sidebar: cora baseline + real generate/index.html fragment ----
-  let sidebar_frag = html.render(template.sidebar(cats(), tags5()))
+  let sidebar_frag = html.render_list(template.sidebar(cats(), tags5()))
   assert_str_eq(sidebar_frag, read_or_fail(str.concat(baseline, "sidebar.html")),
   "sidebar byte-identical to cora baseline")
       let index_page = read_or_fail("./generate/index.html")
@@ -132,13 +132,13 @@ fn main() {
   "sidebar fragment found byte-identical in generate/index.html")
 
   // ---- 2. disqus: cora baseline (real title/url) ----
-  let disqus_frag = html.render(template.disqus("chicken scheme实践之二",
+  let disqus_frag = html.render_list(template.disqus("chicken scheme实践之二",
   "/chicken-scheme-practice2.md"))
   assert_str_eq(disqus_frag, read_or_fail(str.concat(baseline, "disqus.html")),
   "disqus byte-identical to cora baseline")
 
   // ---- 2b. disqus escaping: the script body is a Text node, not Raw ----
-  let disqus_esc = html.render(template.disqus("a \"b\" & <c>", "/x"))
+  let disqus_esc = html.render_list(template.disqus("a \"b\" & <c>", "/x"))
   assert_str_eq(disqus_esc, read_or_fail(str.concat(baseline, "disqus_escape.html")),
   "disqus escapes the script body (Text, not Raw)")
 
@@ -173,7 +173,7 @@ fn main() {
   "article with empty tags renders self-closing pager (gitbbs page)")
 
   // ---- 4. container: cora baseline + real post page prefix ----
-  let container_fixed = html.render(template.container(fixed_content(), cats(), tags5()))
+  let container_fixed = html.render_list(template.container(fixed_content(), cats(), tags5()))
   assert_str_eq(container_fixed, read_or_fail(str.concat(baseline, "container.html")),
   "container byte-identical to cora baseline")
 
@@ -181,7 +181,7 @@ fn main() {
   // sidebar, so compare the prefix up to (and including) the last tag pill,
   // dropping the four closing </div>s that only close because the sidebar
   // ends there
-  let container_real = html.render(template.container(
+  let container_real = html.render_list(template.container(
   template.article("chicken scheme实践之二", "2015-08-12",
   md.html("./content/chicken-scheme-practice2.md"),
   l3("blog", "scheme", "chicken"), nil, nil, "chicken-scheme-practice2.md"),
@@ -193,7 +193,7 @@ fn main() {
   "container prefix found byte-identical in generated post page")
 
   // ---- 5. page: cora baseline + real page skeleton ----
-  let page_fixed = html.render(template.page("blog",
+  let page_fixed = html.render_list(template.page("blog",
   template.container(fixed_content(), cats(), tags5())))
   assert_str_eq(page_fixed, read_or_fail(str.concat(baseline, "page.html")),
   "page byte-identical to cora baseline")
@@ -212,7 +212,7 @@ fn main() {
   "page tail is the exact suffix of generate/index.html")
 
   // same head check against the post page, with its own title
-  let page_post = html.render(template.page("chicken scheme实践之二",
+  let page_post = html.render_list(template.page("chicken scheme实践之二",
   template.container(fixed_content(), cats(), tags5())))
   let head_post = str.substr(page_post, 0,
   str.index_of(page_post, "<div class=\"container\">"))
