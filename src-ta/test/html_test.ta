@@ -1,10 +1,10 @@
 // src-ta/test/html_test.ta — html module acceptance tests.
 //
-// Every expectation is derived from cora/lib/sxml.cora (the byte-identical
-// target): element->xml (self-closing " />" for empty bodies), attribute->xml
+// Every expectation is pinned by the golden fixtures: element->xml
+// (self-closing " />" for empty bodies), attribute->xml
 // (" name=\"value\"" in list order), string->escaped-xml (escape set:
 // " -> &quot;, & -> &amp;, \ -> &apos;, < -> &lt;, > -> &gt;; single quote
-// NOT escaped). Cross-verified against real cora output in generate/*.html
+// NOT escaped). Cross-verified against the generated site in generate/*.html
 // (skipped gracefully when the directory is absent).
 //
 // Asserts pass silently; a failed assertion prints a message and crashes
@@ -54,7 +54,7 @@ fn l4(x, y, z, w) {
 }
 
 fn main() {
-  // ---- simple element, empty body (cora element->xml null branch) ----
+  // ---- simple element, empty body (legacy null branch) ----
   assert_str_eq(html.render(html.elem("div", nil, nil)),
   "<div />", "empty element self-closes with ' />'")
   assert_str_eq(html.render(html.elem("hr", nil, nil)),
@@ -94,14 +94,14 @@ fn main() {
   "<a title=\"x &amp; y &lt;z&gt; &quot; &apos;\">t</a>",
   "attribute value escaping")
 
-  // ---- text escaping: the exact cora string->escaped-xml set ----
+  // ---- text escaping: the exact legacy string->escaped-xml set ----
   // input chars: < & > " \ and '
   assert_str_eq(html.render(html.elem("p", nil, l1(html.text(
   "a < b & c > d \" e \\ f ' g")))),
   "<p>a &lt; b &amp; c &gt; d &quot; e &apos; f ' g</p>",
   "text escaping set (quote, amp, backslash, lt, gt; apostrophe untouched)")
 
-  // escape order quirk: & itself must become &amp; (the cora cond matches
+  // escape order quirk: & itself must become &amp; (the legacy cond matches
   // the raw character, so a literal "&amp;" in the source becomes "&amp;amp;")
   assert_str_eq(html.render(html.text("&amp;")),
   "&amp;amp;", "double-escape of literal entity text")
@@ -126,7 +126,7 @@ fn main() {
   assert_str_eq(html.render(html.elem("p", nil, l1(html.text("中文")))),
   "<p>中文</p>", "utf-8 text passes through")
 
-  // ---- top-level list dispatch (cora sxml->xml-h [c . more] clause) ----
+  // ---- top-level list dispatch (legacy list clause) ----
   assert_str_eq(html.render_list(l2(html.text("a"),
   html.elem("b", nil, l1(html.text("c"))))),
   "a<b>c</b>", "top-level list concatenates items")
@@ -143,9 +143,9 @@ fn main() {
   assert_str_eq(html.text_of(html.text("t")), "t", "text_of")
   assert_str_eq(html.raw_of(html.raw("r")), "r", "raw_of")
 
-  // ---- cross-verification against real cora output (generate/*.html) ----
-  // Rebuild template.cora footer/meta/link nodes and check the rendered
-  // strings byte-for-byte, and that they appear in the cora-generated page.
+  // ---- cross-verification against the generated site (generate/*.html) ----
+  // Rebuild the footer/meta/link nodes and check the rendered
+  // strings byte-for-byte, and that they appear in the generated page.
   let footer = html.elem("p", l1(html.attr("class", "nav navbar-nav navbar-right")),
   l4(html.text("Powered by "),
   html.elem("a", l1(html.attr("href", "https://github.com/tiancaiamao/tinyactor")),
@@ -168,14 +168,14 @@ fn main() {
 
   let page = file.read("generate/index.html")
   if null?(page) {
-    print("note: generate/index.html missing, skipping cora cross-check")
+    print("note: generate/index.html missing, skipping cross-check")
   } else {
     assert_true(str.index_of(page, footer_str) >= 0,
-    "footer fragment found byte-identical in cora output")
+    "footer fragment found byte-identical in generated output")
     assert_true(str.index_of(page, html.render(link)) >= 0,
-    "link fragment found byte-identical in cora output")
+    "link fragment found byte-identical in generated output")
     assert_true(str.index_of(page, "<meta charset=\"utf-8\" />") >= 0,
-    "meta fragment found in cora output")
+    "meta fragment found in generated output")
   }
 
   print("PASS")

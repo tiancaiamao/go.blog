@@ -85,20 +85,16 @@ src-ta/test/wrapper_test.sh                  # blog-gen-ta behaviour
 ```
 
 `core_test.sh` and `wrapper_test.sh` byte-compare against `generate/`, so the site
-must be generated (and current) before running them. Markdown expectations under
-`src-ta/test/baseline/` were produced by the previous generator; the `gen_*.sh`
-scripts there regenerate them with `cora` (`CORA_BIN`, default
-`/Users/genius/project/cora/cora`). Exception: the table expectations
-(`raft-2F1A`, the `table` fixture) are ta-generated — cora has no tables support
-(no `MD_FLAG_TABLES`), and the ta generator does.
+must be generated (and current) before running them. Markdown/template expectations
+under `src-ta/test/baseline/` are golden fixtures checked against the generated site;
+the table expectations (`raft-2F1A`, the `table` fixture) are TA-generated because
+the old renderer had no tables support (`MD_FLAG_TABLES`).
 
 ## History
 
-The generator has been rewritten twice: Clojure (`project.clj`, dropped) → cora
-(`src/*.cora`, driven by `blog-gen`) → TA (`src-ta/`, driven by `blog-gen-ta`).
-The page/feed templates are now written in the in-repo template DSL
-(`dsl/templates.dsl`) and compiled to KL + TA external stubs by
-`tools/build-dsl.sh`; the TA core consumes the resulting Node trees. Output is
-byte-identical to the cora-generated `generate/` tree, including `feed.atom`.
-`src/*.cora` and `blog-gen` are kept only as the reference the TA port and its
-baselines were checked against.
+The generator was previously written in Clojure and then in cora; both are gone.
+The current implementation is TA (`src-ta/`, driven by `blog-gen-ta`), with the
+page/feed templates written in the in-repo DSL (`dsl/templates.dsl`) and compiled
+to KL + TA external stubs by `tools/build-dsl.sh`. The TA core consumes the
+resulting Node trees. Output is byte-identical to the golden fixtures and the
+`generate/` tree, including `feed.atom`.

@@ -6,18 +6,19 @@
  * Architecture (go.blog .pge/spec.md): this C layer only translates md4c's
  * SAX callbacks into a flat, document-ordered event list. It builds no
  * tree and no ADT — the ta side (src-ta/lib/md.ta) folds the events into
- * the html Node ADT and applies the cora-wrap.c special cases (task-list
+ * the html Node ADT and applies the legacy special cases (task-list
  * items, checkbox attrs, ol start attr, code-block language quirk).
  *
  * Event shape: every event is a pair  (sym . payload).  The full grammar
  * is documented at the top of src-ta/lib/md.ta; the two sides must stay
  * in sync.
  *
- * md4c configuration follows cora/lib/md4c/wrap.c EXCEPT for the tables
- * extension: cora never enabled MD_FLAG_TABLES (so a markdown table reached
- * the sxml layer as one run-on paragraph of "|" text), while go.blog posts
- * do contain tables. This module enables MD_FLAG_TABLES and emits the th/td
- * block events cora's enter switch was missing.
+ * md4c configuration follows the golden-fixture renderer EXCEPT for the
+ * tables extension: the legacy renderer never enabled MD_FLAG_TABLES (so a
+ * markdown table reached the sxml layer as one run-on paragraph of "|"
+ * text), while go.blog posts do contain tables. This module enables
+ * MD_FLAG_TABLES and emits the th/td block events the legacy enter switch
+ * was missing.
  *
  * Parser flags: MD_FLAG_STRIKETHROUGH | MD_FLAG_TASKLISTS | MD_FLAG_TABLES.
  * MD_TEXT_HTML and MD_TEXT_SOFTBR are dropped; MD_BLOCK_DOC/HTML emit
@@ -72,7 +73,7 @@ static void md4c_event_nil(md4c_state *s, Val sym) { md4c_event(s, sym, val_nil(
 
 /* Concatenate all substrings of an MD_ATTRIBUTE (href/src/title/lang)
  * into one heap string. Escaping is per-character and independent, so
- * pre-concatenating chunks is byte-identical to cora's per-chunk
+ * pre-concatenating chunks is byte-identical to the legacy per-chunk
  * append + sxml->xml escaping. */
 static Val md4c_attr_text(md4c_state *s, const MD_ATTRIBUTE *attr) {
     if (attr->text == NULL)
@@ -100,7 +101,7 @@ static int enter_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
     switch (type) {
     case MD_BLOCK_DOC:
     case MD_BLOCK_HTML:
-        /* cora wrap.c: DOC/HTML are noops. */
+        /* golden fixture: DOC/HTML are noops. */
         break;
     case MD_BLOCK_QUOTE:
         md4c_event_nil(s, sym_e_quote);
@@ -110,7 +111,7 @@ static int enter_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
         break;
     case MD_BLOCK_OL: {
         const MD_BLOCK_OL_DETAIL *det = (const MD_BLOCK_OL_DETAIL *)detail;
-        /* cora wrap.c render_open_ol_block: no start attribute when
+        /* legacy render_open_ol_block: no start attribute when
          * start == 1; every other value passes through — including
          * start == 0 (markdown "0. item" renders as start="0"). */
         md4c_event(s, sym_e_ol, val_int((int)det->start));
@@ -119,7 +120,7 @@ static int enter_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
     case MD_BLOCK_LI: {
         const MD_BLOCK_LI_DETAIL *det = (const MD_BLOCK_LI_DETAIL *)detail;
         /* payload 0 = plain <li>; otherwise the task mark char
-         * (cora checks 'x'/'X' for the "checked" attribute). */
+         * (the legacy renderer checks 'x'/'X' for the "checked" attribute). */
         int mark = det->is_task ? (int)det->task_mark : 0;
         md4c_event(s, sym_e_li, val_int(mark));
         break;
@@ -134,7 +135,7 @@ static int enter_block(MD_BLOCKTYPE type, void *detail, void *userdata) {
     }
     case MD_BLOCK_CODE: {
         const MD_BLOCK_CODE_DETAIL *det = (const MD_BLOCK_CODE_DETAIL *)detail;
-        /* lang string, or nil (cora: class attr only when lang.text !=
+        /* lang string, or nil (legacy: class attr only when lang.text !=
          * NULL). */
         md4c_event(s, sym_e_code, md4c_attr_text(s, &det->lang));
         break;
@@ -254,7 +255,7 @@ static int enter_span(MD_SPANTYPE type, void *detail, void *userdata) {
     }
     case MD_SPAN_IMG: {
         const MD_SPAN_IMG_DETAIL *det = (const MD_SPAN_IMG_DETAIL *)detail;
-        /* payload: src string (cora renders only src; a title attr is
+        /* payload: src string (the legacy renderer emits only src; a title attr is
          * dropped, alt text arrives via text callbacks). */
         md4c_event(s, sym_s_img, md4c_attr_text(s, &det->src));
         break;
@@ -303,15 +304,15 @@ static int text_cb(MD_TEXTTYPE type, const MD_CHAR *text, MD_SIZE size, void *us
         md4c_event_nil(s, sym_br);
         break;
     case MD_TEXT_HTML:
-        /* cora wrap.c: dropped (it conflicts with sxml). */
+        /* legacy wrap.c: dropped (it conflicts with sxml). */
         break;
     default:
         /* NORMAL, ENTITY, CODE, ESCAPED, SOFTBR, ... : raw text passed
-         * through as-is — cora's text_callback has no SOFTBR case either,
+         * through as-is — the legacy text_callback had no SOFTBR case either,
          * so a soft break reaches this default and md4c delivers it as
-         * the 1-byte text "\n" (the newlines visible inside cora's <p>
-         * output). The ta side escapes it when rendering (matches cora's
-         * string sxml nodes). */
+         * the 1-byte text "\n" (the newlines visible inside legacy <p>
+         * output). The ta side escapes it when rendering (matches the
+         * legacy string sxml nodes). */
         md4c_event(s, sym_text, val_string(s->p, (const char *)text, (int)size));
         break;
     }

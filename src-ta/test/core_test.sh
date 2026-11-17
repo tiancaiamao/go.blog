@@ -30,7 +30,7 @@ rm -rf "$ROOT"
 mkdir -p "$ROOT/an-ai-debug-story.md" \
          "$ROOT/gitbbs.md"
 # generate_file (single-post update) refreshes EVERY category/tags page, so
-# mirror cora's full summary-page tree — including nested dirs: the tag
+# mirror the full summary-page tree — including nested dirs: the tag
 # "call/cc" nests as tags/call/cc/ (the names are exactly what
 # build_category/build_tags produce — verified byte-identical by the test)
 while IFS= read -r d; do
@@ -48,7 +48,7 @@ FILES=(
   "tags/raft/index.html"
   "feed.atom"
 )
-# gitbbs.md / about.html baselines predate the last cora run (stale
+# gitbbs.md / about.html baselines predate the latest run (stale
 # sidebar tag set); core_test.ta verifies them modulo the sidebar, so they
 # are excluded from the plain diff here.
 MODULO_STALE=(

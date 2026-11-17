@@ -1,9 +1,9 @@
 // src-ta/test/core_test.ta — core module acceptance tests.
 //
-// Two kinds of evidence against cora's products in generate/:
+// Two kinds of evidence against the generated site in generate/:
 //
-// 1. FULL byte-identity for the pages from cora's latest consistent run
-//    (all mtime 8/16 22:22 — a `blog-gen file an-ai-debug-story.md`):
+// 1. FULL byte-identity for the pages from the latest consistent run
+//    (all mtime 8/16 22:22 — a single-post generation of an-ai-debug-story.md):
 //      index.html                          full blog listing + full sidebar
 //      an-ai-debug-story.md/index.html     a post page (tags + md body)
 //      category/AI/index.html              a category summary page
@@ -15,8 +15,8 @@
 //    null + Category "" — the known data edges) and about.html (static
 //    page). Their bytes outside the sidebar well are compared; the stale
 //    sidebar is spliced out and replaced with the fresh sidebar carved
-//    from our own index.html output (itself byte-identical to cora's
-//    fresh one), and the WHOLE spliced page must then match our output.
+//    from our own index.html output (itself byte-identical to the fresh
+//    baseline), and the WHOLE spliced page must then match our output.
 //
 // Plus pure-logic unit checks for the data-edge items (12: no Category;
 // 19-style Tags null) and the tag/category map shapes.
@@ -68,7 +68,7 @@ fn read_or_fail(path) {
   }
 }
 
-// assert_file_eq: byte-compare the generated file against the cora baseline.
+// assert_file_eq: byte-compare the generated file against the baseline.
 fn assert_file_eq(gen_path, base_path, msg) {
   let a = read_or_fail(gen_path)
   let b = read_or_fail(base_path)
@@ -129,7 +129,7 @@ fn fresh_sidebar_well(index_page) {
   str.substr(index_page, w, c - w)
 }
 
-// assert_modulo_stale_sidebar: the cora baseline page was generated with an
+// assert_modulo_stale_sidebar: the baseline page was generated with an
 // older tag set, so its sidebar is stale. Replace its sidebar with the
 // fresh one and require our generated page to match the spliced result
 // byte-for-byte (everything outside the sidebar is still compared 1:1).
@@ -202,47 +202,47 @@ fn main() {
   let ai_items = cdr(find_entry(category, "AI"))
   print(str.concat("ok category AI items: ", str.from_int(count(ai_items))))
 
-  // ---- 1. index page (full listing + full sidebar), cora 22:22 run ----
+  // ---- 1. index page (full listing + full sidebar), fresh baseline ----
   core.write_index_page(scratch_dir(), category, tags, index)
   assert_file_eq("./.coretest/index.html", "./generate/index.html",
-  "index.html byte-identical to cora output")
+  "index.html byte-identical to baseline")
   let sb_fresh = fresh_sidebar_well(read_or_fail("./.coretest/index.html"))
 
-  // ---- 2. post page (tags + md body), same 22:22 cora run ----
+  // ---- 2. post page (tags + md body), fresh baseline ----
   core.write_post(scratch_dir(), category, tags,
   car(cdr(core.find_item_by_file("an-ai-debug-story.md", index))))
   assert_file_eq("./.coretest/an-ai-debug-story.md/index.html",
   "./generate/an-ai-debug-story.md/index.html",
-  "post page byte-identical to cora output")
+  "post page byte-identical to baseline")
 
   // ---- 2b. post page edge (Tags null, Category ""): stale baseline ----
   core.write_post(scratch_dir(), category, tags, gitbbs)
   assert_modulo_stale_sidebar("./.coretest/gitbbs.md/index.html",
   "./generate/gitbbs.md/index.html", sb_fresh,
-  "post page (no tags) identical to cora output modulo stale sidebar")
+  "post page (no tags) identical to baseline modulo stale sidebar")
 
-  // ---- 3. category summary page, cora 22:22 run ----
+  // ---- 3. category summary page, fresh baseline ----
   core.write_category(scratch_dir(), category, tags, find_entry(category, "AI"))
   assert_file_eq("./.coretest/category/AI/index.html",
   "./generate/category/AI/index.html",
-  "category page byte-identical to cora output")
+  "category page byte-identical to baseline")
 
-  // ---- 4. tags summary page, cora 22:22 run ----
+  // ---- 4. tags summary page, fresh baseline ----
   core.write_tags(scratch_dir(), category, tags, find_entry(tags, "raft"))
   assert_file_eq("./.coretest/tags/raft/index.html",
   "./generate/tags/raft/index.html",
-  "tags page byte-identical to cora output")
+  "tags page byte-identical to baseline")
 
   // ---- 5. static template page: stale baseline ----
   core.write_about(scratch_dir(), category, tags)
   assert_modulo_stale_sidebar("./.coretest/about.html",
   "./generate/about.html", sb_fresh,
-  "about.html identical to cora output modulo stale sidebar")
+  "about.html identical to baseline modulo stale sidebar")
 
-  // ---- 6. atom feed (10 full entries), cora 22:22 run ----
+  // ---- 6. atom feed (10 full entries), fresh baseline ----
   core.write_atom(scratch_dir(), index)
   assert_file_eq("./.coretest/feed.atom", "./generate/feed.atom",
-  "feed.atom byte-identical to cora output")
+  "feed.atom byte-identical to baseline")
 
   // ---- 7. single-post entry point regenerates the same bytes ----
   core.generate_file(scratch_dir(), index, category, tags, "an-ai-debug-story.md")

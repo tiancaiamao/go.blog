@@ -1,10 +1,10 @@
-// md module: markdown -> html Node tree (byte-identical to cora's wrap.c,
-// except tables — see the md4c configuration note below).
+// md module: markdown -> html Node tree (byte-identical to the golden
+// fixtures, except tables — see the md4c configuration note below).
 //
 // md4c.events(path) (C module, src-ta/md4c/glue.c) produces a flat,
 // document-ordered event list; md.fold turns it into the html Node ADT and
 // md.html(path) = fold(events(path)). The C layer does NO tree assembly —
-// this module is where cora's lib/md4c/wrap.c render logic lives.
+// this module is where the renderer logic lives.
 //
 // Event grammar (must stay in sync with src-ta/md4c/glue.c; every event is
 // a pair (sym . payload)):
@@ -20,8 +20,8 @@
 //   (e-code . lang)  (l-code)                   <pre><code [class="language-L"]>
 //                                               (lang nil => no class); the
 //                                               single l-code event closes
-//                                               code and pre (cora does two
-//                                               render_verbatim_leave)
+//                                               code and pre (the legacy renderer
+//                                               used two verbatim leaves)
 //   (e-hr . nil)                               self-contained <hr /> (no leave)
 //   (e-table . nil) / (e-thead . nil) / (e-tbody . nil) / (e-tr . nil)
 //   + matching l-* events                     <table>/<thead>/<tbody>/<tr>
@@ -37,28 +37,28 @@
 //                                               carries soft-break "\n")
 //   (br . nil)                                <br />
 //
-// md4c configuration follows cora/lib/md4c/wrap.c, with ONE deliberate
+// md4c configuration follows the golden-fixture renderer, with ONE deliberate
 // divergence: MD_FLAG_TABLES is enabled here and the th/td block events are
-// emitted. cora never set that flag (and its enter switch had no th/td
+// emitted. The legacy renderer never set that flag (and had no th/td
 // case), so a markdown table in a post rendered as one run-on paragraph of
 // "|" text — go.blog posts do use tables, so the ta generator parses them.
 // Everything else is byte-identical: flags STRIKETHROUGH | TASKLISTS |
-// TABLES; MD_TEXT_HTML dropped (cora: "it conflicts with sxml");
-// MD_TEXT_SOFTBR falls through to the plain text case like cora's default
+// TABLES; MD_TEXT_HTML dropped (legacy: "it conflicts with sxml");
+// MD_TEXT_SOFTBR falls through to the plain text case like the legacy default
 // clause — md4c delivers it as the 1-byte string "\n", so soft line breaks
 // survive as text nodes; MD_BLOCK_DOC/HTML emit nothing.
 //
-// Serialization: html.render / html.render_list (cora sxml->xml). A top-level
+// Serialization: html.render / html.render_list. A top-level
 // post is a List(Node); the empty document renders "".
 //
-// Fold mechanics mirror cora's MD_HTML {curr, stack} exactly:
+// Fold mechanics mirror the legacy MD_HTML {curr, stack} exactly:
 //   curr  — cons list of the current element's contents (REVERSED order:
-//           the most recent child is the head, like cora's append_curr);
+//           the most recent child is the head, like legacy append_curr);
 //   stack — ONE cell per open element: ((tag . info) . saved-cur), where
 //           info is the open-time payload (ol start / li mark / code lang
 //           / a href+title) only consumed at close time, and saved-cur is
-//           the parent's content list frozen at enter time. cora's
-//           render_verbatim_leave does (cons (reverse curr) old): reversing
+//           the parent's content list frozen at enter time. The legacy
+//           verbatim leave did (cons (reverse curr) old): reversing
 //           then re-consing back is a no-op on the final value, so the ta
 //           close uses a plain cons (byte-identical, and avoids the O(n^2)
 //           per-leave reversal).
@@ -86,16 +86,16 @@ fn md_rev(lst, acc) {
   }
 }
 
-// ---- close-time element builders (cora's special cases) ----
+// ---- close-time element builders (legacy special cases) ----
 
-// md_li_node: cora render_open_li_block.
+// md_li_node: legacy render_open_li_block.
 //
-// cora's sxml for a task item is (li (@ (class "task-list-item"))
+// The legacy sxml for a task item is (li (@ (class "task-list-item"))
 // (input (@ (type "checkbox") (class "task-list-item-checkbox")
 // disabled [checked]) body...): the input comes first, then the li body.
-// The input's attrs render in cora's order — type, class, disabled,
+// The input's attrs render in the legacy order — type, class, disabled,
 // [checked only when the mark is x/X] — with disabled/checked as
-// VALUELESS attrs (bare symbols in cora's attr list render as
+// VALUELESS attrs (bare symbols in the legacy attr list render as
 // " name", see html.attr_flag). Attribute/child ORDER is part of the
 // byte-identical contract (verified against baseline 2022.md.html):
 //   <li class="task-list-item"><input type="checkbox"
@@ -127,7 +127,7 @@ fn md_li_node(mark, body) {
   }
 }
 
-// md_ol_node: cora render_open_ol_block — start attribute only when
+// md_ol_node: legacy render_open_ol_block — start attribute only when
 // start != 1 (start 0 renders as start="0").
 fn md_ol_node(start, body) {
   if start == 1 {
@@ -137,7 +137,7 @@ fn md_ol_node(start, body) {
   }
 }
 
-// md_h_node: cora head[] = {"h1", ... "h6"}.
+// md_h_node: legacy head[] = {"h1", ... "h6"}.
 fn md_h_node(level, body) {
   let tag = if level == 1 {
     "h1"
@@ -163,7 +163,7 @@ fn md_h_node(level, body) {
   html.elem(tag, nil, body)
 }
 
-// md_code_node: cora render_open_code_block — <code [class="language-L"]>.
+// md_code_node: legacy render_open_code_block — <code [class="language-L"]>.
 fn md_code_node(lang, body) {
   let attrs = if null?(lang) {
     nil
@@ -173,7 +173,7 @@ fn md_code_node(lang, body) {
   html.elem("code", attrs, body)
 }
 
-// md_a_node: cora render_open_a_span — attr order href, then title (only
+// md_a_node: legacy render_open_a_span — attr order href, then title (only
 // when present).
 fn md_a_node(href_title, body) {
   let href = car(href_title)
@@ -187,8 +187,9 @@ fn md_a_node(href_title, body) {
 }
 
 // md_align_attrs: table cell alignment (markdown `:---:`) -> attrs list.
-// MD_ALIGN: 0 default (no attribute), 1 left, 2 center, 3 right. No cora
-// counterpart: cora dropped table cells entirely, so this shape is ours
+// MD_ALIGN: 0 default (no attribute), 1 left, 2 center, 3 right. No legacy
+// counterpart: the legacy renderer dropped table cells entirely, so this
+// shape is ours
 // (pinned by src-ta/test/baseline/md/table.md.html).
 fn md_align_attrs(align) {
   if align == 1 {
@@ -222,23 +223,23 @@ fn md_cell_body(body) {
 // payload (nil for plain blocks). The top-level frame has tag nil: its
 // "element" is the document's top-level List(Node).
 //
-// SPECIAL CASES — byte-identical to cora's wrap.c, QUIRKS INCLUDED. cora
-// builds several of these as sxml lists whose second cell is NOT an
-// (@ ...) attrs list, so sxml->xml falls into the plain-element clause
-// and renders the pieces as CHILD ELEMENTS. Reproduced here as explicit
+// SPECIAL CASES — byte-identical to the golden fixtures, QUIRKS INCLUDED.
+// The legacy renderer built several of these as sxml lists whose second
+// cell is NOT an (@ ...) attrs list, so sxml->xml fell into the plain-element
+// clause and rendered the pieces as CHILD ELEMENTS. Reproduced here as explicit
 // Elem/Text/Raw nodes (all verified against
 // src-ta/test/baseline/md/*.html):
 //   li task   : <li class="task-list-item">INPUT BODY</li> — the input
-//               first, then the body (cora's curr is reversed at close);
+//               first, then the body (legacy curr is reversed at close);
 //               input attrs type/class/disabled[checked], the last two
 //               valueless (see md_li_node)
 //   code+lang : <code><class>language-L</class><@></@>BODY</code> — the
 //               class element and the stray @ element are CHILDREN, in
 //               that order, before the body. The @ has body (nil) in
-//               cora — a one-element list, hence NOT the self-closing
-//               form: modeled as Elem("@", nil, [Raw("")])
+//               the legacy output — a one-element list, hence NOT the
+//               self-closing form: modeled as Elem("@", nil, [Raw("")])
 //   a         : <a href="H" [title="T"]>BODY</a> — a NORMAL element
-//               (cora's (@ (href H) (title T)) attrs list is proper);
+//               (legacy (@ (href H) (title T)) attrs list is proper);
 //               BODY is the link text events only
 //   img       : <img src="S">ALT</img> — src attr + the alt-text events
 //               as body (md4c delivers alt text via text callbacks
@@ -294,7 +295,7 @@ fn md_build(frame, body) {
   }
 }
 
-// md_close: cora render_verbatim_leave — pop the frame cell, build the
+// md_close: legacy render_verbatim_leave — pop the frame cell, build the
 // element from the inner content list, prepend it to the PARENT's saved
 // content list. State: (cur . stack); each stack cell is
 // ((tag . info) . saved-cur): exactly one cell per open element, the
@@ -308,7 +309,7 @@ fn md_close(state) {
   cons(cons(node, cdr(cell)), cdr(cdr(state)))
 }
 
-// md_enter: cora render_verbatim_enter — save (frame . cur) as one stack
+// md_enter: legacy render_verbatim_enter — save (frame . cur) as one stack
 // cell, start a fresh (empty) content list; info is the open-time payload
 // (nil for plain blocks).
 fn md_enter(tag, info, state) {
@@ -341,7 +342,7 @@ fn md_fold_ev(ev, state) {
     }
     "l-code" -> {
       let s1 = md_close(state) // closes <code>
-      md_close(s1)             // closes <pre> (cora: two verbatim_leave)
+      md_close(s1)             // closes <pre> (legacy: two verbatim leaves)
     }
     "e-hr" -> {
       let cur = car(state)

@@ -1,7 +1,7 @@
 // dsl/templates.dsl — go.blog page + atom feed templates in the template DSL.
 //
-// Semantics mirror src/template.cora and src/core.cora byte-for-byte; the
-// generated KL builds html Node trees (not strings). Attributes use the flat
+// Output matches the golden fixtures in src-ta/test/baseline/ byte-for-byte;
+// the generated KL builds html Node trees (not strings). Attributes use the flat
 // surface form; nested SXML `(@ (class "x"))` is accepted too.
 
 (def site-url "https://tiancaiamao.github.io")
@@ -92,7 +92,7 @@
     (for x in tags ,(template.tp_tag_link x))
     (ul (@ class "pager"))))
 
-// --- atom feed (migrated from core.ta / src/core.cora) ---
+// --- atom feed ---
 
 (template atom_entry (title date entry-url html-content)
   (entry

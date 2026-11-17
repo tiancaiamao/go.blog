@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Blog generator wrapper script (ta version — ta port of blog-gen)
+# Blog generator wrapper script
+
 # Usage: blog-gen-ta [command] [options]
 #
 # Failure contract: any step that fails — the tinyactor generation run —

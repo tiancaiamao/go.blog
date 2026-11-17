@@ -1,4 +1,5 @@
-// src-ta/gen.ta — blog generator entry point (ta port of blog-gen).
+// src-ta/gen.ta — blog generator entry point.
+
 //
 // Usage (from the go.blog repo root, via the blog-gen-ta wrapper):
 //   tinyactor run src-ta/gen.ta generate        full site -> generate/

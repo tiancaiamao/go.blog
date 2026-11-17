@@ -2,22 +2,20 @@
 //
 // Byte-identical target, two layers of evidence:
 //
-// 1. Cora baselines: src-ta/test/baseline/template/*.html, produced by
-//    baseline/gen_template_baseline.sh (cora's own sidebar/container/page/
-//    article with the fixed real-data args, plus a disqus variant — see
-//    that script's header for why disqus is inlined there: template.cora's
-//    disqus is dead code with a missing unquote comma that crashes cora).
-//    Each template constructor rendered through html must equal its
-//    baseline byte-for-byte.
+// 1. Golden fixtures: src-ta/test/baseline/template/*.html (the legacy
+//    sidebar/container/page/article with fixed real-data args, plus a
+//    disqus variant). Each template constructor rendered through html
+//    must equal its fixture byte-for-byte.
+
 //
-// 2. Real cora products: generate/index.html and
+// 2. Real generated pages: generate/index.html and
 //    generate/chicken-scheme-practice2.md/index.html. Rendered fragments
 //    (sidebar prefix, full article wrap with real md content, container
 //    prefix, page head/tail) must appear byte-identical inside the real
 //    generated pages. The article check is end-to-end: its content comes
 //    from md.html on the real post file.
 //
-// Shared fixed args (same as the baseline generator):
+// Shared fixed args:
 //   CATS  — the six real categories, in sidebar order
 //   TAGS  — the first five real tags, in sidebar order
 //   chicken-scheme-practice2.md — title/date/tags from content/index.json
@@ -88,7 +86,7 @@ fn read_or_fail(path) {
   }
 }
 
-// ---- shared fixed args (mirror of gen_template_baseline.cora) ----
+// ---- shared fixed args ----
 
 fn l3(x, y, z) {
   cons(x, cons(y, cons(z, nil)))
@@ -118,10 +116,10 @@ fn fixed_content() {
 fn main() {
   let baseline = "./src-ta/test/baseline/template/"
 
-  // ---- 1. sidebar: cora baseline + real generate/index.html fragment ----
+  // ---- 1. sidebar: golden fixture + real generate/index.html fragment ----
   let sidebar_frag = html.render_list(template.sidebar(cats(), tags5()))
   assert_str_eq(sidebar_frag, read_or_fail(str.concat(baseline, "sidebar.html")),
-  "sidebar byte-identical to cora baseline")
+  "sidebar byte-identical to golden fixture")
       let index_page = read_or_fail("./generate/index.html")
   // cats(6) + first 5 tags is a contiguous prefix of the real sidebar; the
   // well's closing </div> only appears after all 337 real tags, so compare
@@ -131,26 +129,26 @@ fn main() {
   assert_in(sidebar_prefix, index_page, -1,
   "sidebar fragment found byte-identical in generate/index.html")
 
-  // ---- 2. disqus: cora baseline (real title/url) ----
+  // ---- 2. disqus: golden fixture (real title/url) ----
   let disqus_frag = html.render_list(template.disqus("chicken scheme实践之二",
   "/chicken-scheme-practice2.md"))
   assert_str_eq(disqus_frag, read_or_fail(str.concat(baseline, "disqus.html")),
-  "disqus byte-identical to cora baseline")
+  "disqus byte-identical to golden fixture")
 
   // ---- 2b. disqus escaping: the script body is a Text node, not Raw ----
   let disqus_esc = html.render_list(template.disqus("a \"b\" & <c>", "/x"))
   assert_str_eq(disqus_esc, read_or_fail(str.concat(baseline, "disqus_escape.html")),
   "disqus escapes the script body (Text, not Raw)")
 
-  // ---- 3. article: cora baseline + real generated post page ----
+  // ---- 3. article: golden fixture + real generated post page ----
   let article_fixed = html.render_list(template.article(
   "chicken scheme实践之二", "2015-08-12", fixed_content(),
   l3("blog", "scheme", "chicken"), nil, nil, "chicken-scheme-practice2.md"))
   assert_str_eq(article_fixed, read_or_fail(str.concat(baseline, "article.html")),
-  "article byte-identical to cora baseline")
+  "article byte-identical to golden fixture")
 
   // end-to-end with the real post: content from md.html must reproduce the
-  // article wrap inside the cora-generated page byte-for-byte
+  // article wrap inside the generated page byte-for-byte
   let chicken_page = read_or_fail("./generate/chicken-scheme-practice2.md/index.html")
   let article_real = html.render_list(template.article(
   "chicken scheme实践之二", "2015-08-12",
@@ -172,10 +170,10 @@ fn main() {
   assert_in(html.render(car(cdr(notags))), gitbbs_page, -1,
   "article with empty tags renders self-closing pager (gitbbs page)")
 
-  // ---- 4. container: cora baseline + real post page prefix ----
+  // ---- 4. container: golden fixture + real post page prefix ----
   let container_fixed = html.render_list(template.container(fixed_content(), cats(), tags5()))
   assert_str_eq(container_fixed, read_or_fail(str.concat(baseline, "container.html")),
-  "container byte-identical to cora baseline")
+  "container byte-identical to golden fixture")
 
   // real check: container around the real article; TAGS5 truncates the
   // sidebar, so compare the prefix up to (and including) the last tag pill,
@@ -192,11 +190,11 @@ fn main() {
   assert_in(container_prefix, chicken_page, -1,
   "container prefix found byte-identical in generated post page")
 
-  // ---- 5. page: cora baseline + real page skeleton ----
+  // ---- 5. page: golden fixture + real page skeleton ----
   let page_fixed = html.render_list(template.page("blog",
   template.container(fixed_content(), cats(), tags5())))
   assert_str_eq(page_fixed, read_or_fail(str.concat(baseline, "page.html")),
-  "page byte-identical to cora baseline")
+  "page byte-identical to golden fixture")
 
   // head skeleton (everything before the container) must open the real
   // index page exactly

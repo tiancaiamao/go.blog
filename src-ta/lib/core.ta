@@ -1,40 +1,13 @@
-// core module: port of src/core.cora (the blog generator core).
+// core module: the blog generator core.
 //
 // Reads content/index.json (json module), turns each post's markdown into
-// a html Node tree (md module), wraps pages with template constructors
-// (template module) and serializes them byte-identically to cora's
-// sxml->xml (html module). The output ROOT DIRECTORY IS A PARAMETER —
-// every write_* function takes it as its first argument, so tests can
-// generate into a scratch tree and diff against cora's generate/ output.
+// a html Node tree (md module), wraps pages with DSL template constructors
+// (template module) and serializes them (html module). The output ROOT DIRECTORY
+// IS A PARAMETER — every write_* function takes it as its first argument, so
+// tests can generate into a scratch tree and diff against generate/.
 //
-// Function-by-function correspondence with core.cora:
-//   for-range/parse-index-file   -> parse_index_file (items collected in
-//                                   REVERSE array order, like cora's
-//                                   for-range cons fold)
-//   assoc                        -> co_assoc (entry = [name item...]; a new
-//                                   key is prepended, a repeated key conses
-//                                   the item onto the existing entry)
-//   build-category/build-tags    -> build_category / build_tags
-//   get-tags-from-item           -> get_tags_from_item (reversed tag order,
-//                                   exactly like cora)
-//   get-string-from-item         -> get_string_from_item
-//   container0                   -> container0 (sidebar gets the category
-//                                   names then the tag names, in build order)
-//   static-template-handler &co  -> static_page / about_page / project_page
-//                                   / home_page
-//   md-sxml                      -> post_page
-//   blog-item/blog-handler       -> blog_item / blog_page
-//   write-file                   -> write_file (crashes on failure)
-//   md-handler                   -> write_post
-//   find-item-by-file            -> find_item_by_file ('none | ['ok item])
-//   generate-file                -> generate_file (single-post update)
-//   summery-handler &
-//   category/tags-handler        -> write_summary / write_category /
-//                                   write_tags
-//   take-n/atom-entry/atom-handler -> list.take / atom_entry / atom_feed
-//   generate                     -> generate
-//
-// Ordering notes pinned by cora's semantics (verified against generate/):
+// Ordering notes pinned by the golden baselines (verified against generate/):
+
 //   - index.json is newest-first; INDEX is its REVERSE (oldest-first);
 //     the index page's foldl-blog_item PREPENDS, so the page ends up
 //     newest-first (array order)
@@ -71,9 +44,9 @@ pub fn co_die(msg) -> string {
   str.from_int(1 / 0)
 }
 
-// ---- index / tags / category (cora assoc machinery) ----
+// ---- index / tags / category (assoc machinery) ----
 
-// co_assoc: cora's assoc — acc is a list of entries [k v...]; a new key is
+// co_assoc: acc is a list of entries [k v...]; a new key is
 // prepended as a fresh entry, an existing key conses v onto its entry's
 // items (so the items end up newest-first).
 fn co_assoc(k, v, lst) {
@@ -90,7 +63,7 @@ fn co_assoc(k, v, lst) {
 }
 
 // parse_index_file: index.json -> item list in REVERSE array order
-// (cora's for-range cons fold). Every element is a json JObj.
+// (reversed cons fold). Every element is a json JObj.
 pub fn parse_index_file(idx_file) {
   let data = json.load(idx_file)
   co_index_collect(data, 0, json.array_size(data), nil)
@@ -132,7 +105,7 @@ pub fn build_tags(index) {
 }
 
 // get_tags_from_item: the item's Tags strings in REVERSE array order
-// (cora's cons fold) — template.article consumes them in exactly this
+// (cons fold) — template.article consumes them in exactly this
 // order (e.g. chicken-scheme-practice2.md renders blog, scheme, chicken).
 // Non-array Tags (missing or null) yield nil.
 pub fn get_tags_from_item(item) {
@@ -169,7 +142,7 @@ pub fn get_string_from_item(item, field) {
 }
 
 // co_item_date10: the item's Date truncated to its first 10 chars
-// (cora's (string-slice date 0 10)).
+// (string-slice date 0 10).
 fn co_item_date10(item) {
   str.substr(get_string_from_item(item, "Date"), 0, 10)
 }
@@ -177,7 +150,7 @@ fn co_item_date10(item) {
 // ---- page constructors ----
 
 // container0: container with the site-wide sidebar — category names then
-// tag names, in build order (cora's (map car CATEGORY)/(map car TAGS)).
+// tag names, in build order (mapped from CATEGORY/TAGS).
 fn container0(category, tags, content) {
   template.container(content, list.map(fn(e) { car(e) }, category),
   list.map(fn(e) { car(e) }, tags))
@@ -203,8 +176,8 @@ pub fn home_page(category, tags) {
   static_page(category, tags, "Home", "home.md")
 }
 
-// post_page: one post's full page (cora md-sxml). prev/next stay false,
-// matching the current template.cora (navigation commented out there).
+// post_page: one post's full page. prev/next stay false, matching the
+// baseline template (navigation commented out there).
 pub fn post_page(category, tags, item) {
   let title = get_string_from_item(item, "Title")
   let date = co_item_date10(item)
@@ -215,7 +188,7 @@ pub fn post_page(category, tags, item) {
   template.article(title, date, content, tags_l, false, false, filename)))
 }
 
-// blog_item: prepend the post's h2 link + meta date to acc (cora blog-item).
+// blog_item: prepend the post's h2 link + meta date to acc.
 fn blog_item(acc, item) {
   let href = str.concat("/", get_string_from_item(item, "File"))
   let h2 = html.elem("h2", nil, co_l1(html.elem("a",
@@ -227,7 +200,7 @@ fn blog_item(acc, item) {
 }
 
 // blog_page: a listing page — the index page and every category/tags
-// summary page (cora blog-handler).
+// summary page.
 pub fn blog_page(category, tags, title, indices) {
   template.page(title, container0(category, tags,
   list.foldl(fn(acc, item) { blog_item(acc, item) }, nil, indices)))
@@ -240,8 +213,7 @@ fn co_site_url() {
 }
 
 // atom_entry: one <entry>; the content is the post's rendered markdown,
-// ESCAPED as a text child (cora splices the sxml->xml string into the
-// entry and sxml->xml escapes string children).
+// ESCAPED as a text child (the renderer escapes string children).
 fn atom_entry(item) {
   let title = get_string_from_item(item, "Title")
   let date = get_string_from_item(item, "Date")
@@ -261,7 +233,7 @@ fn co_l8(x, y, z, w, v, u, t, s) {
 }
 
 // atom_feed: the whole <feed> node — fixed head (through <author>), then
-// the 10 most recent entries spliced in (cora atom-handler).
+// the 10 most recent entries spliced in.
 pub fn atom_feed(index) {
   let recent = list.reverse(index)
   let updated_date = get_string_from_item(car(recent), "Date")
@@ -283,7 +255,7 @@ pub fn write_file(path, data) {
   }
 }
 
-// write_post: <root>/<file>/index.html (cora md-handler).
+// write_post: <root>/<file>/index.html.
 pub fn write_post(root, category, tags, item) {
   let file = get_string_from_item(item, "File")
   let path = str.concat(str.concat(root, file), "/index.html")
@@ -291,7 +263,7 @@ pub fn write_post(root, category, tags, item) {
 }
 
 // write_summary: <root>/<kind>/<name>/index.html listing the entry's items
-// (cora summery-handler; kind is "category" or "tags", data is the assoc
+// (kind is "category" or "tags", data is the assoc
 // entry [name item...]).
 pub fn write_summary(root, category, tags, kind, data) {
   let path = str.concat(str.concat(str.concat(str.concat(root, kind), "/"),
@@ -349,7 +321,7 @@ pub fn find_item_by_file(filename, items) {
 }
 
 // generate_file: single-post update — regenerate that post, then refresh
-// the index/category/tags pages and the feed (cora generate-file).
+// the index/category/tags pages and the feed.
 pub fn generate_file(root, index, category, tags, filename) {
   let res = find_item_by_file(filename, index)
   if pair?(res) && car(res) == 'ok {
@@ -365,7 +337,7 @@ pub fn generate_file(root, index, category, tags, filename) {
   }
 }
 
-// generate: the full site into root (cora generate).
+// generate: the full site into root.
 pub fn generate(root, index, category, tags) {
   list.map(fn(item) { write_post(root, category, tags, item) }, index)
   write_about(root, category, tags)
